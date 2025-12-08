@@ -4,7 +4,25 @@ import {
     PiBookOpenUserDuotone,
     PiBookBookmarkDuotone,
     PiAcornDuotone,
-    PiBagSimpleDuotone
+    PiBagSimpleDuotone,
+    PiSquaresFourDuotone,
+    PiBuildingDuotone,
+    PiUsersDuotone,
+    PiClipboardTextDuotone,
+    PiChartBarDuotone,
+    PiFileTextDuotone,
+    PiCreditCardDuotone,
+    PiBellDuotone,
+    PiUserDuotone,
+    PiHeadphonesDuotone,
+    PiUserCircleDuotone,
+    PiClipboardDuotone,
+    PiQuestionDuotone,
+    PiCheckCircleDuotone,
+    PiChatCircleTextDuotone,
+    PiFileDuotone,
+    PiGearDuotone,
+    PiShieldCheckDuotone
 } from 'react-icons/pi'
 
 export type NavigationIcons = Record<string, JSX.Element>
@@ -15,7 +33,25 @@ const navigationIcon: NavigationIcons = {
     collapseMenu: <PiArrowsInDuotone />,
     groupSingleMenu: <PiBookOpenUserDuotone />,
     groupCollapseMenu: <PiBookBookmarkDuotone />,
-    groupMenu: <PiBagSimpleDuotone />
+    groupMenu: <PiBagSimpleDuotone />,
+    dashboard: <PiSquaresFourDuotone />,
+    building: <PiBuildingDuotone />,
+    users: <PiUsersDuotone />,
+    clipboardList: <PiClipboardTextDuotone />,
+    chartBar: <PiChartBarDuotone />,
+    documentReport: <PiFileTextDuotone />,
+    creditCard: <PiCreditCardDuotone />,
+    bell: <PiBellDuotone />,
+    user: <PiUserDuotone />,
+    support: <PiHeadphonesDuotone />,
+    userGroup: <PiUserCircleDuotone />,
+    clipboardCheck: <PiClipboardDuotone />,
+    questionMarkCircle: <PiQuestionDuotone />,
+    checkCircle: <PiCheckCircleDuotone />,
+    chatBubbleLeftRight: <PiChatCircleTextDuotone />,
+    documentText: <PiFileDuotone />,
+    cog: <PiGearDuotone />,
+    shieldCheck: <PiShieldCheckDuotone />
 }
 
 export default navigationIcon

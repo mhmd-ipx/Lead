@@ -1,0 +1,158 @@
+import { lazy } from 'react'
+import { ADMIN } from '@/constants/roles.constant'
+import type { Routes } from '@/@types/routes'
+
+const adminRoutes: Routes = [
+    {
+        key: 'adminDashboard',
+        path: '/admin/dashboard',
+        component: lazy(() => import('@/views/admin/Dashboard')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminCompanies',
+        path: '/admin/companies',
+        component: lazy(() => import('@/views/admin/Companies')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminCompanyDetails',
+        path: '/admin/companies/:companyId',
+        component: lazy(() => import('@/views/admin/CompanyDetails')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminOwners',
+        path: '/admin/owners',
+        component: lazy(() => import('@/views/admin/Owners')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminOwnerDetails',
+        path: '/admin/owners/:ownerId',
+        component: lazy(() => import('@/views/admin/OwnerDetails')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminManagers',
+        path: '/admin/managers',
+        component: lazy(() => import('@/views/admin/Managers')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminManagerDetails',
+        path: '/admin/managers/:managerId',
+        component: lazy(() => import('@/views/admin/ManagerDetails')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminAssessmentForms',
+        path: '/admin/assessment/forms',
+        component: lazy(() => import('@/views/admin/AssessmentForms')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminAssessmentForm',
+        path: '/admin/assessment/:assessmentId',
+        component: lazy(() => import('@/views/admin/AssessmentForm')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminExams',
+        path: '/admin/exams',
+        component: lazy(() => import('@/views/admin/Exams')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminExamsAdd',
+        path: '/admin/exams/add',
+        component: lazy(() => import('@/views/admin/ExamsAdd')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminExamDetails',
+        path: '/admin/exams/:examId',
+        component: lazy(() => import('@/views/admin/ExamDetails')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminExamsAssign',
+        path: '/admin/exams/assign/:managerId',
+        component: lazy(() => import('@/views/admin/ExamsAssign')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminQuestions',
+        path: '/admin/questions',
+        component: lazy(() => import('@/views/admin/Questions')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminQuestionsAdd',
+        path: '/admin/questions/add',
+        component: lazy(() => import('@/views/admin/QuestionsAdd')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminQuestionDetails',
+        path: '/admin/questions/:questionId',
+        component: lazy(() => import('@/views/admin/QuestionDetails')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminAnswers',
+        path: '/admin/answers',
+        component: lazy(() => import('@/views/admin/Answers')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminAnswersManager',
+        path: '/admin/answers/:managerId',
+        component: lazy(() => import('@/views/admin/AnswersManager')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminReports',
+        path: '/admin/reports',
+        component: lazy(() => import('@/views/admin/Reports')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminPayments',
+        path: '/admin/payments',
+        component: lazy(() => import('@/views/admin/Payments')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminNotifications',
+        path: '/admin/notifications',
+        component: lazy(() => import('@/views/admin/Notifications')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminSms',
+        path: '/admin/sms',
+        component: lazy(() => import('@/views/admin/Sms')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminTemplates',
+        path: '/admin/templates',
+        component: lazy(() => import('@/views/admin/Templates')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminSettings',
+        path: '/admin/settings',
+        component: lazy(() => import('@/views/admin/Settings')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminRoles',
+        path: '/admin/roles',
+        component: lazy(() => import('@/views/admin/Roles')),
+        authority: [ADMIN],
+    },
+]
+
+export default adminRoutes

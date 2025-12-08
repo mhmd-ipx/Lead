@@ -11,7 +11,7 @@ type SignUpProps = {
 }
 
 export const SignUpBase = ({
-    signInUrl = '/sign-in',
+    signInUrl = '/login',
     disableSubmit,
 }: SignUpProps) => {
     const [message, setMessage] = useTimeOutMessage()

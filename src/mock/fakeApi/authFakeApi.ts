@@ -1,25 +1,32 @@
 import { mock } from '../MockAdapter'
 import { signInUserData } from '../data/authData'
 
-mock.onPost(`/sign-in`).reply((config) => {
+mock.onPost(`/login`).reply((config) => {
     const data = JSON.parse(config.data as string) as {
-        email: string
-        password: string
+        phone: string
+        otp: string
     }
 
-    const { email, password } = data
+    const { phone, otp } = data
 
+    // Mock OTP validation - in real app, verify against sent OTP
     const user = signInUserData.find(
-        (user) => user.email === email && user.password === password,
+        (user) => user.phone === phone,
     )
 
-    if (user) {
+    if (user && otp === '123456') { // Mock OTP
         return new Promise(function (resolve) {
             setTimeout(function () {
                 resolve([
                     201,
                     {
-                        user,
+                        user: {
+                            userId: user.id,
+                            userName: user.userName,
+                            authority: user.authority,
+                            avatar: user.avatar,
+                            phone: user.phone,
+                        },
                         token: 'wVYrxaeNa9OxdnULvde1Au5m5w63',
                     },
                 ])
@@ -27,29 +34,29 @@ mock.onPost(`/sign-in`).reply((config) => {
         })
     }
 
-    return [401, { message: 'Invalid email or password!' }]
+    return [401, { message: 'Invalid phone or OTP!' }]
 })
 
 mock.onPost(`/sign-up`).reply((config) => {
     const data = JSON.parse(config.data as string) as {
-        email: string
+        phone: string
         password: string
         userName: string
     }
 
-    const { email, userName } = data
+    const { phone, userName } = data
 
-    const emailUsed = signInUserData.some((user) => user.email === email)
+    const phoneUsed = signInUserData.some((user) => user.phone === phone)
     const newUser = {
         avatar: '',
         userName,
-        email,
+        phone,
         authority: ['admin', 'user'],
     }
 
     return new Promise(function (resolve) {
         setTimeout(function () {
-            if (emailUsed) {
+            if (phoneUsed) {
                 resolve([400, { message: 'User already exist!' }])
             }
 
