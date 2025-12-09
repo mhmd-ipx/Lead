@@ -1,18 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Card, Button, Avatar, Tag, Dialog } from '@/components/ui'
+import { Card, Button, Avatar, Tag } from '@/components/ui'
 import { HiOutlineDocumentText, HiOutlineEye, HiOutlinePlus, HiOutlineArrowLeft } from 'react-icons/hi'
-import { getAssessments, getManagers, getAssessmentTemplates, createAssessment } from '@/services/OwnerService'
-import { Assessment, Manager, AssessmentTemplate } from '@/mock/data/ownerData'
+import { getAssessments, getManagers, createAssessment } from '@/services/OwnerService'
+import { Assessment, Manager } from '@/mock/data/ownerData'
 import { useNavigate, useParams } from 'react-router-dom'
 
 const ManagerAssessmentList = () => {
   const { managerId } = useParams<{ managerId: string }>()
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [manager, setManager] = useState<Manager | null>(null)
-  const [assessmentTemplates, setAssessmentTemplates] = useState<AssessmentTemplate[]>([])
   const [loading, setLoading] = useState(true)
-  const [showNewAssessmentDialog, setShowNewAssessmentDialog] = useState(false)
-  const [selectedTemplateId, setSelectedTemplateId] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -21,10 +18,9 @@ const ManagerAssessmentList = () => {
 
   const loadData = async () => {
     try {
-      const [assessmentsData, managersData, templatesData] = await Promise.all([
+      const [assessmentsData, managersData] = await Promise.all([
         getAssessments(),
-        getManagers(),
-        getAssessmentTemplates()
+        getManagers()
       ])
 
       const managerData = managersData.find(m => m.id === managerId) || null
@@ -32,8 +28,6 @@ const ManagerAssessmentList = () => {
 
       const managerAssessments = assessmentsData.filter(a => a.managerId === managerId)
       setAssessments(managerAssessments)
-
-      setAssessmentTemplates(templatesData)
     } catch (error) {
       console.error('Error loading assessment data:', error)
     } finally {
@@ -96,7 +90,14 @@ const ManagerAssessmentList = () => {
         <Button
           variant="solid"
           icon={<HiOutlinePlus />}
-          onClick={() => setShowNewAssessmentDialog(true)}
+          onClick={async () => {
+            try {
+              const newAssessment = await createAssessment(managerId!, 'template-1')
+              navigate(`/owner/assessment/form/${newAssessment.id}`)
+            } catch (error) {
+              console.error('Error creating assessment:', error)
+            }
+          }}
         >
           نیازسنجی جدید
         </Button>

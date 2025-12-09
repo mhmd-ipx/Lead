@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card, Button, Avatar, Dialog, Input, Switcher, Tooltip, Tag } from '@/components/ui'
 import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineMail, HiOutlineSearch, HiOutlineDocumentText, HiOutlineEye } from 'react-icons/hi'
-import { getManagers, deleteManager, toggleManagerAccess, sendManagerInvite, getAssessments, getExamResultsByManager } from '@/services/OwnerService'
+import { getManagers, deleteManager, toggleManagerAccess, sendManagerInvite, getAssessments, getExamResultsByManager, getAssessmentTemplates, createAssessment } from '@/services/OwnerService'
 import { Manager, Assessment, ExamResult } from '@/mock/data/ownerData'
 import { useNavigate } from 'react-router-dom'
 
@@ -152,14 +152,6 @@ const Managers = () => {
               size="sm"
               icon={<HiOutlineMail />}
               onClick={() => handleSendInvite(manager)}
-            />
-          </Tooltip>
-          <Tooltip title="آغاز نیازسنجی">
-            <Button
-              variant="plain"
-              size="sm"
-              icon={<HiOutlineDocumentText />}
-              onClick={() => navigate(`/owner/managers/${manager.id}/assessment`)}
             />
           </Tooltip>
           <Tooltip title="مشاهده جزئیات">

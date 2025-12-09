@@ -12,10 +12,7 @@ const ManagerDetails = () => {
   const [manager, setManager] = useState<Manager | null>(null)
   const [examResults, setExamResults] = useState<ExamResult[]>([])
   const [assessments, setAssessments] = useState<Assessment[]>([])
-  const [assessmentTemplates, setAssessmentTemplates] = useState<AssessmentTemplate[]>([])
   const [loading, setLoading] = useState(true)
-  const [showNewAssessmentDialog, setShowNewAssessmentDialog] = useState(false)
-  const [selectedTemplateId, setSelectedTemplateId] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -28,17 +25,15 @@ const ManagerDetails = () => {
     if (!managerId) return
 
     try {
-      const [managerData, examResultsData, assessmentsData, templatesData] = await Promise.all([
+      const [managerData, examResultsData, assessmentsData] = await Promise.all([
         getManagerById(managerId),
         getExamResultsByManager(managerId),
-        getAssessments(),
-        getAssessmentTemplates()
+        getAssessments()
       ])
 
       setManager(managerData)
       setExamResults(examResultsData)
       setAssessments(assessmentsData.filter(a => a.managerId === managerId))
-      setAssessmentTemplates(templatesData)
     } catch (error) {
       console.error('Error loading manager data:', error)
     } finally {
@@ -284,7 +279,16 @@ const ManagerDetails = () => {
                   <Button
                     variant="solid"
                     icon={<HiOutlinePlus />}
-                    onClick={() => setShowNewAssessmentDialog(true)}
+                    onClick={async () => {
+                      if (managerId) {
+                        try {
+                          const newAssessment = await createAssessment(managerId, 'template-1')
+                          navigate(`/owner/assessment/form/${newAssessment.id}`)
+                        } catch (error) {
+                          console.error('Error creating assessment:', error)
+                        }
+                      }
+                    }}
                   >
                     ایجاد نیازسنجی
                   </Button>
@@ -374,115 +378,6 @@ const ManagerDetails = () => {
         </div>
       </Tabs>
 
-      {/* New Assessment Dialog */}
-      <Dialog
-        isOpen={showNewAssessmentDialog}
-        onClose={() => {
-          setShowNewAssessmentDialog(false)
-          setSelectedTemplateId('')
-        }}
-        onRequestClose={() => {
-          setShowNewAssessmentDialog(false)
-          setSelectedTemplateId('')
-        }}
-      >
-        <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            انتخاب نوع نیازسنجی برای {manager?.name}
-          </h3>
-
-          <div className="space-y-4">
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Avatar size="sm" src="" />
-                <div>
-                  <div className="font-medium text-gray-900 dark:text-white">
-                    {manager?.name}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {manager?.position}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                انتخاب نوع نیازسنجی
-              </label>
-              <div className="grid grid-cols-1 gap-3">
-                {assessmentTemplates.map((template) => (
-                  <div
-                    key={template.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                      selectedTemplateId === template.id
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
-                    }`}
-                    onClick={() => setSelectedTemplateId(template.id)}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 dark:text-white">
-                          {template.name}
-                        </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          {template.description}
-                        </p>
-                        <div className="flex items-center gap-4 mt-2">
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {template.steps.length} مرحله
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {template.estimatedTime} دقیقه
-                          </span>
-                          <Tag className="text-xs">{template.category}</Tag>
-                        </div>
-                      </div>
-                      <input
-                        type="radio"
-                        checked={selectedTemplateId === template.id}
-                        onChange={() => setSelectedTemplateId(template.id)}
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="plain"
-              onClick={() => {
-                setShowNewAssessmentDialog(false)
-                setSelectedTemplateId('')
-              }}
-            >
-              انصراف
-            </Button>
-            <Button
-              variant="solid"
-              disabled={!selectedTemplateId}
-              onClick={async () => {
-                if (selectedTemplateId && managerId) {
-                  try {
-                    const newAssessment = await createAssessment(managerId, selectedTemplateId)
-                    navigate(`/owner/assessment/form/${newAssessment.id}`)
-                    setShowNewAssessmentDialog(false)
-                    setSelectedTemplateId('')
-                  } catch (error) {
-                    console.error('Error creating assessment:', error)
-                  }
-                }
-              }}
-            >
-              شروع نیازسنجی
-            </Button>
-          </div>
-        </div>
-      </Dialog>
     </div>
   )
 }
