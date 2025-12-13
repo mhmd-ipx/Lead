@@ -1,9 +1,64 @@
 import { useEffect, useState } from 'react'
-import { Card, Button, Avatar, Dialog, Input, Switcher, Tooltip, Tag } from '@/components/ui'
-import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineMail, HiOutlineSearch, HiOutlineDocumentText, HiOutlineEye } from 'react-icons/hi'
-import { getManagers, deleteManager, toggleManagerAccess, sendManagerInvite, getAssessments, getExamResultsByManager, getAssessmentTemplates, createAssessment } from '@/services/OwnerService'
+import { Card, Button, Avatar, Tag, Tooltip, Input } from '@/components/ui'
+import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import {
+  HiOutlinePlus,
+  HiOutlinePencil,
+  HiOutlineTrash,
+  HiOutlineEye,
+  HiOutlineSearch,
+  HiOutlineClipboardCheck,
+  HiOutlineAcademicCap,
+  HiOutlineUserGroup,
+  HiOutlineCheckCircle,
+} from 'react-icons/hi'
+import { getManagers, deleteManager, getAssessments, getExamResultsByManager } from '@/services/OwnerService'
 import { Manager, Assessment, ExamResult } from '@/mock/data/ownerData'
 import { useNavigate } from 'react-router-dom'
+import classNames from '@/utils/classNames'
+
+type FilterCategory = 'all' | 'active' | 'assessmentDone' | 'examDone'
+
+type StatisticCardProps = {
+  title: string
+  value: number
+  icon: React.ReactNode
+  iconClass: string
+  label: FilterCategory
+  active: boolean
+  onClick: (label: FilterCategory) => void
+}
+
+const StatisticCard = (props: StatisticCardProps) => {
+  const { title, value, label, icon, iconClass, active, onClick } = props
+
+  return (
+    <button
+      className={classNames(
+        'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full',
+        active && 'bg-white dark:bg-gray-900 shadow-md',
+      )}
+      onClick={() => onClick(label)}
+    >
+      <div className="flex justify-between items-center">
+        <div>
+          <div className="mb-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
+            {title}
+          </div>
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{value}</h3>
+        </div>
+        <div
+          className={classNames(
+            'flex items-center justify-center min-h-12 min-w-12 max-h-12 max-w-12 rounded-full text-2xl',
+            iconClass,
+          )}
+        >
+          {icon}
+        </div>
+      </div>
+    </button>
+  )
+}
 
 const Managers = () => {
   const [managers, setManagers] = useState<Manager[]>([])
@@ -13,6 +68,7 @@ const Managers = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedManager, setSelectedManager] = useState<Manager | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -24,7 +80,7 @@ const Managers = () => {
       const [managersData, assessmentsData, examResultsData] = await Promise.all([
         getManagers(),
         getAssessments(),
-        getExamResultsByManager('') // This will get all exam results, we'll filter by manager later
+        getExamResultsByManager('')
       ])
       setManagers(managersData)
       setAssessments(assessmentsData)
@@ -49,30 +105,6 @@ const Managers = () => {
     }
   }
 
-  const handleToggleAccess = async (manager: Manager) => {
-    try {
-      const updatedManager = await toggleManagerAccess(manager.id, !manager.canViewResults)
-      setManagers(managers.map(m => m.id === manager.id ? updatedManager : m))
-    } catch (error) {
-      console.error('Error toggling access:', error)
-    }
-  }
-
-  const handleSendInvite = async (manager: Manager) => {
-    try {
-      await sendManagerInvite(manager.id)
-      alert(`دعوتنامه برای ${manager.name} ارسال شد`)
-    } catch (error) {
-      console.error('Error sending invite:', error)
-    }
-  }
-
-  const filteredManagers = managers.filter(manager =>
-    manager.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    manager.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    manager.position.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
   const getStatusTag = (status: Manager['status']) => {
     switch (status) {
       case 'active':
@@ -84,100 +116,49 @@ const Managers = () => {
     }
   }
 
-  const getAssessmentCount = (managerId: string) => {
-    return assessments.filter(a => a.managerId === managerId).length
+  const getAssessmentStatus = (managerId: string) => {
+    const managerAssessments = assessments.filter(a => a.managerId === managerId)
+    if (managerAssessments.length === 0) {
+      return <Tag className="text-gray-600 bg-gray-100 dark:text-gray-100 dark:bg-gray-500/20 border-0">انجام نشده</Tag>
+    }
+    const submitted = managerAssessments.filter(a => a.status === 'submitted').length
+    if (submitted > 0) {
+      return <Tag className="text-green-600 bg-green-100 dark:text-green-100 dark:bg-green-500/20 border-0">تکمیل شده ({submitted})</Tag>
+    }
+    return <Tag className="text-amber-600 bg-amber-100 dark:text-amber-100 dark:bg-amber-500/20 border-0">در حال انجام</Tag>
   }
 
   const getExamCount = (managerId: string) => {
     return examResults.filter(r => r.managerId === managerId).length
   }
 
-  const renderTableRow = (manager: Manager) => (
-    <tr key={manager.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="flex items-center gap-3">
-          <Avatar size="sm" src="" />
-          <div>
-            <div className="font-medium text-gray-900 dark:text-white">
-              {manager.name}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              {manager.position}
-            </div>
-          </div>
-        </div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div>
-          <div className="text-sm text-gray-900 dark:text-white">
-            {manager.email}
-          </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {manager.phone}
-          </div>
-        </div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        {getStatusTag(manager.status)}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <Tag className="text-blue-600 bg-blue-100 dark:text-blue-100 dark:bg-blue-500/20 border-0">
-          {getAssessmentCount(manager.id)}
-        </Tag>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <Tag className="text-purple-600 bg-purple-100 dark:text-purple-100 dark:bg-purple-500/20 border-0">
-          {getExamCount(manager.id)}
-        </Tag>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <Switcher
-          checked={manager.canViewResults}
-          onChange={() => handleToggleAccess(manager)}
-        />
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="flex items-center gap-2">
-          <Tooltip title="ویرایش">
-            <Button
-              variant="plain"
-              size="sm"
-              icon={<HiOutlinePencil />}
-              onClick={() => navigate(`/owner/managers/${manager.id}/edit`)}
-            />
-          </Tooltip>
-          <Tooltip title="ارسال دعوتنامه">
-            <Button
-              variant="plain"
-              size="sm"
-              icon={<HiOutlineMail />}
-              onClick={() => handleSendInvite(manager)}
-            />
-          </Tooltip>
-          <Tooltip title="مشاهده جزئیات">
-            <Button
-              variant="plain"
-              size="sm"
-              icon={<HiOutlineEye />}
-              onClick={() => navigate(`/owner/managers/${manager.id}`)}
-            />
-          </Tooltip>
-          <Tooltip title="حذف">
-            <Button
-              variant="plain"
-              size="sm"
-              color="red"
-              icon={<HiOutlineTrash />}
-              onClick={() => {
-                setSelectedManager(manager)
-                setDeleteDialogOpen(true)
-              }}
-            />
-          </Tooltip>
-        </div>
-      </td>
-    </tr>
+  // Filter managers based on selected category
+  const filteredByCategory = managers.filter(manager => {
+    switch (selectedCategory) {
+      case 'active':
+        return manager.status === 'active'
+      case 'assessmentDone':
+        return manager.assessmentStatus === 'completed'
+      case 'examDone':
+        return manager.examStatus === 'completed'
+      case 'all':
+      default:
+        return true
+    }
+  })
+
+  // Then filter by search query
+  const filteredManagers = filteredByCategory.filter(manager =>
+    manager.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    manager.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    manager.position.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  // Calculate statistics
+  const totalManagers = managers.length
+  const activeManagers = managers.filter(m => m.status === 'active').length
+  const assessmentDone = managers.filter(m => m.assessmentStatus === 'completed').length
+  const examDone = managers.filter(m => m.examStatus === 'completed').length
 
   if (loading) {
     return (
@@ -190,144 +171,242 @@ const Managers = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          مدیریت مدیران
-        </h1>
-        <Button
-          variant="solid"
-          icon={<HiOutlinePlus />}
-          onClick={() => navigate('/owner/managers/add')}
-        >
-          افزودن مدیر جدید
-        </Button>
+      <div className="flex justify-between items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            متقاضیان
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            مدیریت متقاضیان و نیازسنجی‌ها
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Input
+            className="w-64"
+            placeholder="جستجو..."
+            prefix={<HiOutlineSearch />}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <Button
+            variant="solid"
+            icon={<HiOutlinePlus />}
+            onClick={() => navigate('/owner/managers/add')}
+          >
+            افزودن متقاضی
+          </Button>
+        </div>
       </div>
 
-      {/* Search and Filters */}
-      <Card className="p-4">
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <Input
-              placeholder="جستجو بر اساس نام، ایمیل یا سمت..."
-              prefix={<HiOutlineSearch />}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
-      </Card>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
+        <StatisticCard
+          title="همه متقاضیان"
+          value={totalManagers}
+          iconClass="bg-purple-200 text-purple-700"
+          icon={<HiOutlineUserGroup />}
+          label="all"
+          active={selectedCategory === 'all'}
+          onClick={setSelectedCategory}
+        />
+        <StatisticCard
+          title="فعال"
+          value={activeManagers}
+          iconClass="bg-emerald-200 text-emerald-700"
+          icon={<HiOutlineCheckCircle />}
+          label="active"
+          active={selectedCategory === 'active'}
+          onClick={setSelectedCategory}
+        />
+        <StatisticCard
+          title="نیازسنجی شده"
+          value={assessmentDone}
+          iconClass="bg-blue-200 text-blue-700"
+          icon={<HiOutlineClipboardCheck />}
+          label="assessmentDone"
+          active={selectedCategory === 'assessmentDone'}
+          onClick={setSelectedCategory}
+        />
+        <StatisticCard
+          title="آزمون داده‌اند"
+          value={examDone}
+          iconClass="bg-indigo-200 text-indigo-700"
+          icon={<HiOutlineAcademicCap />}
+          label="examDone"
+          active={selectedCategory === 'examDone'}
+          onClick={setSelectedCategory}
+        />
+      </div>
 
       {/* Managers Table */}
       <Card>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  مدیر
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  اطلاعات تماس
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  وضعیت
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  تعداد نیازسنجی
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  تعداد آزمون
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  دسترسی نتایج
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  عملیات
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredManagers.map(renderTableRow)}
-            </tbody>
-          </table>
+        <div className="p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            لیست متقاضیان
+            {selectedCategory !== 'all' && (
+              <span className="text-sm font-normal text-gray-500 dark:text-gray-400 mr-2">
+                ({filteredManagers.length} مورد)
+              </span>
+            )}
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-800">
+                <tr>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    متقاضی
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    اطلاعات تماس
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    وضعیت
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    نیازسنجی
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    آزمون‌ها
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    عملیات
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                {filteredManagers.map((manager) => (
+                  <tr key={manager.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <Avatar size="sm" src="" />
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {manager.name}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {manager.position}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm text-gray-900 dark:text-white">
+                          {manager.email}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {manager.phone}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getStatusTag(manager.status)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getAssessmentStatus(manager.id)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Tag className="text-indigo-600 bg-indigo-100 dark:text-indigo-100 dark:bg-indigo-500/20 border-0">
+                        {getExamCount(manager.id)} آزمون
+                      </Tag>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <Tooltip title="مشاهده جزئیات">
+                          <Button
+                            variant="plain"
+                            size="sm"
+                            icon={<HiOutlineEye />}
+                            onClick={() => navigate(`/owner/managers/${manager.id}`)}
+                          />
+                        </Tooltip>
+                        <Tooltip title="نیازسنجی">
+                          <Button
+                            variant="plain"
+                            size="sm"
+                            icon={<HiOutlineClipboardCheck />}
+                            onClick={() => navigate(`/owner/managers/${manager.id}/assessment`)}
+                            className="text-blue-600 hover:text-blue-700"
+                          />
+                        </Tooltip>
+                        <Tooltip title="آزمون‌ها">
+                          <Button
+                            variant="plain"
+                            size="sm"
+                            icon={<HiOutlineAcademicCap />}
+                            onClick={() => navigate(`/owner/managers/${manager.id}/exams`)}
+                            className="text-indigo-600 hover:text-indigo-700"
+                          />
+                        </Tooltip>
+                        <Tooltip title="ویرایش">
+                          <Button
+                            variant="plain"
+                            size="sm"
+                            icon={<HiOutlinePencil />}
+                            onClick={() => navigate(`/owner/managers/${manager.id}/edit`)}
+                          />
+                        </Tooltip>
+                        <Tooltip title="حذف">
+                          <Button
+                            variant="plain"
+                            size="sm"
+                            icon={<HiOutlineTrash />}
+                            onClick={() => {
+                              setSelectedManager(manager)
+                              setDeleteDialogOpen(true)
+                            }}
+                            className="text-red-600 hover:text-red-700"
+                          />
+                        </Tooltip>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredManagers.length === 0 && (
+                  <tr>
+                    <td colSpan={6}>
+                      <div className="text-center py-12">
+                        <p className="text-gray-500 dark:text-gray-400">
+                          {searchQuery || selectedCategory !== 'all'
+                            ? 'متقاضی با این فیلتر یافت نشد'
+                            : 'هنوز متقاضی‌ای ثبت نشده است'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </Card>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {managers.length}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              کل مدیران
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {managers.filter(m => m.status === 'active').length}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              مدیران فعال
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {managers.filter(m => m.assessmentStatus === 'completed').length}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              نیازسنجی تکمیل شده
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {managers.filter(m => m.examStatus === 'completed').length}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              آزمون تکمیل شده
-            </div>
-          </div>
-        </Card>
-      </div>
-
       {/* Delete Confirmation Dialog */}
-      <Dialog
+      <ConfirmDialog
         isOpen={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-        onRequestClose={() => setDeleteDialogOpen(false)}
+        type="danger"
+        title="حذف متقاضی"
+        confirmText="بله، حذف کن"
+        cancelText="انصراف"
+        onClose={() => {
+          setDeleteDialogOpen(false)
+          setSelectedManager(null)
+        }}
+        onRequestClose={() => {
+          setDeleteDialogOpen(false)
+          setSelectedManager(null)
+        }}
+        onCancel={() => {
+          setDeleteDialogOpen(false)
+          setSelectedManager(null)
+        }}
+        onConfirm={handleDeleteManager}
       >
-        <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            حذف مدیر
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            آیا مطمئن هستید که می‌خواهید مدیر "{selectedManager?.name}" را حذف کنید؟
-            این عملیات قابل برگرداندن نیست.
-          </p>
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="plain"
-              onClick={() => setDeleteDialogOpen(false)}
-            >
-              انصراف
-            </Button>
-            <Button
-              variant="solid"
-              color="red"
-              onClick={handleDeleteManager}
-            >
-              حذف
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+        <p>آیا مطمئن هستید که می‌خواهید متقاضی "{selectedManager?.name}" را حذف کنید؟</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+          این عملیات قابل برگشت نیست و تمام نیازسنجی‌ها و نتایج آزمون‌های مرتبط نیز حذف خواهند شد.
+        </p>
+      </ConfirmDialog>
     </div>
   )
 }

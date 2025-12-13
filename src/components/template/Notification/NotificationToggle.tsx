@@ -1,22 +1,24 @@
 import classNames from '@/utils/classNames'
 import Badge from '@/components/ui/Badge'
-import { PiBellDuotone } from 'react-icons/pi'
+import { HiOutlineBell } from 'react-icons/hi'
 
 const NotificationToggle = ({
     className,
     dot,
+    count,
 }: {
     className?: string
     dot: boolean
+    count?: number
 }) => {
     return (
         <div className={classNames('text-2xl', className)}>
-            {dot ? (
-                <Badge badgeStyle={{ top: '3px', right: '6px' }}>
-                    <PiBellDuotone />
+            {dot && count && count > 0 ? (
+                <Badge content={count} maxCount={99}>
+                    <HiOutlineBell className="text-2xl cursor-pointer" />
                 </Badge>
             ) : (
-                <PiBellDuotone />
+                <HiOutlineBell className="text-2xl cursor-pointer" />
             )}
         </div>
     )

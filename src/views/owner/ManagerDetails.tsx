@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Card, Button, Avatar, Badge, Tabs, Tag, Dialog } from '@/components/ui'
-import { HiOutlineArrowLeft, HiOutlineMail, HiOutlinePhone, HiOutlineOfficeBuilding, HiOutlineAcademicCap, HiOutlineDocumentText, HiOutlineEye, HiOutlinePencil, HiOutlinePlus } from 'react-icons/hi'
-import { getManagerById, getExamResultsByManager, getAssessments, getAssessmentTemplates, createAssessment } from '@/services/OwnerService'
-import { Manager, ExamResult, Assessment, AssessmentTemplate } from '@/mock/data/ownerData'
+import { Card, Button, Avatar, Badge, Tabs, Tag } from '@/components/ui'
+import { HiOutlineArrowLeft, HiOutlineMail, HiOutlinePhone, HiOutlineOfficeBuilding, HiOutlineAcademicCap, HiOutlineDocumentText, HiOutlineEye, HiOutlinePencil } from 'react-icons/hi'
+import { getManagerById, getExamResultsByManager, getAssessments } from '@/services/OwnerService'
+import { Manager, ExamResult, Assessment } from '@/mock/data/ownerData'
 import { useNavigate, useParams } from 'react-router-dom'
 
 const { TabContent, TabList, TabNav } = Tabs
@@ -52,17 +52,6 @@ const ManagerDetails = () => {
     }
   }
 
-  const getAssessmentStatusBadge = (status: Assessment['status']) => {
-    switch (status) {
-      case 'submitted':
-        return <Badge className="bg-green-500">تکمیل شده</Badge>
-      case 'draft':
-        return <Badge className="bg-orange-500">پیش‌نویس</Badge>
-      default:
-        return <Badge className="bg-gray-500">نامشخص</Badge>
-    }
-  }
-
   const getExamStatusBadge = (status: ExamResult['status']) => {
     switch (status) {
       case 'passed':
@@ -91,7 +80,7 @@ const ManagerDetails = () => {
   if (!manager) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 dark:text-gray-400">مدیر مورد نظر یافت نشد</p>
+        <p className="text-gray-500 dark:text-gray-400">متقاضی مورد نظر یافت نشد</p>
       </div>
     )
   }
@@ -105,7 +94,7 @@ const ManagerDetails = () => {
           icon={<HiOutlineArrowLeft />}
           onClick={() => navigate('/owner/managers')}
         >
-          بازگشت به لیست مدیران
+          بازگشت به لیست متقاضیان
         </Button>
       </div>
 
@@ -150,6 +139,20 @@ const ManagerDetails = () => {
           </div>
 
           <div className="flex gap-2">
+            <Button
+              variant="default"
+              icon={<HiOutlineDocumentText />}
+              onClick={() => navigate(`/owner/managers/${manager.id}/assessment`)}
+            >
+              نیازسنجی‌ها
+            </Button>
+            <Button
+              variant="default"
+              icon={<HiOutlineAcademicCap />}
+              onClick={() => navigate(`/owner/managers/${manager.id}/exams`)}
+            >
+              آزمون‌ها
+            </Button>
             <Button
               variant="solid"
               icon={<HiOutlinePencil />}
@@ -209,7 +212,6 @@ const ManagerDetails = () => {
       <Tabs defaultValue="exams">
         <TabList>
           <TabNav value="exams">آزمون‌ها</TabNav>
-          <TabNav value="assessments">نیازسنجی‌ها</TabNav>
           <TabNav value="permissions">دسترسی‌ها</TabNav>
         </TabList>
 
@@ -269,76 +271,6 @@ const ManagerDetails = () => {
             </Card>
           </TabContent>
 
-          <TabContent value="assessments">
-            <Card>
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    نیازسنجی‌های انجام شده
-                  </h3>
-                  <Button
-                    variant="solid"
-                    icon={<HiOutlinePlus />}
-                    onClick={async () => {
-                      if (managerId) {
-                        try {
-                          const newAssessment = await createAssessment(managerId, 'template-1')
-                          navigate(`/owner/assessment/form/${newAssessment.id}`)
-                        } catch (error) {
-                          console.error('Error creating assessment:', error)
-                        }
-                      }
-                    }}
-                  >
-                    ایجاد نیازسنجی
-                  </Button>
-                </div>
-                {assessments.length > 0 ? (
-                  <div className="space-y-4">
-                    {assessments.map((assessment) => (
-                      <div key={assessment.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-full">
-                            <HiOutlineDocumentText className="w-5 h-5 text-green-600 dark:text-green-400" />
-                          </div>
-                          <div>
-                            <div className="font-medium text-gray-900 dark:text-white">
-                              {assessment.templateName}
-                            </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                              آخرین بروزرسانی: {formatDate(assessment.updatedAt)}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                          {assessment.score && (
-                            <Tag className="bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-100 border-0">
-                              امتیاز: {assessment.score}
-                            </Tag>
-                          )}
-                          {getAssessmentStatusBadge(assessment.status)}
-                          <Button
-                            variant="plain"
-                            size="sm"
-                            icon={<HiOutlineEye />}
-                            onClick={() => navigate(`/owner/assessment/form/${assessment.id}?view=existing`)}
-                          >
-                            مشاهده
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    هیچ نیازسنجی یافت نشد
-                  </div>
-                )}
-              </div>
-            </Card>
-          </TabContent>
-
           <TabContent value="permissions">
             <Card>
               <div className="p-6">
@@ -352,7 +284,7 @@ const ManagerDetails = () => {
                         دسترسی مشاهده نتایج آزمون‌ها
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                        امکان مشاهده نتایج آزمون‌ها توسط مدیر
+                        امکان مشاهده نتایج آزمون‌ها توسط متقاضی
                       </div>
                     </div>
                     <Badge className={manager.canViewResults ? "bg-green-500" : "bg-red-500"}>
@@ -366,7 +298,7 @@ const ManagerDetails = () => {
                         وضعیت حساب کاربری
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                        وضعیت فعال بودن حساب مدیر
+                        وضعیت فعال بودن حساب متقاضی
                       </div>
                     </div>
                     {getStatusBadge(manager.status)}

@@ -96,6 +96,37 @@ export interface Invoice {
   pdfUrl?: string
 }
 
+// سند مالی (Financial Document)
+export interface FinancialDocument {
+  id: string
+  paymentId?: string
+  managerName: string
+  title: string
+  amount: number
+  currency: string
+  status: 'pending' | 'paid' | 'cancelled'
+  createdDate: string
+  paidDate?: string
+  billId?: string
+  description?: string
+}
+
+// صورتحساب (Bill/Receipt)
+export interface Bill {
+  id: string
+  billNumber: string
+  financialDocumentIds: string[]
+  totalAmount: number
+  currency: string
+  status: 'pending' | 'paid' | 'partially_paid'
+  createdDate: string
+  paidDate?: string
+  dueDate?: string
+  officialInvoiceRequested: boolean
+  officialInvoicePdfUrl?: string
+  description?: string
+}
+
 export interface Exam {
   id: string
   title: string

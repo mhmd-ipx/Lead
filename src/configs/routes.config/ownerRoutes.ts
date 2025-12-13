@@ -42,7 +42,43 @@ const ownerRoutes: Routes = [
     {
         key: 'ownerManagerAssessment',
         path: '/owner/managers/:managerId/assessment',
-        component: lazy(() => import('@/views/owner/assessment/ManagerAssessmentList')),
+        component: lazy(() => import('@/views/owner/ApplicantAssessment')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerAssessmentView',
+        path: '/owner/managers/:managerId/assessment/:assessmentId/view',
+        component: lazy(() => import('@/views/owner/AssessmentView')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerAssessmentNew',
+        path: '/owner/managers/:managerId/assessment/new',
+        component: lazy(() => import('@/views/owner/AssessmentForm')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerAssessmentEdit',
+        path: '/owner/managers/:managerId/assessment/:assessmentId/edit',
+        component: lazy(() => import('@/views/owner/AssessmentForm')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerManagerExams',
+        path: '/owner/managers/:managerId/exams',
+        component: lazy(() => import('@/views/owner/ApplicantExams')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerExamSetResults',
+        path: '/owner/managers/:managerId/exams/:examSetId/results',
+        component: lazy(() => import('@/views/owner/ExamResults')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerAllExamsResults',
+        path: '/owner/exams-results',
+        component: lazy(() => import('@/views/owner/AllExamsResults')),
         authority: [OWNER],
     },
     {
@@ -112,15 +148,40 @@ const ownerRoutes: Routes = [
         authority: [OWNER],
     },
     {
-        key: 'ownerPaymentsHistory',
-        path: '/owner/payments/history',
-        component: lazy(() => import('@/views/owner/PaymentsHistory')),
-        authority: [OWNER],
-    },
-    {
         key: 'ownerPaymentsInvoice',
         path: '/owner/payments/invoice/:id',
         component: lazy(() => import('@/views/owner/PaymentsInvoice')),
+        authority: [OWNER],
+    },
+    // Accounting Routes
+    {
+        key: 'ownerFinancialDocuments',
+        path: '/owner/accounting/documents',
+        component: lazy(() => import('@/views/owner/FinancialDocuments')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerFinancialDocumentView',
+        path: '/owner/accounting/documents/:id',
+        component: lazy(() => import('@/views/owner/FinancialDocumentView')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerBills',
+        path: '/owner/accounting/bills',
+        component: lazy(() => import('@/views/owner/Bills')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerBillView',
+        path: '/owner/accounting/bills/:id',
+        component: lazy(() => import('@/views/owner/BillView')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerBulkPayment',
+        path: '/owner/accounting/bulk-payment',
+        component: lazy(() => import('@/views/owner/BulkPayment')),
         authority: [OWNER],
     },
     {
@@ -130,15 +191,39 @@ const ownerRoutes: Routes = [
         authority: [OWNER],
     },
     {
+        key: 'ownerUserProfile',
+        path: '/owner/user-profile',
+        component: lazy(() => import('@/views/owner/UserProfile')),
+        authority: [OWNER],
+    },
+    {
         key: 'ownerProfile',
         path: '/owner/profile',
         component: lazy(() => import('@/views/owner/Profile')),
         authority: [OWNER],
     },
     {
-        key: 'ownerSupport',
-        path: '/owner/support',
+        key: 'ownerSupportTickets',
+        path: '/owner/support/tickets',
         component: lazy(() => import('@/views/owner/Support')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerSupportCreate',
+        path: '/owner/support/create',
+        component: lazy(() => import('@/views/owner/CreateTicket')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerSupportContact',
+        path: '/owner/support/contact',
+        component: lazy(() => import('@/views/owner/ContactSupport')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerSupportTicketView',
+        path: '/owner/support/ticket/:ticketId',
+        component: lazy(() => import('@/views/owner/SupportTicketView')),
         authority: [OWNER],
     },
 ]

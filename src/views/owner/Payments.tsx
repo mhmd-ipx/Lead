@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react'
-import { Card, Button, Avatar, Badge, Dialog, Select, Tooltip } from '@/components/ui'
-import { HiOutlineCreditCard, HiOutlinePlus, HiOutlineDocumentDownload, HiOutlineEye, HiOutlineCheckCircle, HiOutlineClock, HiOutlineXCircle } from 'react-icons/hi'
+import { useEffect, useState, useMemo } from 'react'
+import { Card, Button, Badge, Dialog, Select, Tooltip, Table, Tabs } from '@/components/ui'
+import { HiOutlinePlus, HiOutlineDocumentDownload, HiOutlineEye, HiOutlineCheckCircle, HiOutlineClock, HiOutlineXCircle, HiOutlineDocumentText, HiOutlineCreditCard } from 'react-icons/hi'
 import { getPayments, payForManager, payForAllManagers, getInvoices, getManagers } from '@/services/OwnerService'
 import { Payment, Invoice, Manager } from '@/mock/data/ownerData'
 import { useNavigate } from 'react-router-dom'
+
+const { TabNav, TabList, TabContent } = Tabs
 
 const Payments = () => {
   const [payments, setPayments] = useState<Payment[]>([])
   const [managers, setManagers] = useState<Manager[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
+  const [invoiceTab, setInvoiceTab] = useState<'all' | 'paid' | 'unpaid'>('all')
   const [payDialogOpen, setPayDialogOpen] = useState(false)
   const [bulkPayDialogOpen, setBulkPayDialogOpen] = useState(false)
   const [selectedManager, setSelectedManager] = useState<Manager | null>(null)
@@ -64,19 +67,6 @@ const Payments = () => {
     }
   }
 
-  const getPaymentStatusBadge = (status: Payment['status']) => {
-    switch (status) {
-      case 'paid':
-        return <Badge className="bg-green-500"><HiOutlineCheckCircle className="w-3 h-3 mr-1" />پرداخت شده</Badge>
-      case 'pending':
-        return <Badge className="bg-orange-500"><HiOutlineClock className="w-3 h-3 mr-1" />در انتظار</Badge>
-      case 'failed':
-        return <Badge className="bg-red-500"><HiOutlineXCircle className="w-3 h-3 mr-1" />ناموفق</Badge>
-      default:
-        return <Badge>نامشخص</Badge>
-    }
-  }
-
   const getPaymentTypeLabel = (type: Payment['type']) => {
     return type === 'before_results' ? 'قبل از صدور نتایج' : 'بعد از صدور نتایج'
   }
@@ -97,13 +87,28 @@ const Payments = () => {
     return managers.filter(m => !paidManagerIds.includes(m.id))
   }
 
-  const totalPaid = payments
-    .filter(p => p.status === 'paid')
-    .reduce((sum, p) => sum + p.amount, 0)
+  // Invoice statistics
+  const totalInvoices = invoices.length
+  const totalInvoiceAmount = invoices.reduce((sum, i) => sum + i.amount, 0)
 
-  const totalPending = payments
-    .filter(p => p.status === 'pending')
-    .reduce((sum, p) => sum + p.amount, 0)
+  // Map invoice status to payment-like status for calculations  
+  const paidInvoices = invoices.filter(i => i.status === 'generated' || i.status === 'sent')
+  const unpaidInvoices = invoices.filter(i => i.status === 'requested')
+
+  const paidInvoiceAmount = paidInvoices.reduce((sum, i) => sum + i.amount, 0)
+  const unpaidInvoiceAmount = unpaidInvoices.reduce((sum, i) => sum + i.amount, 0)
+
+  // Filtered invoices based on tab
+  const filteredInvoices = useMemo(() => {
+    switch (invoiceTab) {
+      case 'paid':
+        return paidInvoices
+      case 'unpaid':
+        return unpaidInvoices
+      default:
+        return invoices
+    }
+  }, [invoices, invoiceTab, paidInvoices, unpaidInvoices])
 
   if (loading) {
     return (
@@ -118,22 +123,15 @@ const Payments = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          مدیریت پرداخت‌ها
+          فاکتورها
         </h1>
         <div className="flex gap-3">
           <Button
-            variant="default"
+            variant="solid"
             icon={<HiOutlinePlus />}
             onClick={() => setBulkPayDialogOpen(true)}
           >
             پرداخت گروهی
-          </Button>
-          <Button
-            variant="solid"
-            icon={<HiOutlineCreditCard />}
-            onClick={() => navigate('/owner/payments/history')}
-          >
-            تاریخچه پرداخت‌ها
           </Button>
         </div>
       </div>
@@ -144,10 +142,26 @@ const Payments = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                مجموع پرداخت شده
+                مجموع کل
+              </p>
+              <p className="text-2xl font-bold text-blue-600">
+                {formatCurrency(totalInvoiceAmount)}
+              </p>
+            </div>
+            <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full">
+              <HiOutlineDocumentText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                پرداخت شده
               </p>
               <p className="text-2xl font-bold text-green-600">
-                {formatCurrency(totalPaid)}
+                {formatCurrency(paidInvoiceAmount)}
               </p>
             </div>
             <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
@@ -160,10 +174,10 @@ const Payments = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                مجموع بدهی
+                پرداخت نشده
               </p>
               <p className="text-2xl font-bold text-orange-600">
-                {formatCurrency(totalPending)}
+                {formatCurrency(unpaidInvoiceAmount)}
               </p>
             </div>
             <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-full">
@@ -176,113 +190,50 @@ const Payments = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                تعداد پرداخت‌ها
-              </p>
-              <p className="text-2xl font-bold text-blue-600">
-                {payments.length}
-              </p>
-            </div>
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full">
-              <HiOutlineCreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                فاکتورهای صادر شده
+                تعداد فاکتورها
               </p>
               <p className="text-2xl font-bold text-purple-600">
-                {invoices.filter(i => i.status === 'generated').length}
+                {totalInvoices}
               </p>
             </div>
             <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-full">
-              <HiOutlineDocumentDownload className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              <HiOutlineCreditCard className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Payments Table */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          لیست پرداخت‌ها
-        </h3>
-        <div className="space-y-4">
-          {payments.map((payment) => (
-            <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <div className="flex items-center gap-4">
-                <Avatar size="md" src="" />
-                <div>
-                  <div className="font-medium text-gray-900 dark:text-white">
-                    {payment.managerName}
-                  </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {getPaymentTypeLabel(payment.type)}
-                  </div>
-                  <div className="text-xs text-gray-400 dark:text-gray-500">
-                    {payment.paymentDate ? formatDate(payment.paymentDate) : 'تاریخ نامشخص'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="text-left">
-                  <div className="font-bold text-gray-900 dark:text-white">
-                    {formatCurrency(payment.amount)}
-                  </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {payment.currency}
-                  </div>
-                </div>
-
-                {getPaymentStatusBadge(payment.status)}
-
-                <div className="flex gap-2">
-                  {payment.invoiceId && (
-                    <Tooltip title="مشاهده فاکتور">
-                      <Button
-                        variant="plain"
-                        size="sm"
-                        icon={<HiOutlineEye />}
-                        onClick={() => navigate(`/owner/payments/invoice/${payment.invoiceId}`)}
-                      />
-                    </Tooltip>
-                  )}
-                  <Tooltip title="دانلود فاکتور">
-                    <Button
-                      variant="plain"
-                      size="sm"
-                      icon={<HiOutlineDocumentDownload />}
-                      disabled={!payment.invoiceId}
-                    />
-                  </Tooltip>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {payments.length === 0 && (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              هیچ پرداختی یافت نشد
-            </div>
-          )}
-        </div>
+      {/* Invoices Tabs */}
+      <Card>
+        <Tabs value={invoiceTab} onChange={(val) => setInvoiceTab(val as 'all' | 'paid' | 'unpaid')}>
+          <TabList>
+            <TabNav value="all">همه فاکتورها</TabNav>
+            <TabNav value="paid">پرداخت شده</TabNav>
+            <TabNav value="unpaid">پرداخت نشده</TabNav>
+          </TabList>
+          <div className="p-4">
+            <TabContent value={invoiceTab}>
+              <InvoicesTable
+                invoices={filteredInvoices}
+                navigate={navigate}
+                formatCurrency={formatCurrency}
+                formatDate={formatDate}
+              />
+            </TabContent>
+          </div>
+        </Tabs>
       </Card>
 
       {/* Unpaid Managers */}
       {getUnpaidManagers().length > 0 && (
         <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            مدیران پرداخت نشده
+            متقاضیان پرداخت نشده
           </h3>
           <div className="space-y-3">
             {getUnpaidManagers().map((manager) => (
               <div key={manager.id} className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/10 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <Avatar size="sm" src="" />
                   <div>
                     <div className="font-medium text-gray-900 dark:text-white">
                       {manager.name}
@@ -369,7 +320,7 @@ const Payments = () => {
       >
         <div className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            پرداخت گروهی برای همه مدیران
+            پرداخت گروهی برای همه متقاضی
           </h3>
 
           <div className="space-y-4 mb-6">
@@ -390,7 +341,7 @@ const Payments = () => {
             <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  تعداد مدیران: {getUnpaidManagers().length}
+                  تعداد متقاضی: {getUnpaidManagers().length}
                 </span>
                 <span className="font-bold text-gray-900 dark:text-white">
                   مجموع: {formatCurrency(getUnpaidManagers().length * 500000)}
@@ -416,6 +367,93 @@ const Payments = () => {
         </div>
       </Dialog>
     </div>
+  )
+}
+
+// Invoices Table Component
+const InvoicesTable = ({ invoices, navigate, formatCurrency, formatDate }: {
+  invoices: Invoice[]
+  navigate: (path: string) => void
+  formatCurrency: (amount: number) => string
+  formatDate: (dateString: string) => string
+}) => {
+  const { THead, TBody, Tr, Th, Td } = Table
+
+  const getInvoiceStatusBadge = (status: Invoice['status']) => {
+    switch (status) {
+      case 'generated':
+      case 'sent':
+        return <Badge className="bg-green-500"><HiOutlineCheckCircle className="w-3 h-3 mr-1" />پرداخت شده</Badge>
+      case 'requested':
+        return <Badge className="bg-orange-500"><HiOutlineClock className="w-3 h-3 mr-1" />در انتظار</Badge>
+      default:
+        return <Badge>نامشخص</Badge>
+    }
+  }
+
+  return (
+    <Table>
+      <THead>
+        <Tr>
+          <Th>شناسه فاکتور</Th>
+          <Th>عنوان</Th>
+          <Th>متقاضی</Th>
+          <Th>مبلغ</Th>
+          <Th>تاریخ</Th>
+          <Th>وضعیت</Th>
+          <Th>اقدامات</Th>
+        </Tr>
+      </THead>
+      <TBody>
+        {invoices.map((invoice) => (
+          <Tr key={invoice.id}>
+            <Td>#{invoice.id}</Td>
+            <Td>فاکتور {invoice.managerName}</Td>
+            <Td>{invoice.managerName}</Td>
+            <Td>{formatCurrency(invoice.amount)}</Td>
+            <Td>{formatDate(invoice.requestDate)}</Td>
+            <Td>{getInvoiceStatusBadge(invoice.status)}</Td>
+            <Td>
+              <div className="flex gap-2">
+                <Tooltip title="مشاهده فاکتور">
+                  <Button
+                    variant="plain"
+                    size="sm"
+                    icon={<HiOutlineEye />}
+                    onClick={() => navigate(`/owner/payments/invoice/${invoice.id}`)}
+                  />
+                </Tooltip>
+                <Tooltip title="دانلود فاکتور">
+                  <Button
+                    variant="plain"
+                    size="sm"
+                    icon={<HiOutlineDocumentDownload />}
+                    disabled={!invoice.pdfUrl}
+                  />
+                </Tooltip>
+                <Tooltip title="درخواست فاکتور رسمی">
+                  <Button
+                    variant="plain"
+                    size="sm"
+                    icon={<HiOutlineDocumentText />}
+                    disabled={invoice.status !== 'requested'}
+                  />
+                </Tooltip>
+              </div>
+            </Td>
+          </Tr>
+        ))}
+        {invoices.length === 0 && (
+          <Tr>
+            <Td colSpan={7}>
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                هیچ فاکتوری یافت نشد
+              </div>
+            </Td>
+          </Tr>
+        )}
+      </TBody>
+    </Table>
   )
 }
 

@@ -3,7 +3,7 @@ import Dropdown from '@/components/ui/Dropdown'
 import withHeaderItem from '@/utils/hoc/withHeaderItem'
 import { useSessionUser } from '@/store/authStore'
 import { Link } from 'react-router-dom'
-import { PiUserDuotone, PiSignOutDuotone } from 'react-icons/pi'
+import { PiUserDuotone, PiSignOutDuotone, PiGearDuotone } from 'react-icons/pi'
 import { useAuth } from '@/auth'
 
 type DropdownList = {
@@ -13,6 +13,11 @@ type DropdownList = {
 }
 
 const dropdownItemList: DropdownList[] = [
+    {
+        label: 'تنظیمات کاربری',
+        path: '/owner/user-profile',
+        icon: <PiGearDuotone />,
+    },
 ]
 
 const _UserDropdown = () => {
@@ -75,7 +80,7 @@ const _UserDropdown = () => {
                 <span className="text-xl">
                     <PiSignOutDuotone />
                 </span>
-                <span>Sign Out</span>
+                <span>خروج</span>
             </Dropdown.Item>
         </Dropdown>
     )

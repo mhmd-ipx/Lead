@@ -22,7 +22,8 @@ import {
     PiChatCircleTextDuotone,
     PiFileDuotone,
     PiGearDuotone,
-    PiShieldCheckDuotone
+    PiShieldCheckDuotone,
+    PiCurrencyDollarSimpleDuotone
 } from 'react-icons/pi'
 
 export type NavigationIcons = Record<string, JSX.Element>
@@ -51,7 +52,8 @@ const navigationIcon: NavigationIcons = {
     chatBubbleLeftRight: <PiChatCircleTextDuotone />,
     documentText: <PiFileDuotone />,
     cog: <PiGearDuotone />,
-    shieldCheck: <PiShieldCheckDuotone />
+    shieldCheck: <PiShieldCheckDuotone />,
+    cash: <PiCurrencyDollarSimpleDuotone />
 }
 
 export default navigationIcon

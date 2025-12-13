@@ -10,10 +10,6 @@ import Tooltip from '@/components/ui/Tooltip'
 import NotificationAvatar from './NotificationAvatar'
 import NotificationToggle from './NotificationToggle'
 import { HiOutlineMailOpen } from 'react-icons/hi'
-import {
-    apiGetNotificationList,
-    apiGetNotificationCount,
-} from '@/services/CommonService'
 import isLastChild from '@/utils/isLastChild'
 import useResponsive from '@/utils/hooks/useResponsive'
 import { useNavigate } from 'react-router-dom'
@@ -36,9 +32,7 @@ type NotificationList = {
 const notificationHeight = 'h-[280px]'
 
 const _Notification = ({ className }: { className?: string }) => {
-    const [notificationList, setNotificationList] = useState<
-        NotificationList[]
-    >([])
+    const [notificationList, setNotificationList] = useState<NotificationList[]>([])
     const [unreadNotification, setUnreadNotification] = useState(false)
     const [noResult, setNoResult] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -48,8 +42,49 @@ const _Notification = ({ className }: { className?: string }) => {
     const navigate = useNavigate()
 
     const getNotificationCount = async () => {
-        const resp = await apiGetNotificationCount()
-        if (resp.count > 0) {
+        // Mock data - فقط خوانده نشده‌ها
+        const mockNotifications: NotificationList[] = [
+            {
+                id: '1',
+                target: 'علی محمدی',
+                description: 'نیازسنجی مهارت‌های مدیریتی را تکمیل کرد',
+                date: '14:30',
+                image: '',
+                type: 1,
+                location: '/owner/managers/mgr-001/assessment/assess-001/view',
+                locationLabel: 'مشاهده',
+                status: 'assessment',
+                readed: false,
+            },
+            {
+                id: '2',
+                target: 'مریم احمدی',
+                description: 'آزمون مدیریت منابع انسانی را تکمیل کرد',
+                date: '16:45',
+                image: '',
+                type: 2,
+                location: '/owner/managers/mgr-002/exams/examset-004/results',
+                locationLabel: 'نتایج',
+                status: 'exam',
+                readed: false,
+            },
+            {
+                id: '6',
+                target: 'حسن رضایی',
+                description: 'آزمون فروش و بازاریابی را تکمیل کرد',
+                date: '15:30',
+                image: '',
+                type: 2,
+                location: '/owner/managers/mgr-003/exams/examset-005/results',
+                locationLabel: 'نتایج',
+                status: 'exam',
+                readed: false,
+            },
+        ]
+
+        const unreadCount = mockNotifications.filter(n => !n.readed).length
+
+        if (unreadCount > 0) {
             setNoResult(false)
             setUnreadNotification(true)
         } else {
@@ -64,9 +99,52 @@ const _Notification = ({ className }: { className?: string }) => {
     const onNotificationOpen = async () => {
         if (notificationList.length === 0) {
             setLoading(true)
-            const resp = await apiGetNotificationList()
+
+            // Mock API call delay
+            await new Promise(resolve => setTimeout(resolve, 500))
+
+            // Mock data - فقط خوانده نشده‌ها
+            const mockNotifications: NotificationList[] = [
+                {
+                    id: '1',
+                    target: 'علی محمدی',
+                    description: 'نیازسنجی مهارت‌های مدیریتی را تکمیل کرد',
+                    date: '14:30',
+                    image: '',
+                    type: 1,
+                    location: '/owner/managers/mgr-001/assessment/assess-001/view',
+                    locationLabel: 'مشاهده',
+                    status: 'assessment',
+                    readed: false,
+                },
+                {
+                    id: '2',
+                    target: 'مریم احمدی',
+                    description: 'آزمون مدیریت منابع انسانی را تکمیل کرد',
+                    date: '16:45',
+                    image: '',
+                    type: 2,
+                    location: '/owner/managers/mgr-002/exams/examset-004/results',
+                    locationLabel: 'نتایج',
+                    status: 'exam',
+                    readed: false,
+                },
+                {
+                    id: '6',
+                    target: 'حسن رضایی',
+                    description: 'آزمون فروش و بازاریابی را تکمیل کرد',
+                    date: '15:30',
+                    image: '',
+                    type: 2,
+                    location: '/owner/managers/mgr-003/exams/examset-005/results',
+                    locationLabel: 'نتایج',
+                    status: 'exam',
+                    readed: false,
+                },
+            ]
+
             setLoading(false)
-            setNotificationList(resp)
+            setNotificationList(mockNotifications)
         }
     }
 
@@ -81,7 +159,7 @@ const _Notification = ({ className }: { className?: string }) => {
         setUnreadNotification(false)
     }
 
-    const onMarkAsRead = (id: string) => {
+    const onMarkAsRead = (id: string, location?: string) => {
         const list = notificationList.map((item) => {
             if (item.id === id) {
                 item.readed = true
@@ -94,16 +172,27 @@ const _Notification = ({ className }: { className?: string }) => {
         if (!hasUnread) {
             setUnreadNotification(false)
         }
+
+        // Navigate if location exists
+        if (location) {
+            navigate(location)
+            if (notificationDropdownRef.current) {
+                notificationDropdownRef.current.handleDropdownClose()
+            }
+        }
     }
 
     const notificationDropdownRef = useRef<DropdownRef>(null)
 
     const handleViewAllActivity = () => {
-        navigate('/concepts/account/activity-log')
+        navigate('/owner/notifications')
         if (notificationDropdownRef.current) {
             notificationDropdownRef.current.handleDropdownClose()
         }
     }
+
+    // Calculate unread count
+    const unreadCount = notificationList.filter(n => !n.readed).length
 
     return (
         <Dropdown
@@ -111,6 +200,7 @@ const _Notification = ({ className }: { className?: string }) => {
             renderTitle={
                 <NotificationToggle
                     dot={unreadNotification}
+                    count={unreadCount}
                     className={className}
                 />
             }
@@ -120,8 +210,8 @@ const _Notification = ({ className }: { className?: string }) => {
         >
             <Dropdown.Item variant="header">
                 <div className="dark:border-gray-700 px-2 flex items-center justify-between mb-1">
-                    <h6>Notifications</h6>
-                    <Tooltip title="Mark all as read">
+                    <h6>اعلانات</h6>
+                    <Tooltip title="همه را به عنوان خوانده شده علامت بزن">
                         <Button
                             variant="plain"
                             shape="circle"
@@ -140,7 +230,7 @@ const _Notification = ({ className }: { className?: string }) => {
                         <div key={item.id}>
                             <div
                                 className={`relative rounded-xl flex px-4 py-3 cursor-pointer hover:bg-gray-100 active:bg-gray-100 dark:hover:bg-gray-700`}
-                                onClick={() => onMarkAsRead(item.id)}
+                                onClick={() => onMarkAsRead(item.id, item.location)}
                             >
                                 <div>
                                     <NotificationAvatar {...item} />
@@ -158,11 +248,10 @@ const _Notification = ({ className }: { className?: string }) => {
                                 </div>
                                 <Badge
                                     className="absolute top-4 ltr:right-4 rtl:left-4 mt-1.5"
-                                    innerClass={`${
-                                        item.readed
-                                            ? 'bg-gray-300 dark:bg-gray-600'
-                                            : 'bg-primary'
-                                    } `}
+                                    innerClass={`${item.readed
+                                        ? 'bg-gray-300 dark:bg-gray-600'
+                                        : 'bg-primary'
+                                        } `}
                                 />
                             </div>
                             {!isLastChild(notificationList, index) ? (
@@ -195,8 +284,8 @@ const _Notification = ({ className }: { className?: string }) => {
                                 src="/img/others/no-notification.png"
                                 alt="no-notification"
                             />
-                            <h6 className="font-semibold">No notifications!</h6>
-                            <p className="mt-1">Please Try again later</p>
+                            <h6 className="font-semibold">هیچ اعلانی نیست!</h6>
+                            <p className="mt-1">لطفاً بعداً دوباره امتحان کنید</p>
                         </div>
                     </div>
                 )}
@@ -208,7 +297,7 @@ const _Notification = ({ className }: { className?: string }) => {
                         variant="solid"
                         onClick={handleViewAllActivity}
                     >
-                        View All Activity
+                        مشاهده همه اعلانات
                     </Button>
                 </div>
             </Dropdown.Item>
