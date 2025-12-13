@@ -91,7 +91,7 @@ const OTPInput = ({
     }
 
     return (
-        <div className={`flex gap-2 ${className}`}>
+        <div className={`flex gap-2 ${className}`} dir="ltr">
             {Array(length)
                 .fill(null)
                 .map((_, index) => (

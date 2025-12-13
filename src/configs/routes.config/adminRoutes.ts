@@ -17,8 +17,14 @@ const adminRoutes: Routes = [
     },
     {
         key: 'adminCompanyDetails',
-        path: '/admin/companies/:companyId',
+        path: '/admin/companies/:id',
         component: lazy(() => import('@/views/admin/CompanyDetails')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminCompanyEdit',
+        path: '/admin/companies/:id/edit',
+        component: lazy(() => import('@/views/admin/CompanyEdit')),
         authority: [ADMIN],
     },
     {
@@ -46,9 +52,45 @@ const adminRoutes: Routes = [
         authority: [ADMIN],
     },
     {
+        key: 'adminCompletedAssessments',
+        path: '/admin/assessments/completed',
+        component: lazy(() => import('@/views/admin/CompletedAssessments')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminCompletedAssessmentView',
+        path: '/admin/assessments/:id',
+        component: lazy(() => import('@/views/admin/CompletedAssessmentView')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminApplicantExams',
+        path: '/admin/applicant-exams',
+        component: lazy(() => import('@/views/admin/ApplicantExamSets')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminApplicantExamResults',
+        path: '/admin/applicant-exams/:examSetId/results',
+        component: lazy(() => import('@/views/admin/ApplicantExamResults')),
+        authority: [ADMIN],
+    },
+    {
         key: 'adminAssessmentForms',
         path: '/admin/assessment/forms',
         component: lazy(() => import('@/views/admin/AssessmentForms')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminExams',
+        path: '/admin/exams',
+        component: lazy(() => import('@/views/admin/Exams')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminCreateExam',
+        path: '/admin/exams/create',
+        component: lazy(() => import('@/views/admin/CreateExam')),
         authority: [ADMIN],
     },
     {
