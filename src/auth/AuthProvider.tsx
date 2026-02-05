@@ -2,7 +2,7 @@ import { useRef, useImperativeHandle, forwardRef } from 'react'
 import AuthContext from './AuthContext'
 import appConfig from '@/configs/app.config'
 import { useSessionUser, useToken } from '@/store/authStore'
-import { apiSignIn, apiSignOut, apiSignUp } from '@/services/AuthService'
+import { apiVerifyOtp, apiSignOut, apiSignUp } from '@/services/AuthService'
 import { REDIRECT_URL_KEY } from '@/constants/app.constant'
 import { useNavigate } from 'react-router-dom'
 import type {
@@ -76,17 +76,42 @@ function AuthProvider({ children }: AuthProviderProps) {
         setSessionSignedIn(false)
     }
 
+    // تبدیل user از API به فرمت User type
+    const mapApiUserToUser = (apiUser: any): User => {
+        return {
+            userId: apiUser.id?.toString() || null,
+            userName: apiUser.name || null,
+            phone: apiUser.phone || null,
+            avatar: apiUser.avatar || null,
+            authority: apiUser.role ? [apiUser.role] : [],
+        }
+    }
+
     const signIn = async (values: SignInCredential): AuthResult => {
         try {
-            const resp = await apiSignIn(values)
-            if (resp) {
-                handleSignIn({ accessToken: resp.token }, resp.user)
-                redirect()
-                return {
-                    status: 'success',
-                    message: '',
+            // استفاده از apiVerifyOtp برای لاگین با phone و otp
+            if (values.phone && values.otp) {
+                const resp = await apiVerifyOtp({
+                    phone: values.phone,
+                    code: values.otp,
+                })
+
+                console.log('🔐 Verify OTP Response:', resp)
+
+                if (resp && resp.success) {
+                    const mappedUser = mapApiUserToUser(resp.data.user)
+                    console.log('👤 Mapped User:', mappedUser)
+                    console.log('🔑 Token:', resp.data.token)
+
+                    handleSignIn({ accessToken: resp.data.token }, mappedUser)
+                    redirect()
+                    return {
+                        status: 'success',
+                        message: '',
+                    }
                 }
             }
+
             return {
                 status: 'failed',
                 message: 'Unable to sign in',
@@ -95,7 +120,7 @@ function AuthProvider({ children }: AuthProviderProps) {
         } catch (errors: any) {
             return {
                 status: 'failed',
-                message: errors?.response?.data?.message || errors.toString(),
+                message: errors?.message || errors?.response?.data?.message || errors.toString(),
             }
         }
     }

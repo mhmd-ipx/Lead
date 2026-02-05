@@ -3,7 +3,11 @@ import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import { FormItem, Form } from '@/components/ui/Form'
 import OTPInput from '@/components/shared/OtpInput'
+import OtpCodeModal from './OtpCodeModal'
 import { useAuth } from '@/auth'
+import { apiSendOtp, apiVerifyOtp } from '@/services/AuthService'
+import { useToken, useSessionUser } from '@/store/authStore'
+import appConfig from '@/configs/app.config'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -25,6 +29,12 @@ type OTPFormSchema = {
     otp: string
 }
 
+type RegisterFormSchema = {
+    name: string
+    email?: string
+    password?: string
+}
+
 type EmailPasswordFormSchema = {
     email: string
     password: string
@@ -40,8 +50,17 @@ const phoneValidationSchema: ZodType<PhoneFormSchema> = z.object({
 const otpValidationSchema: ZodType<OTPFormSchema> = z.object({
     otp: z
         .string({ required_error: 'لطفاً کد OTP را وارد کنید' })
-        .length(6, { message: 'کد OTP باید 6 رقم باشد' }),
+        .length(4, { message: 'کد OTP باید 4 رقم باشد' }),
 })
+
+const registerValidationSchema: ZodType<RegisterFormSchema> = z.object({
+    name: z
+        .string({ required_error: 'لطفاً نام خود را وارد کنید' })
+        .min(2, { message: 'نام باید حداقل 2 کاراکتر باشد' }),
+    email: z.string().optional().or(z.literal('')),
+    password: z.string().optional().or(z.literal('')),
+})
+
 
 const emailPasswordValidationSchema: ZodType<EmailPasswordFormSchema> = z.object({
     email: z
@@ -54,10 +73,16 @@ const emailPasswordValidationSchema: ZodType<EmailPasswordFormSchema> = z.object
 
 const SignInForm = (props: SignInFormProps) => {
     const [isSubmitting, setSubmitting] = useState<boolean>(false)
-    const [step, setStep] = useState<'phone' | 'otp' | 'emailPassword'>('phone')
+    const [step, setStep] = useState<'phone' | 'otp' | 'register' | 'emailPassword'>('phone')
     const [phoneNumber, setPhoneNumber] = useState<string>('')
+    const [isRegistered, setIsRegistered] = useState<boolean>(true)
     const [timer, setTimer] = useState<number>(120) // 2 minutes in seconds
     const [canResend, setCanResend] = useState<boolean>(false)
+
+    // OTP Code Modal States
+    const [showOtpModal, setShowOtpModal] = useState<boolean>(false)
+    const [otpCode, setOtpCode] = useState<string>('')
+    const [otpExpiresAt, setOtpExpiresAt] = useState<string>('')
 
     const { disableSubmit = false, className, setMessage } = props
 
@@ -84,7 +109,7 @@ const SignInForm = (props: SignInFormProps) => {
 
     const phoneForm = useForm<PhoneFormSchema>({
         defaultValues: {
-            phone: '09120000000',
+            phone: '',
         },
         resolver: zodResolver(phoneValidationSchema),
     })
@@ -94,6 +119,15 @@ const SignInForm = (props: SignInFormProps) => {
             otp: '',
         },
         resolver: zodResolver(otpValidationSchema),
+    })
+
+    const registerForm = useForm<RegisterFormSchema>({
+        defaultValues: {
+            name: '',
+            email: '',
+            password: '',
+        },
+        resolver: zodResolver(registerValidationSchema),
     })
 
     const emailPasswordForm = useForm<EmailPasswordFormSchema>({
@@ -113,14 +147,31 @@ const SignInForm = (props: SignInFormProps) => {
         if (!disableSubmit) {
             setSubmitting(true)
 
-            // Mock sending OTP - in real app, call API
-            setTimeout(() => {
-                setStep('otp')
-                setTimer(120) // Reset timer to 2 minutes
-                setCanResend(false)
+            try {
+                const response = await apiSendOtp({ phone })
+
+                if (response.success) {
+                    // ذخیره وضعیت ثبت‌نام کاربر
+                    setIsRegistered(response.data.is_registered)
+
+                    // نمایش کد OTP در مودال (فقط در حالت توسعه)
+                    setOtpCode(response.data.code)
+                    setOtpExpiresAt(response.data.expires_at)
+                    setShowOtpModal(true)
+
+                    // انتقال به مرحله وارد کردن OTP
+                    setStep('otp')
+                    setTimer(120) // Reset timer to 2 minutes
+                    setCanResend(false)
+                    setMessage?.(response.message || 'کد OTP به شماره موبایل شما ارسال شد')
+                }
+            } catch (error: any) {
+                // هندل کردن خطاها
+                const errorMessage = error?.message || 'خطا در ارسال کد تایید. لطفاً دوباره تلاش کنید.'
+                setMessage?.(errorMessage)
+            } finally {
                 setSubmitting(false)
-                setMessage?.('کد OTP به شماره موبایل شما ارسال شد')
-            }, 1000)
+            }
         }
     }
 
@@ -130,17 +181,56 @@ const SignInForm = (props: SignInFormProps) => {
         if (!disableSubmit) {
             setSubmitting(true)
 
-            const result = await signIn({ phone: phoneNumber, otp })
+            try {
+                // اگر کاربر ثبت‌نام کرده، مستقیم verify می‌کنیم
+                if (isRegistered) {
+                    const response = await apiVerifyOtp({
+                        phone: phoneNumber,
+                        code: otp,
+                    })
 
-            if (result?.status === 'failed') {
-                setMessage?.(result.message)
-            } else {
-                // Success - handled by auth
+                    console.log('🔐 Verify Response in Form:', response)
+
+                    if (response.success) {
+                        // لاگین موفق - مستقیماً از response استفاده می‌کنیم
+                        const { setToken } = useToken()
+                        const { setUser, setSessionSignedIn } = useSessionUser.getState()
+
+                        // ذخیره token
+                        setToken(response.data.token)
+
+                        // Map و ذخیره user
+                        const mappedUser = {
+                            userId: response.data.user.id?.toString() || null,
+                            userName: response.data.user.name || null,
+                            phone: response.data.user.phone || null,
+                            avatar: response.data.user.avatar || null,
+                            authority: response.data.user.role ? [response.data.user.role] : [],
+                        }
+
+                        setUser(mappedUser)
+                        setSessionSignedIn(true)
+
+                        console.log('✅ Login successful, redirecting...')
+
+                        // Redirect به dashboard
+                        window.location.href = appConfig.authenticatedEntryPath
+                    }
+                } else {
+                    // کاربر ثبت‌نام نکرده - انتقال به فرم ثبت‌نام
+                    setStep('register')
+                    setMessage?.('لطفاً برای تکمیل ثبت‌نام، نام و ایمیل خود را وارد کنید')
+                }
+            } catch (error: any) {
+                console.error('❌ Verify Error:', error)
+                const errorMessage = error?.message || 'کد تایید نامعتبر یا منقضی شده است'
+                setMessage?.(errorMessage)
+            } finally {
+                setSubmitting(false)
             }
         }
-
-        setSubmitting(false)
     }
+
 
     const handleBack = () => {
         setStep('phone')
@@ -151,6 +241,63 @@ const SignInForm = (props: SignInFormProps) => {
         setStep('emailPassword')
         setMessage?.('')
     }
+
+    const onRegisterSubmit = async (values: RegisterFormSchema) => {
+        const { name, email, password } = values
+
+        if (!disableSubmit) {
+            setSubmitting(true)
+
+            try {
+                // ارسال درخواست verify با اطلاعات ثبت‌نام
+                const response = await apiVerifyOtp({
+                    phone: phoneNumber,
+                    code: otpForm.getValues('otp'),
+                    data: {
+                        name,
+                        // email,      // فعلاً کامنت - بعداً فعال می‌شود
+                        // password,   // فعلاً کامنت - بعداً فعال می‌شود
+                    },
+                })
+
+                console.log('🔐 Register Response:', response)
+
+                if (response.success) {
+                    // ثبت‌نام و لاگین موفق - مستقیماً از response استفاده می‌کنیم
+                    const { setToken } = useToken()
+                    const { setUser, setSessionSignedIn } = useSessionUser.getState()
+
+                    // ذخیره token
+                    setToken(response.data.token)
+
+                    // Map و ذخیره user
+                    const mappedUser = {
+                        userId: response.data.user.id?.toString() || null,
+                        userName: response.data.user.name || null,
+                        phone: response.data.user.phone || null,
+                        avatar: response.data.user.avatar || null,
+                        authority: response.data.user.role ? [response.data.user.role] : [],
+                    }
+
+                    setUser(mappedUser)
+                    setSessionSignedIn(true)
+
+                    console.log('✅ Register successful, redirecting...')
+
+                    // Redirect به dashboard
+                    window.location.href = appConfig.authenticatedEntryPath
+                }
+            } catch (error: any) {
+                console.error('❌ Register Error:', error)
+                const errorMessage = error?.message || 'خطا در ثبت‌نام. لطفاً دوباره تلاش کنید.'
+                setMessage?.(errorMessage)
+            } finally {
+                setSubmitting(false)
+            }
+        }
+    }
+
+
 
     const onEmailPasswordSignIn = async (values: EmailPasswordFormSchema) => {
         const { email, password } = values
@@ -172,13 +319,25 @@ const SignInForm = (props: SignInFormProps) => {
         if (!disableSubmit && canResend) {
             setSubmitting(true)
 
-            // Mock resending OTP - in real app, call API
-            setTimeout(() => {
-                setTimer(120) // Reset timer to 2 minutes
-                setCanResend(false)
+            try {
+                const response = await apiSendOtp({ phone: phoneNumber })
+
+                if (response.success) {
+                    // نمایش کد OTP جدید در مودال
+                    setOtpCode(response.data.code)
+                    setOtpExpiresAt(response.data.expires_at)
+                    setShowOtpModal(true)
+
+                    setTimer(120) // Reset timer to 2 minutes
+                    setCanResend(false)
+                    setMessage?.(response.message || 'کد OTP مجدداً به شماره موبایل شما ارسال شد')
+                }
+            } catch (error: any) {
+                const errorMessage = error?.message || 'خطا در ارسال مجدد کد تایید'
+                setMessage?.(errorMessage)
+            } finally {
                 setSubmitting(false)
-                setMessage?.('کد OTP مجدداً به شماره موبایل شما ارسال شد')
-            }, 1000)
+            }
         }
     }
 
@@ -229,7 +388,7 @@ const SignInForm = (props: SignInFormProps) => {
                 <div>
                     <div className="text-center mb-4">
                         <p className="text-sm text-gray-600">
-                            کد 6 رقمی به شماره {phoneNumber} ارسال شد
+                            کد 4 رقمی به شماره {phoneNumber} ارسال شد
                         </p>
                         <div className="mt-2">
                             {timer > 0 ? (
@@ -261,7 +420,7 @@ const SignInForm = (props: SignInFormProps) => {
                                 control={otpForm.control}
                                 render={({ field }) => (
                                     <OTPInput
-                                        length={6}
+                                        length={4}
                                         placeholder="0"
                                         {...field}
                                     />
@@ -284,6 +443,91 @@ const SignInForm = (props: SignInFormProps) => {
                                 type="submit"
                             >
                                 {isSubmitting ? 'ورود...' : 'ورود'}
+                            </Button>
+                        </div>
+                    </Form>
+                </div>
+            ) : step === 'register' ? (
+                <div>
+                    <div className="text-center mb-4">
+                        <p className="text-sm text-gray-600">
+                            شما هنوز ثبت‌نام نکرده‌اید. لطفاً اطلاعات خود را وارد کنید
+                        </p>
+                    </div>
+                    <Form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
+                        {/* Hidden input to disable browser autocomplete for Name field */}
+                        <input type="text" className="hidden" aria-hidden="true" autoComplete="off" />
+
+                        <FormItem
+                            label="نام"
+                            invalid={Boolean(registerForm.formState.errors.name)}
+                            errorMessage={registerForm.formState.errors.name?.message}
+                        >
+                            <Controller
+                                name="name"
+                                control={registerForm.control}
+                                render={({ field }) => (
+                                    <Input
+                                        type="text"
+                                        placeholder="نام خود را وارد کنید"
+                                        autoComplete="off"
+                                        {...field}
+                                    />
+                                )}
+                            />
+                        </FormItem>
+                        <FormItem
+                            label="ایمیل"
+                            invalid={Boolean(registerForm.formState.errors.email)}
+                            errorMessage={registerForm.formState.errors.email?.message}
+                        >
+                            <Controller
+                                name="email"
+                                control={registerForm.control}
+                                render={({ field }) => (
+                                    <Input
+                                        type="email"
+                                        placeholder="example@email.com"
+                                        autoComplete="email"
+                                        {...field}
+                                    />
+                                )}
+                            />
+                        </FormItem>
+                        <FormItem
+                            label="رمز عبور"
+                            invalid={Boolean(registerForm.formState.errors.password)}
+                            errorMessage={registerForm.formState.errors.password?.message}
+                        >
+                            <Controller
+                                name="password"
+                                control={registerForm.control}
+                                render={({ field }) => (
+                                    <Input
+                                        type="password"
+                                        placeholder="••••••"
+                                        autoComplete="new-password"
+                                        {...field}
+                                    />
+                                )}
+                            />
+                        </FormItem>
+                        <div className="flex gap-2">
+                            <Button
+                                block
+                                variant="plain"
+                                type="button"
+                                onClick={handleBack}
+                            >
+                                بازگشت
+                            </Button>
+                            <Button
+                                block
+                                loading={isSubmitting}
+                                variant="solid"
+                                type="submit"
+                            >
+                                {isSubmitting ? 'در حال ثبت‌نام...' : 'ثبت‌نام و ورود'}
                             </Button>
                         </div>
                     </Form>
@@ -348,6 +592,14 @@ const SignInForm = (props: SignInFormProps) => {
                     </Form>
                 </div>
             )}
+
+            {/* Modal برای نمایش کد OTP (فقط در حالت توسعه) */}
+            <OtpCodeModal
+                isOpen={showOtpModal}
+                onClose={() => setShowOtpModal(false)}
+                code={otpCode}
+                expiresAt={otpExpiresAt}
+            />
         </div>
     )
 }

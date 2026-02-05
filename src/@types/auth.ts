@@ -5,6 +5,43 @@ export type SignInCredential = {
     password?: string
 }
 
+// Send OTP Types
+export type SendOtpRequest = {
+    phone: string
+}
+
+export type SendOtpResponse = {
+    success: boolean
+    message: string
+    data: {
+        expires_at: string
+        code: string
+        is_registered: boolean
+    }
+}
+
+// Verify OTP Types
+export type VerifyOtpRequest = {
+    phone: string
+    code: string
+    data?: {
+        name: string
+        email?: string
+        password?: string
+    }
+}
+
+export type VerifyOtpResponse = {
+    success: boolean
+    message: string
+    data: {
+        user: any  // API user structure (will be mapped to User type)
+        token: string
+    }
+}
+
+
+
 export type SignInResponse = {
     token: string
     user: {

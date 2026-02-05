@@ -1,5 +1,7 @@
 import ApiService from './ApiService'
+import apiClient from './ApiClient'
 import endpointConfig from '@/configs/endpoint.config'
+import API_ENDPOINTS from '@/constants/api.endpoints'
 import type {
     SignInCredential,
     SignUpCredential,
@@ -7,7 +9,29 @@ import type {
     ResetPassword,
     SignInResponse,
     SignUpResponse,
+    SendOtpRequest,
+    SendOtpResponse,
+    VerifyOtpRequest,
+    VerifyOtpResponse,
 } from '@/@types/auth'
+
+/**
+ * Send OTP to phone number
+ */
+export async function apiSendOtp(data: SendOtpRequest) {
+    return apiClient.post<SendOtpResponse>(API_ENDPOINTS.AUTH.SEND_OTP, data)
+}
+
+/**
+ * Verify OTP code and login/register user
+ */
+export async function apiVerifyOtp(data: VerifyOtpRequest) {
+    return apiClient.post<VerifyOtpResponse>(
+        API_ENDPOINTS.AUTH.VERIFY_OTP,
+        data,
+    )
+}
+
 
 export async function apiSignIn(data: SignInCredential) {
     return ApiService.fetchDataWithAxios<SignInResponse>({
@@ -47,3 +71,4 @@ export async function apiResetPassword<T>(data: ResetPassword) {
         data,
     })
 }
+
