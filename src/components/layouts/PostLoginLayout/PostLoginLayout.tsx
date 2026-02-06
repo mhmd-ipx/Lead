@@ -1,4 +1,5 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
+import { useToken } from '@/store/authStore'
 import {
     LAYOUT_COLLAPSIBLE_SIDE,
     LAYOUT_STACKED_SIDE,
@@ -36,6 +37,12 @@ const PostLoginLayout = ({ layoutType, children }: PostLoginLayoutProps) => {
 
     const AppLayout =
         layouts[layoutType] ?? layouts[Object.keys(layouts)[0]];
+
+    const { token } = useToken()
+
+    useEffect(() => {
+        console.log('User Token:', token)
+    }, [token])
 
     return (
         <Suspense fallback={<Loading type='cover' loading={true} />}>
