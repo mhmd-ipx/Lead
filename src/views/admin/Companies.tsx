@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Card, Button, Tag, Tooltip, Input } from '@/components/ui'
+import { Card, Button, Tag, Tooltip, Input, Skeleton, toast, Notification } from '@/components/ui'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import {
     HiOutlinePlus,
@@ -11,24 +11,38 @@ import {
 } from 'react-icons/hi'
 import { getCompanies, deleteCompany } from '@/services/AdminService'
 import { Company } from '@/mock/data/adminData'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 const Companies = () => {
     const [companies, setCompanies] = useState<Company[]>([])
     const [loading, setLoading] = useState(true)
+    const [initialLoad, setInitialLoad] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null)
     const navigate = useNavigate()
+    const location = useLocation()
 
     useEffect(() => {
-        loadCompanies()
-    }, [])
+        // Check if we should reload data (e.g., after adding/editing)
+        const shouldReload = location.state?.reload
+
+        if (initialLoad || shouldReload) {
+            loadCompanies()
+        }
+    }, [initialLoad, location.state])
 
     const loadCompanies = async () => {
         try {
+            setLoading(true)
             const data = await getCompanies()
             setCompanies(data)
+            setInitialLoad(false)
+
+            // Clear reload state
+            if (location.state?.reload) {
+                navigate(location.pathname, { replace: true, state: {} })
+            }
         } catch (error) {
             console.error('Error loading companies:', error)
         } finally {
@@ -40,12 +54,35 @@ const Companies = () => {
         if (!selectedCompany) return
 
         try {
-            await deleteCompany(selectedCompany.id)
+            await deleteCompany(selectedCompany.id.toString())
             setCompanies(companies.filter(c => c.id !== selectedCompany.id))
             setDeleteDialogOpen(false)
             setSelectedCompany(null)
-        } catch (error) {
+
+            toast.push(
+                <Notification type="success" duration={3000}>
+                    <div>
+                        <p className="font-semibold">حذف موفق</p>
+                        <p className="text-sm">سازمان با موفقیت حذف شد</p>
+                    </div>
+                </Notification>,
+                {
+                    placement: 'top-center'
+                }
+            )
+        } catch (error: any) {
             console.error('Error deleting company:', error)
+            toast.push(
+                <Notification type="danger" duration={4000}>
+                    <div>
+                        <p className="font-semibold">خطا در حذف</p>
+                        <p className="text-sm">{error?.message || 'خطا در حذف سازمان'}</p>
+                    </div>
+                </Notification>,
+                {
+                    placement: 'top-center'
+                }
+            )
         }
     }
 
@@ -62,18 +99,50 @@ const Companies = () => {
 
     const filteredCompanies = companies.filter(company =>
         company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        company.legalName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        company.ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        company.legalName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        company.ownerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         company.email.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center h-96">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
-            </div>
-        )
-    }
+    // Skeleton loading component
+    const SkeletonRow = () => (
+        <tr>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="space-y-2">
+                    <Skeleton width={150} height={16} />
+                    <Skeleton width={120} height={12} />
+                </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="space-y-2">
+                    <Skeleton width={140} height={14} />
+                    <Skeleton width={100} height={12} />
+                </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <Skeleton width={100} height={14} />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <Skeleton width={80} height={20} />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="space-y-2">
+                    <Skeleton width={120} height={14} />
+                    <Skeleton width={100} height={12} />
+                </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <Skeleton width={60} height={24} />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex items-center gap-2">
+                    <Skeleton variant="circle" width={32} height={32} />
+                    <Skeleton variant="circle" width={32} height={32} />
+                    <Skeleton variant="circle" width={32} height={32} />
+                </div>
+            </td>
+        </tr>
+    )
 
     return (
         <div className="space-y-6">
@@ -143,86 +212,100 @@ const Companies = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                                {filteredCompanies.map((company) => (
-                                    <tr key={company.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div>
-                                                <div className="font-medium text-gray-900 dark:text-white">
-                                                    {company.name}
+                                {loading ? (
+                                    // Show skeleton rows while loading
+                                    <>
+                                        <SkeletonRow />
+                                        <SkeletonRow />
+                                        <SkeletonRow />
+                                    </>
+                                ) : filteredCompanies.length > 0 ? (
+                                    // Show actual data
+                                    filteredCompanies.map((company) => (
+                                        <tr key={company.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div>
+                                                    <div className="font-medium text-gray-900 dark:text-white">
+                                                        {company.name}
+                                                    </div>
+                                                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                                                        {company.legalName}
+                                                    </div>
                                                 </div>
-                                                <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                    {company.legalName}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div>
+                                                    <div className="text-sm text-gray-900 dark:text-white">
+                                                        {company.email}
+                                                    </div>
+                                                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                                                        {company.phone}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm text-gray-900 dark:text-white">
-                                                    {company.email}
+                                                    {company.nationalId || '-'}
                                                 </div>
-                                                <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                    {company.phone}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {company.fieldOfActivity ? (
+                                                    <Tag className="text-blue-600 bg-blue-100 dark:text-blue-100 dark:bg-blue-500/20 border-0">
+                                                        {company.fieldOfActivity}
+                                                    </Tag>
+                                                ) : (
+                                                    <span className="text-gray-400">-</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div>
+                                                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                                        {company.ownerName}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                        {company.ownerPhone}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900 dark:text-white">
-                                                {company.nationalId}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <Tag className="text-blue-600 bg-blue-100 dark:text-blue-100 dark:bg-blue-500/20 border-0">
-                                                {company.fieldOfActivity}
-                                            </Tag>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div>
-                                                <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                                    {company.ownerName}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {getStatusTag(company.status)}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center gap-2">
+                                                    <Tooltip title="مشاهده جزئیات">
+                                                        <Button
+                                                            variant="plain"
+                                                            size="sm"
+                                                            icon={<HiOutlineEye />}
+                                                            onClick={() => navigate(`/admin/companies/${company.id}`)}
+                                                        />
+                                                    </Tooltip>
+                                                    <Tooltip title="ویرایش">
+                                                        <Button
+                                                            variant="plain"
+                                                            size="sm"
+                                                            icon={<HiOutlinePencil />}
+                                                            onClick={() => navigate(`/admin/companies/${company.id}/edit`)}
+                                                        />
+                                                    </Tooltip>
+                                                    <Tooltip title="حذف">
+                                                        <Button
+                                                            variant="plain"
+                                                            size="sm"
+                                                            icon={<HiOutlineTrash />}
+                                                            onClick={() => {
+                                                                setSelectedCompany(company)
+                                                                setDeleteDialogOpen(true)
+                                                            }}
+                                                            className="text-red-600 hover:text-red-700"
+                                                        />
+                                                    </Tooltip>
                                                 </div>
-                                                <div className="text-xs text-gray-500 dark:text-gray-400">
-                                                    {company.ownerEmail}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {getStatusTag(company.status)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-2">
-                                                <Tooltip title="مشاهده جزئیات">
-                                                    <Button
-                                                        variant="plain"
-                                                        size="sm"
-                                                        icon={<HiOutlineEye />}
-                                                        onClick={() => navigate(`/admin/companies/${company.id}`)}
-                                                    />
-                                                </Tooltip>
-                                                <Tooltip title="ویرایش">
-                                                    <Button
-                                                        variant="plain"
-                                                        size="sm"
-                                                        icon={<HiOutlinePencil />}
-                                                        onClick={() => navigate(`/admin/companies/${company.id}/edit`)}
-                                                    />
-                                                </Tooltip>
-                                                <Tooltip title="حذف">
-                                                    <Button
-                                                        variant="plain"
-                                                        size="sm"
-                                                        icon={<HiOutlineTrash />}
-                                                        onClick={() => {
-                                                            setSelectedCompany(company)
-                                                            setDeleteDialogOpen(true)
-                                                        }}
-                                                        className="text-red-600 hover:text-red-700"
-                                                    />
-                                                </Tooltip>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {filteredCompanies.length === 0 && (
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    // Show empty state
                                     <tr>
                                         <td colSpan={7}>
                                             <div className="text-center py-12">

@@ -19,6 +19,16 @@ const navigationConfig: NavigationTree[] = [
         subMenu: [],
     },
     {
+        key: 'ownerCompanies',
+        path: '/owner/companies',
+        title: 'سازمان های من',
+        translateKey: 'nav.owner.companies',
+        icon: 'building',
+        type: NAV_ITEM_TYPE_ITEM,
+        authority: [OWNER],
+        subMenu: [],
+    },
+    {
         key: 'ownerManagers',
         path: '/owner/managers',
         title: 'متقاضیان',
@@ -78,16 +88,7 @@ const navigationConfig: NavigationTree[] = [
         type: NAV_ITEM_TYPE_COLLAPSE,
         authority: [OWNER],
         subMenu: [
-            {
-                key: 'ownerCompany',
-                path: '/owner/company',
-                title: 'پروفایل سازمان',
-                translateKey: 'nav.owner.company',
-                icon: '',
-                type: NAV_ITEM_TYPE_ITEM,
-                authority: [OWNER],
-                subMenu: [],
-            },
+
             {
                 key: 'ownerUserProfile',
                 path: '/owner/user-profile',

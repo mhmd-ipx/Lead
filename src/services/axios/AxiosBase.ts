@@ -11,7 +11,17 @@ const AxiosBase = axios.create({
 
 AxiosBase.interceptors.request.use(
     (config) => {
-        return AxiosRequestIntrceptorConfigCallback(config)
+        const updatedConfig = AxiosRequestIntrceptorConfigCallback(config)
+
+        // Log complete request details
+        console.log('🚀 API Request:', {
+            method: updatedConfig.method?.toUpperCase(),
+            url: `${updatedConfig.baseURL || ''}${updatedConfig.url || ''}`,
+            headers: updatedConfig.headers,
+            data: updatedConfig.data,
+        })
+
+        return updatedConfig
     },
     (error) => {
         return Promise.reject(error)

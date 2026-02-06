@@ -1,23 +1,41 @@
 // Mock data for Admin modules
 
-export interface Company {
-    id: string
+export interface CompanyOwner {
+    id: number | string
     name: string
-    legalName: string
+    phone: string
+    email?: string | null
+    avatar?: string | null
+    role: string
+    status: string
+    last_login?: string
+    created_at?: string
+    updated_at?: string
+}
+
+export interface Company {
+    id: string | number
+    name: string
+    legalName: string // mapped from legal_name
     phone: string
     email: string
-    nationalId: string
-    economicCode: string
-    fieldOfActivity: string
-    logo?: string
-    website?: string
+    nationalId?: string | null // mapped from national_id
+    economicCode?: string | null // mapped from economic_code
+    fieldOfActivity?: string | null // mapped from field_of_activity
+    logo?: string | null
+    website?: string | null
     address: string
-    description?: string
-    ownerName: string
-    ownerEmail: string
-    ownerPhone: string
-    createdAt: string
+    description?: string | null
+    owner_id?: number | string
+    owner?: CompanyOwner
+    createdAt: string // mapped from created_at
+    updatedAt?: string // mapped from updated_at
     status: 'active' | 'inactive'
+
+    // Legacy fields for backward compatibility (optional)
+    ownerName?: string
+    ownerEmail?: string
+    ownerPhone?: string
 }
 
 export const mockCompanies: Company[] = [

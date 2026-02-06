@@ -10,8 +10,20 @@ const ownerRoutes: Routes = [
         authority: [OWNER],
     },
     {
-        key: 'ownerCompany',
-        path: '/owner/company',
+        key: 'ownerCompanies',
+        path: '/owner/companies',
+        component: lazy(() => import('@/views/owner/Companies')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerCompanyAdd',
+        path: '/owner/companies/add',
+        component: lazy(() => import('@/views/owner/Company')),
+        authority: [OWNER],
+    },
+    {
+        key: 'ownerCompanyEdit',
+        path: '/owner/companies/:companyId/edit',
         component: lazy(() => import('@/views/owner/Company')),
         authority: [OWNER],
     },

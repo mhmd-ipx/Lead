@@ -29,6 +29,9 @@ export interface CompanyProfile {
   logo?: string
   website?: string
   description?: string
+  manager_name?: string
+  manager_phone?: string
+  status?: 'active' | 'inactive'
 }
 
 export interface Assessment {

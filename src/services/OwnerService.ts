@@ -22,6 +22,8 @@ import {
   mockSupportMessages,
   mockDashboardStats
 } from '@/mock/data/ownerData'
+import apiClient from '@/services/ApiClient'
+import API_ENDPOINTS from '@/constants/api.endpoints'
 
 // Dashboard
 export const getDashboardStats = async (): Promise<DashboardStats> => {
@@ -33,19 +35,94 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
 }
 
 // Company Profile
+export const getCompanies = async (): Promise<CompanyProfile[]> => {
+  const response = await apiClient.get<{ data: CompanyProfile[] }>(API_ENDPOINTS.COMPANY.MY_COMPANIES)
+  return response.data
+}
+
 export const getCompanyProfile = async (): Promise<CompanyProfile> => {
   return new Promise((resolve) => {
     setTimeout(() => resolve(mockCompanyProfile), 300)
   })
 }
 
+export const getCompanyById = async (id: string): Promise<CompanyProfile | null> => {
+  try {
+    const response = await apiClient.get<{ data: any }>(API_ENDPOINTS.COMPANY.MY_COMPANIES)
+    const companies = response.data
+
+    // Find the company by ID from the list
+    const company = companies.find((c: any) => c.id.toString() === id)
+
+    if (!company) {
+      return null
+    }
+
+    // Map snake_case API response to camelCase frontend format
+    return {
+      id: company.id?.toString() || '',
+      name: company.name || '',
+      legalName: company.legal_name || '',
+      phone: company.phone || '',
+      email: company.email || '',
+      website: company.website || '',
+      fieldOfActivity: company.field_of_activity || '',
+      nationalId: company.national_id || '',
+      economicCode: company.economic_code || '',
+      address: company.address || '',
+      description: company.description || '',
+      logo: company.logo || '',
+      manager_name: company.manager_name || '',
+      manager_phone: company.manager_phone || ''
+    }
+  } catch (error) {
+    console.error('Error fetching company by ID:', error)
+    return null
+  }
+}
+
+export const createCompany = async (data: Partial<CompanyProfile>): Promise<CompanyProfile> => {
+  // تبدیل داده‌ها به فرمت snake_case برای API
+  const apiData = {
+    name: data.name,
+    legal_name: data.legalName,
+    phone: data.phone,
+    email: data.email,
+    address: data.address,
+    website: data.website,
+    description: data.description,
+    manager_name: data.manager_name,
+    manager_phone: data.manager_phone,
+  }
+
+  console.log('📤 Sending company data:', apiData)
+
+  const response = await apiClient.post<{ data: CompanyProfile }>(API_ENDPOINTS.COMPANY.BASE, apiData)
+  return response.data
+}
+
 export const updateCompanyProfile = async (data: Partial<CompanyProfile>): Promise<CompanyProfile> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const updated = { ...mockCompanyProfile, ...data }
-      resolve(updated)
-    }, 500)
-  })
+  // Transform data to snake_case for API
+  const apiData: any = {}
+
+  if (data.name?.trim()) apiData.name = data.name.trim()
+  if (data.legalName?.trim()) apiData.legal_name = data.legalName.trim()
+  if (data.phone?.trim()) apiData.phone = data.phone.trim()
+  if (data.email?.trim()) apiData.email = data.email.trim()
+  if (data.address?.trim()) apiData.address = data.address.trim()
+  if (data.website?.trim()) apiData.website = data.website.trim()
+  if (data.description?.trim()) apiData.description = data.description.trim()
+  if (data.manager_name?.trim()) apiData.manager_name = data.manager_name.trim()
+  if (data.manager_phone?.trim()) apiData.manager_phone = data.manager_phone.trim()
+  if (data.logo) apiData.logo = data.logo
+
+  console.log('📝 Updating company data:', apiData)
+
+  const response = await apiClient.put<{ data: CompanyProfile }>(
+    `${API_ENDPOINTS.COMPANY.BASE}/${data.id}`,
+    apiData
+  )
+  return response.data
 }
 
 // Managers

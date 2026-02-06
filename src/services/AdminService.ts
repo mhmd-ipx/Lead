@@ -1,16 +1,87 @@
+import apiClient from '@/services/ApiClient'
 import { Company, mockCompanies } from '@/mock/data/adminData'
 
 // Simulate API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 export async function getCompanies(): Promise<Company[]> {
-    await delay(500)
-    return mockCompanies
+    try {
+        const response = await apiClient.get<{ data: any[] }>('/companies')
+        return response.data.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            legalName: item.legal_name || '',
+            phone: item.phone || '',
+            email: item.email || '',
+            address: item.address || '',
+            nationalId: item.national_id,
+            economicCode: item.economic_code,
+            fieldOfActivity: item.field_of_activity,
+            logo: item.logo,
+            website: item.website,
+            description: item.description,
+            // Map owner details
+            owner_id: item.owner_id,
+            owner: item.owner,
+            // Map legacy fields for existing UI components
+            ownerName: item.owner?.name || 'نامشخص',
+            ownerEmail: item.owner?.email || '-',
+            ownerPhone: item.owner?.phone || '-',
+
+            status: item.status || 'active',
+            createdAt: item.created_at,
+            updatedAt: item.updated_at
+        }))
+    } catch (error) {
+        console.error('Error fetching companies:', error)
+        // Fallback to mock data if API fails (optional, based on requirement, usually we want to show error)
+        // For now let's return mock if dev env or empty array
+        return []
+    }
 }
 
 export async function getCompanyById(id: string): Promise<Company | null> {
-    await delay(300)
-    return mockCompanies.find(company => company.id === id) || null
+    try {
+        const response = await apiClient.get<{ data: any[] }>('/companies')
+        const companies = response.data
+
+        // Find the company by ID from the list
+        const company = companies.find((c: any) => c.id.toString() === id)
+
+        if (!company) {
+            return null
+        }
+
+        // Map snake_case API response to camelCase frontend format
+        return {
+            id: company.id,
+            name: company.name,
+            legalName: company.legal_name || '',
+            phone: company.phone || '',
+            email: company.email || '',
+            address: company.address || '',
+            nationalId: company.national_id,
+            economicCode: company.economic_code,
+            fieldOfActivity: company.field_of_activity,
+            logo: company.logo,
+            website: company.website,
+            description: company.description,
+            // Map owner details
+            owner_id: company.owner_id,
+            owner: company.owner,
+            // Map legacy fields for existing UI components
+            ownerName: company.owner?.name || 'نامشخص',
+            ownerEmail: company.owner?.email || '-',
+            ownerPhone: company.owner?.phone || '-',
+
+            status: company.status || 'active',
+            createdAt: company.created_at,
+            updatedAt: company.updated_at
+        }
+    } catch (error) {
+        console.error('Error fetching company by ID:', error)
+        return null
+    }
 }
 
 export async function createCompany(company: Omit<Company, 'id' | 'createdAt'>): Promise<Company> {
@@ -25,19 +96,68 @@ export async function createCompany(company: Omit<Company, 'id' | 'createdAt'>):
 }
 
 export async function updateCompany(id: string, data: Partial<Company>): Promise<Company> {
-    await delay(500)
-    const index = mockCompanies.findIndex(c => c.id === id)
-    if (index === -1) throw new Error('Company not found')
+    try {
+        // Transform data to snake_case for API (only company fields, not owner fields)
+        const apiData: any = {}
 
-    mockCompanies[index] = { ...mockCompanies[index], ...data }
-    return mockCompanies[index]
+        if (data.name?.trim()) apiData.name = data.name.trim()
+        if (data.legalName?.trim()) apiData.legal_name = data.legalName.trim()
+        if (data.phone?.trim()) apiData.phone = data.phone.trim()
+        if (data.email?.trim()) apiData.email = data.email.trim()
+        if (data.address?.trim()) apiData.address = data.address.trim()
+        if (data.website?.trim()) apiData.website = data.website.trim()
+        if (data.description?.trim()) apiData.description = data.description.trim()
+        if (data.nationalId?.trim()) apiData.national_id = data.nationalId.trim()
+        if (data.economicCode?.trim()) apiData.economic_code = data.economicCode.trim()
+        if (data.fieldOfActivity?.trim()) apiData.field_of_activity = data.fieldOfActivity.trim()
+        if (data.status) apiData.status = data.status
+        if (data.logo) apiData.logo = data.logo
+
+        console.log('📝 Updating company data (Admin):', apiData)
+
+        const response = await apiClient.put<{ data: any }>(
+            `/companies/${id}`,
+            apiData
+        )
+
+        const company = response.data
+
+        // Map response back to frontend format
+        return {
+            id: company.id,
+            name: company.name,
+            legalName: company.legal_name || '',
+            phone: company.phone || '',
+            email: company.email || '',
+            address: company.address || '',
+            nationalId: company.national_id,
+            economicCode: company.economic_code,
+            fieldOfActivity: company.field_of_activity,
+            logo: company.logo,
+            website: company.website,
+            description: company.description,
+            owner_id: company.owner_id,
+            owner: company.owner,
+            ownerName: company.owner?.name || 'نامشخص',
+            ownerEmail: company.owner?.email || '-',
+            ownerPhone: company.owner?.phone || '-',
+            status: company.status || 'active',
+            createdAt: company.created_at,
+            updatedAt: company.updated_at
+        }
+    } catch (error) {
+        console.error('Error updating company:', error)
+        throw error
+    }
 }
 
 export async function deleteCompany(id: string): Promise<void> {
-    await delay(500)
-    const index = mockCompanies.findIndex(c => c.id === id)
-    if (index !== -1) {
-        mockCompanies.splice(index, 1)
+    try {
+        await apiClient.delete(`/companies/${id}`)
+        console.log('🗑️ Company deleted:', id)
+    } catch (error) {
+        console.error('Error deleting company:', error)
+        throw error
     }
 }
 

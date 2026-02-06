@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Card, Button, Input, Upload, Avatar } from '@/components/ui'
+import { Card, Button, Input, Upload, Avatar, toast, Notification } from '@/components/ui'
 import {
     HiOutlineOfficeBuilding,
     HiOutlineDocumentText,
@@ -80,12 +80,33 @@ const CompanyEdit = () => {
             await updateCompany(id, updatedCompany)
             setCompany(updatedCompany)
 
-            // Show success message (you could use a toast notification here)
-            alert('اطلاعات سازمان با موفقیت ذخیره شد!')
-            navigate(`/admin/companies/${id}`)
-        } catch (error) {
+            toast.push(
+                <Notification type="success" duration={3000}>
+                    <div>
+                        <p className="font-semibold">موفقیت‌آمیز</p>
+                        <p className="text-sm">اطلاعات سازمان با موفقیت ذخیره شد</p>
+                    </div>
+                </Notification>,
+                {
+                    placement: 'top-center'
+                }
+            )
+
+            // Navigate back with reload flag to refresh the list
+            navigate('/admin/companies', { state: { reload: true } })
+        } catch (error: any) {
             console.error('Error saving company:', error)
-            alert('خطا در ذخیره اطلاعات سازمان')
+            toast.push(
+                <Notification type="danger" duration={4000}>
+                    <div>
+                        <p className="font-semibold">خطا در ذخیره</p>
+                        <p className="text-sm">{error?.message || 'خطا در ذخیره اطلاعات سازمان'}</p>
+                    </div>
+                </Notification>,
+                {
+                    placement: 'top-center'
+                }
+            )
         } finally {
             setSaving(false)
         }
@@ -250,7 +271,7 @@ const CompanyEdit = () => {
                                     حوزه فعالیت
                                 </label>
                                 <Input
-                                    value={company.fieldOfActivity}
+                                    value={company.fieldOfActivity || ''}
                                     onChange={(e) => handleInputChange('fieldOfActivity', e.target.value)}
                                     placeholder="حوزه فعالیت سازمان"
                                 />
@@ -271,7 +292,7 @@ const CompanyEdit = () => {
                                     شناسه ملی
                                 </label>
                                 <Input
-                                    value={company.nationalId}
+                                    value={company.nationalId || ''}
                                     onChange={(e) => handleInputChange('nationalId', e.target.value)}
                                     placeholder="شناسه ملی 10 رقمی"
                                 />
@@ -282,53 +303,9 @@ const CompanyEdit = () => {
                                     کد اقتصادی
                                 </label>
                                 <Input
-                                    value={company.economicCode}
+                                    value={company.economicCode || ''}
                                     onChange={(e) => handleInputChange('economicCode', e.target.value)}
                                     placeholder="کد اقتصادی 12 رقمی"
-                                />
-                            </div>
-                        </div>
-                    </Card>
-
-                    {/* Owner Information */}
-                    <Card className="p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                            <HiOutlineUser className="w-5 h-5" />
-                            ایجادکننده سازمان
-                        </h3>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    نام
-                                </label>
-                                <Input
-                                    value={company.ownerName}
-                                    onChange={(e) => handleInputChange('ownerName', e.target.value)}
-                                    placeholder="نام ایجادکننده"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    ایمیل
-                                </label>
-                                <Input
-                                    type="email"
-                                    value={company.ownerEmail}
-                                    onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
-                                    placeholder="email@example.com"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    شماره تماس
-                                </label>
-                                <Input
-                                    value={company.ownerPhone}
-                                    onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
-                                    placeholder="09123456789"
                                 />
                             </div>
                         </div>

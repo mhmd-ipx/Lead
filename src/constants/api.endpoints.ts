@@ -9,6 +9,11 @@ export const API_ENDPOINTS = {
         SEND_OTP: '/auth/send-otp',
         VERIFY_OTP: '/auth/verify-otp',
     },
+    // Company
+    COMPANY: {
+        BASE: '/companies',
+        MY_COMPANIES: '/companies/my-companies',
+    },
 } as const
 
 export default API_ENDPOINTS

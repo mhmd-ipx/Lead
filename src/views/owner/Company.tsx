@@ -1,25 +1,50 @@
 import { useEffect, useState } from 'react'
-import { Card, Button, Input, Upload, Avatar } from '@/components/ui'
-import { HiOutlineOfficeBuilding, HiOutlineDocumentText, HiOutlinePhotograph, HiOutlineSave, HiOutlineArrowLeft } from 'react-icons/hi'
-import { getCompanyProfile, updateCompanyProfile } from '@/services/OwnerService'
+import { Card, Button, Input, Upload, Avatar, toast, Notification } from '@/components/ui'
+import { HiOutlineOfficeBuilding, HiOutlineDocumentText, HiOutlinePhotograph, HiOutlineSave, HiOutlineArrowLeft, HiOutlineUser } from 'react-icons/hi'
+import { getCompanyById, updateCompanyProfile, createCompany } from '@/services/OwnerService'
 import { CompanyProfile } from '@/mock/data/ownerData'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+
+const emptyCompany: CompanyProfile = {
+  id: '',
+  name: '',
+  legalName: '',
+  phone: '',
+  email: '',
+  website: '',
+  fieldOfActivity: '',
+  nationalId: '',
+  economicCode: '',
+  address: '',
+  description: '',
+  logo: '',
+  manager_name: '',
+  manager_phone: ''
+}
 
 const Company = () => {
+  const { companyId } = useParams()
   const [company, setCompany] = useState<CompanyProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string>('')
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const navigate = useNavigate()
+  const isEditMode = !!companyId
 
   useEffect(() => {
     const loadCompanyProfile = async () => {
+      setLoading(true)
       try {
-        const data = await getCompanyProfile()
-        setCompany(data)
-        if (data.logo) {
-          setLogoPreview(data.logo)
+        if (isEditMode) {
+          const data = await getCompanyById(companyId)
+          setCompany(data)
+          if (data?.logo) {
+            setLogoPreview(data.logo)
+          }
+        } else {
+          setCompany({ ...emptyCompany })
         }
       } catch (error) {
         console.error('Error loading company profile:', error)
@@ -29,7 +54,7 @@ const Company = () => {
     }
 
     loadCompanyProfile()
-  }, [])
+  }, [companyId, isEditMode])
 
   const handleLogoChange = (files: File[]) => {
     if (files.length > 0) {
@@ -55,37 +80,148 @@ const Company = () => {
     return true
   }
 
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {}
+
+    // Validate manager_name is required
+    if (!company?.manager_name || !company.manager_name.trim()) {
+      newErrors.manager_name = 'نام مدیر الزامی است'
+    }
+
+    // Validate manager_phone is required and format
+    if (!company?.manager_phone || !company.manager_phone.trim()) {
+      newErrors.manager_phone = 'شماره تماس مدیر الزامی است'
+    } else {
+      const phoneRegex = /^09\d{9}$/
+      if (!phoneRegex.test(company.manager_phone.trim())) {
+        newErrors.manager_phone = 'فرمت شماره تلفن باید 09XXXXXXXXX باشد'
+      }
+    }
+
+    // Validate email format if provided
+    if (company?.email && company.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(company.email.trim())) {
+        newErrors.email = 'فرمت ایمیل معتبر نیست'
+      }
+    }
+
+    // Validate website format if provided
+    if (company?.website && company.website.trim()) {
+      try {
+        const url = new URL(company.website)
+        if (url.protocol !== 'https:') {
+          newErrors.website = 'آدرس وب‌سایت باید با https شروع شود'
+        }
+      } catch {
+        newErrors.website = 'آدرس وب‌سایت معتبر نیست'
+      }
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleSave = async () => {
     if (!company) return
 
+    // Validate form
+    if (!validateForm()) {
+      toast.push(
+        <Notification type="danger" duration={3000}>
+          <div>
+            <p className="font-semibold">خطا در اعتبارسنجی</p>
+            <p className="text-sm">لطفاً فیلدهای قرمز را بررسی کنید</p>
+          </div>
+        </Notification>,
+        {
+          placement: 'top-center'
+        }
+      )
+      return
+    }
+
     setSaving(true)
     try {
-      // In a real implementation, you would upload the logo file first
-      // and get the URL, then update the company profile
-      const updatedCompany = {
-        ...company,
-        logo: logoPreview || company.logo
+      // Remove empty fields before sending
+      const companyData: any = {}
+
+      // Add ID for edit mode
+      if (isEditMode && company.id) {
+        companyData.id = company.id
       }
 
-      await updateCompanyProfile(updatedCompany)
-      setCompany(updatedCompany)
+      if (company.name?.trim()) companyData.name = company.name.trim()
+      if (company.legalName?.trim()) companyData.legalName = company.legalName.trim()
+      if (company.phone?.trim()) companyData.phone = company.phone.trim()
+      if (company.email?.trim()) companyData.email = company.email.trim()
+      if (company.address?.trim()) companyData.address = company.address.trim()
+      if (company.website?.trim()) companyData.website = company.website.trim()
+      if (company.description?.trim()) companyData.description = company.description.trim()
+      if (company.manager_name?.trim()) companyData.manager_name = company.manager_name.trim()
+      if (company.manager_phone?.trim()) companyData.manager_phone = company.manager_phone.trim()
+      if (logoPreview || company.logo) companyData.logo = logoPreview || company.logo
 
-      // Show success message (you could use a toast notification here)
-      alert('پروفایل شرکت با موفقیت ذخیره شد!')
-    } catch (error) {
+      if (isEditMode) {
+        await updateCompanyProfile(companyData)
+      } else {
+        await createCompany(companyData)
+      }
+
+      toast.push(
+        <Notification type="success" duration={3000}>
+          <div>
+            <p className="font-semibold">موفقیت‌آمیز</p>
+            <p className="text-sm">{isEditMode ? 'اطلاعات سازمان با موفقیت ویرایش شد' : 'سازمان جدید با موفقیت ایجاد شد'}</p>
+          </div>
+        </Notification>,
+        {
+          placement: 'top-center'
+        }
+      )
+
+      // Navigate back with reload flag to refresh the list
+      navigate('/owner/companies', { state: { reload: true } })
+    } catch (error: any) {
       console.error('Error saving company profile:', error)
-      alert('خطا در ذخیره پروفایل شرکت')
+      toast.push(
+        <Notification type="danger" duration={4000}>
+          <div>
+            <p className="font-semibold">خطا در ذخیره</p>
+            <p className="text-sm">{error?.message || 'خطا در ذخیره اطلاعات سازمان'}</p>
+          </div>
+        </Notification>,
+        {
+          placement: 'top-center'
+        }
+      )
     } finally {
       setSaving(false)
     }
   }
 
-  const handleInputChange = (field: keyof CompanyProfile, value: string) => {
+  const handleInputChange = (field: keyof CompanyProfile, value: string | number) => {
     if (company) {
+      let processedValue = value
+
+      // Auto-add https:// to website if user starts typing
+      if (field === 'website' && typeof value === 'string' && value.trim() && !value.startsWith('http')) {
+        processedValue = `https://${value}`
+      }
+
       setCompany({
         ...company,
-        [field]: value
+        [field]: processedValue
       })
+
+      // Clear error for this field when user types
+      if (errors[field]) {
+        setErrors(prev => {
+          const newErrors = { ...prev }
+          delete newErrors[field]
+          return newErrors
+        })
+      }
     }
   }
 
@@ -113,12 +249,12 @@ const Company = () => {
           <Button
             variant="plain"
             icon={<HiOutlineArrowLeft />}
-            onClick={() => navigate('/owner/dashboard')}
+            onClick={() => navigate('/owner/companies')}
           >
             بازگشت
           </Button>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            پروفایل شرکت
+            {isEditMode ? 'ویرایش سازمان' : 'افزودن سازمان جدید'}
           </h1>
         </div>
         <Button
@@ -127,7 +263,7 @@ const Company = () => {
           loading={saving}
           onClick={handleSave}
         >
-          ذخیره تغییرات
+          {isEditMode ? 'ذخیره تغییرات' : 'ایجاد سازمان'}
         </Button>
       </div>
 
@@ -136,7 +272,7 @@ const Company = () => {
         <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <HiOutlinePhotograph className="w-5 h-5" />
-            لوگو شرکت
+            لوگو سازمان
           </h3>
 
           <div className="space-y-4">
@@ -158,12 +294,12 @@ const Company = () => {
               className="w-full"
             >
               <Button variant="default" className="w-full">
-                انتخاب لوگو جدید
+                انتخاب لوگو
               </Button>
             </Upload>
 
             <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-              فرمت‌های مجاز: JPG, PNG, GIF (حداکثر 5MB)
+              فرمت‌های مجاز: JPG, PNG (حداکثر 5MB)
             </p>
           </div>
         </Card>
@@ -180,12 +316,12 @@ const Company = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  نام شرکت
+                  نام سازمان <span className="text-red-500">*</span>
                 </label>
                 <Input
                   value={company.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="نام شرکت را وارد کنید"
+                  placeholder="نام سازمان"
                 />
               </div>
 
@@ -196,7 +332,7 @@ const Company = () => {
                 <Input
                   value={company.legalName}
                   onChange={(e) => handleInputChange('legalName', e.target.value)}
-                  placeholder="نام حقوقی شرکت"
+                  placeholder="نام حقوقی سازمان"
                 />
               </div>
 
@@ -207,7 +343,7 @@ const Company = () => {
                 <Input
                   value={company.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="021-12345678"
+                  placeholder="021-..."
                 />
               </div>
 
@@ -219,105 +355,104 @@ const Company = () => {
                   type="email"
                   value={company.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="info@company.com"
+                  placeholder="name@example.com"
+                  invalid={!!errors.email}
                 />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+                )}
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   وب‌سایت
                 </label>
                 <Input
                   value={company.website || ''}
                   onChange={(e) => handleInputChange('website', e.target.value)}
-                  placeholder="https://www.company.com"
+                  placeholder="example.com"
+                  invalid={!!errors.website}
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  حوزه فعالیت
-                </label>
-                <Input
-                  value={company.fieldOfActivity}
-                  onChange={(e) => handleInputChange('fieldOfActivity', e.target.value)}
-                  placeholder="حوزه فعالیت شرکت"
-                />
+                {errors.website && (
+                  <p className="text-red-500 text-xs mt-1">{errors.website}</p>
+                )}
               </div>
             </div>
           </Card>
 
-          {/* Legal Information */}
+          {/* Manager Information */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <HiOutlineDocumentText className="w-5 h-5" />
-              اطلاعات حقوقی
+              <HiOutlineUser className="w-5 h-5" />
+              اطلاعات مدیر
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  شناسه ملی
+                  نام مدیر <span className="text-red-500">*</span>
                 </label>
                 <Input
-                  value={company.nationalId}
-                  onChange={(e) => handleInputChange('nationalId', e.target.value)}
-                  placeholder="شناسه ملی 10 رقمی"
+                  value={company.manager_name || ''}
+                  onChange={(e) => handleInputChange('manager_name', e.target.value)}
+                  placeholder="نام و نام خانوادگی مدیر"
+                  invalid={!!errors.manager_name}
+                />
+                {errors.manager_name && (
+                  <p className="text-red-500 text-xs mt-1">{errors.manager_name}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  شماره تماس مدیر <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  value={company.manager_phone || ''}
+                  onChange={(e) => handleInputChange('manager_phone', e.target.value)}
+                  placeholder="09XXXXXXXXX"
+                  invalid={!!errors.manager_phone}
+                />
+                {errors.manager_phone && (
+                  <p className="text-red-500 text-xs mt-1">{errors.manager_phone}</p>
+                )}
+              </div>
+            </div>
+          </Card>
+
+          {/* Address & Description */}
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <HiOutlineDocumentText className="w-5 h-5" />
+              توضیحات و آدرس
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  آدرس
+                </label>
+                <Input
+                  textArea
+                  rows={2}
+                  value={company.address}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange('address', e.target.value)}
+                  placeholder="آدرس کامل شرکت"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  کد اقتصادی
+                  توضیحات
                 </label>
                 <Input
-                  value={company.economicCode}
-                  onChange={(e) => handleInputChange('economicCode', e.target.value)}
-                  placeholder="کد اقتصادی 12 رقمی"
+                  textArea
+                  rows={3}
+                  value={company.description || ''}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange('description', e.target.value)}
+                  placeholder="توضیحات تکمیلی"
                 />
               </div>
-            </div>
-          </Card>
-
-          {/* Address */}
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <HiOutlineOfficeBuilding className="w-5 h-5" />
-              آدرس
-            </h3>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                آدرس کامل
-              </label>
-              <Input
-                textArea
-                rows={3}
-                value={company.address}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange('address', e.target.value)}
-                placeholder="آدرس کامل شرکت را وارد کنید"
-              />
-            </div>
-          </Card>
-
-          {/* Description */}
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <HiOutlineDocumentText className="w-5 h-5" />
-              توضیحات
-            </h3>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                درباره شرکت
-              </label>
-              <Input
-                textArea
-                rows={4}
-                value={company.description || ''}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange('description', e.target.value)}
-                placeholder="توضیحاتی درباره شرکت، مأموریت، ارزش‌ها و غیره"
-              />
             </div>
           </Card>
         </div>
@@ -327,7 +462,7 @@ const Company = () => {
       <div className="flex justify-end gap-3">
         <Button
           variant="plain"
-          onClick={() => navigate('/owner/dashboard')}
+          onClick={() => navigate('/owner/companies')}
         >
           انصراف
         </Button>
