@@ -1,6 +1,12 @@
 import {
   Manager,
   CompanyProfile,
+  CompanyWithManagers,
+  CreateManagerRequest,
+  CreateManagerResponse,
+  UpdateManagerRequest,
+  UpdateManagerResponse,
+  GetManagerResponse,
   Assessment,
   AssessmentTemplate,
   Payment,
@@ -12,6 +18,7 @@ import {
   DashboardStats,
   mockManagers,
   mockCompanyProfile,
+  mockCompanies,
   mockAssessments,
   mockAssessmentTemplates,
   mockPayments,
@@ -36,8 +43,13 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
 
 // Company Profile
 export const getCompanies = async (): Promise<CompanyProfile[]> => {
-  const response = await apiClient.get<{ data: CompanyProfile[] }>(API_ENDPOINTS.COMPANY.MY_COMPANIES)
-  return response.data
+  try {
+    const response = await apiClient.get<{ data: CompanyProfile[] }>(API_ENDPOINTS.COMPANY.MY_COMPANIES)
+    return response.data
+  } catch (error) {
+    console.warn('Failed to fetch companies from API, using mock data:', error)
+    return mockCompanies
+  }
 }
 
 export const getCompanyProfile = async (): Promise<CompanyProfile> => {
@@ -126,6 +138,46 @@ export const updateCompanyProfile = async (data: Partial<CompanyProfile>): Promi
 }
 
 // Managers
+export const getMyManagers = async (): Promise<CompanyWithManagers[]> => {
+  try {
+    const response = await apiClient.get<{ data: CompanyWithManagers[] }>(API_ENDPOINTS.MANAGER.MY_MANAGERS)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching my managers:', error)
+    throw error
+  }
+}
+
+export const createManager = async (data: CreateManagerRequest): Promise<CreateManagerResponse> => {
+  try {
+    const response = await apiClient.post<CreateManagerResponse>(API_ENDPOINTS.MANAGER.CREATE, data)
+    return response
+  } catch (error) {
+    console.error('Error creating manager:', error)
+    throw error
+  }
+}
+
+export const getManagerByIdFromAPI = async (id: number): Promise<GetManagerResponse['data']> => {
+  try {
+    const response = await apiClient.get<GetManagerResponse>(API_ENDPOINTS.MANAGER.GET_BY_ID(id))
+    return response.data
+  } catch (error) {
+    console.error('Error fetching manager:', error)
+    throw error
+  }
+}
+
+export const updateManager = async (id: number, data: UpdateManagerRequest): Promise<UpdateManagerResponse> => {
+  try {
+    const response = await apiClient.put<UpdateManagerResponse>(API_ENDPOINTS.MANAGER.UPDATE(id), data)
+    return response
+  } catch (error) {
+    console.error('Error updating manager:', error)
+    throw error
+  }
+}
+
 export const getManagers = async (): Promise<Manager[]> => {
   return new Promise((resolve) => {
     setTimeout(() => resolve(mockManagers), 300)
@@ -141,32 +193,7 @@ export const getManagerById = async (id: string): Promise<Manager | null> => {
   })
 }
 
-export const createManager = async (data: Omit<Manager, 'id' | 'createdAt'>): Promise<Manager> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newManager: Manager = {
-        ...data,
-        id: `manager-${Date.now()}`,
-        createdAt: new Date().toISOString()
-      }
-      resolve(newManager)
-    }, 500)
-  })
-}
 
-export const updateManager = async (id: string, data: Partial<Manager>): Promise<Manager> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const manager = mockManagers.find(m => m.id === id)
-      if (manager) {
-        const updated = { ...manager, ...data }
-        resolve(updated)
-      } else {
-        throw new Error('Manager not found')
-      }
-    }, 500)
-  })
-}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const deleteManager = async (_id: string): Promise<void> => {

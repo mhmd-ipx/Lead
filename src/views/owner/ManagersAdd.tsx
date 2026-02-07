@@ -1,114 +1,131 @@
-import { useEffect, useState } from 'react'
-import { Card, Button, Input, Select, Switcher, Upload, Avatar } from '@/components/ui'
-import { HiOutlineArrowLeft, HiOutlineSave, HiOutlineCamera } from 'react-icons/hi'
-import { getManagerById, createManager, updateManager } from '@/services/OwnerService'
+import { useState, useEffect } from 'react'
+import useSWR from 'swr'
+import { Card, Button, Input, Select, Skeleton } from '@/components/ui'
+import { HiOutlineArrowLeft, HiOutlineSave } from 'react-icons/hi'
+import { createManager, updateManager, getManagerByIdFromAPI, getMyManagers } from '@/services/OwnerService'
 import { useNavigate, useParams } from 'react-router-dom'
+import { CreateManagerRequest, UpdateManagerRequest } from '@/mock/data/ownerData'
+import { toast, Notification } from '@/components/ui'
 
 const ManagersAdd = () => {
   const { managerId } = useParams<{ managerId: string }>()
-  const [loading, setLoading] = useState(false)
+  const isEditMode = !!managerId
   const [saving, setSaving] = useState(false)
-  const [formData, setFormData] = useState({
+  const [loading, setLoading] = useState(isEditMode)
+  const [formData, setFormData] = useState<CreateManagerRequest | UpdateManagerRequest>({
+    company_id: 0,
     name: '',
-    email: '',
     phone: '',
     position: '',
-    department: '',
-    canViewResults: false,
-    avatar: ''
+    department: ''
   })
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const navigate = useNavigate()
-  const isEditMode = !!managerId
 
+  // Fetch companies using SWR
+  const { data: companiesWithManagers, isLoading: companiesLoading } = useSWR(
+    '/managers/my-managers',
+    getMyManagers,
+    {
+      revalidateOnFocus: false,
+    }
+  )
+
+  // Load manager data if in edit mode
   useEffect(() => {
     if (isEditMode && managerId) {
-      loadManagerData()
+      loadManagerData(parseInt(managerId))
     }
-  }, [managerId, isEditMode])
+  }, [isEditMode, managerId])
 
-  const loadManagerData = async () => {
-    if (!managerId) return
-
+  const loadManagerData = async (id: number) => {
     setLoading(true)
     try {
-      const manager = await getManagerById(managerId)
-      if (manager) {
-        setFormData({
-          name: manager.name,
-          email: manager.email,
-          phone: manager.phone,
-          position: manager.position,
-          department: manager.department,
-          canViewResults: manager.canViewResults,
-          avatar: manager.avatar || ''
-        })
-      }
-    } catch (error) {
+      const manager = await getManagerByIdFromAPI(id)
+      setFormData({
+        company_id: manager.company_id,
+        name: manager.user.name,
+        phone: manager.user.phone,
+        position: manager.position,
+        department: manager.department
+      })
+    } catch (error: any) {
       console.error('Error loading manager:', error)
+      toast.push(
+        <Notification type="danger" title="خطا">
+          {error?.response?.data?.message || 'خطا در بارگذاری اطلاعات متقاضی.'}
+        </Notification>,
+        { placement: 'top-center' }
+      )
+      navigate('/owner/managers')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  // Get active companies only
+  const activeCompanies = companiesWithManagers?.filter(c => c.status === 'active') || []
+
+  const handleInputChange = (field: keyof (CreateManagerRequest | UpdateManagerRequest), value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }))
   }
 
-  const handleImageUpload = (files: File[]) => {
-    if (files.length > 0) {
-      const file = files[0]
-      // In a real application, you would upload the file to a server
-      // For now, we'll create a data URL for preview
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const result = e.target?.result as string
-        setFormData(prev => ({
-          ...prev,
-          avatar: result
-        }))
-      }
-      reader.readAsDataURL(file)
-      setUploadedFiles([file])
-    }
-  }
-
-  const handleImageRemove = () => {
-    setFormData(prev => ({
-      ...prev,
-      avatar: ''
-    }))
-    setUploadedFiles([])
-  }
-
   const handleSubmit = async () => {
     // Basic validation
-    if (!formData.name || !formData.email || !formData.phone || !formData.position || !formData.department) {
-      alert('لطفاً تمام فیلدهای ضروری را پر کنید.')
+    if (!formData.company_id || !formData.name || !formData.phone || !formData.position || !formData.department) {
+      toast.push(
+        <Notification type="warning" title="خطا در اعتبارسنجی">
+          لطفاً تمام فیلدهای ضروری را پر کنید.
+        </Notification>,
+        { placement: 'top-center' }
+      )
+      return
+    }
+
+    // Phone validation
+    const phoneRegex = /^09\d{9}$/
+    if (!phoneRegex.test(formData.phone)) {
+      toast.push(
+        <Notification type="warning" title="خطا در اعتبارسنجی">
+          شماره تلفن باید با 09 شروع شود و 11 رقم باشد.
+        </Notification>,
+        { placement: 'top-center' }
+      )
       return
     }
 
     setSaving(true)
     try {
       if (isEditMode && managerId) {
-        await updateManager(managerId, formData)
-        alert('مدیر با موفقیت بروزرسانی شد.')
+        const response = await updateManager(parseInt(managerId), formData as UpdateManagerRequest)
+        toast.push(
+          <Notification type="success" title="موفقیت">
+            {response.message || 'اطلاعات متقاضی با موفقیت بروزرسانی شد.'}
+          </Notification>,
+          { placement: 'top-center' }
+        )
       } else {
-        await createManager({
-          ...formData,
-          status: 'active',
-          assessmentStatus: 'not_started',
-          examStatus: 'not_started'
-        })
-        alert('مدیر جدید با موفقیت اضافه شد.')
+        const response = await createManager(formData as CreateManagerRequest)
+        toast.push(
+          <Notification type="success" title="موفقیت">
+            {response.message || 'متقاضی با موفقیت اضافه شد.'}
+          </Notification>,
+          { placement: 'top-center' }
+        )
       }
-      navigate('/owner/managers')
-    } catch (error) {
+
+      // Navigate back and trigger revalidation
+      navigate('/owner/managers', { state: { reload: true } })
+    } catch (error: any) {
       console.error('Error saving manager:', error)
-      alert('خطا در ذخیره اطلاعات مدیر.')
+      toast.push(
+        <Notification type="danger" title="خطا">
+          {error?.response?.data?.message || 'خطا در ذخیره اطلاعات متقاضی.'}
+        </Notification>,
+        { placement: 'top-center' }
+      )
     } finally {
       setSaving(false)
     }
@@ -117,16 +134,80 @@ const ManagersAdd = () => {
   const departmentOptions = [
     { value: 'فروش', label: 'فروش' },
     { value: 'بازاریابی', label: 'بازاریابی' },
-    { value: 'HR', label: 'منابع انسانی' },
+    { value: 'منابع انسانی', label: 'منابع انسانی' },
     { value: 'مالی', label: 'مالی' },
     { value: 'عملیات', label: 'عملیات' },
-    { value: 'فنی', label: 'فنی' }
+    { value: 'فنی', label: 'فنی' },
+    { value: 'پشتیبانی', label: 'پشتیبانی' },
+    { value: 'تحقیق و توسعه', label: 'تحقیق و توسعه' }
   ]
 
-  if (loading) {
+  // Skeleton Loading State
+  if (loading || companiesLoading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex items-center gap-4">
+          <Skeleton width={180} height={40} />
+          <Skeleton width={200} height={32} />
+        </div>
+
+        {/* Form Skeleton */}
+        <Card className="p-6">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Company Field */}
+              <div className="md:col-span-2">
+                <Skeleton width={100} height={20} className="mb-2" />
+                <Skeleton width="100%" height={40} />
+                <Skeleton width={200} height={14} className="mt-1" />
+              </div>
+
+              {/* Name Field */}
+              <div>
+                <Skeleton width={150} height={20} className="mb-2" />
+                <Skeleton width="100%" height={40} />
+              </div>
+
+              {/* Phone Field */}
+              <div>
+                <Skeleton width={100} height={20} className="mb-2" />
+                <Skeleton width="100%" height={40} />
+                <Skeleton width={250} height={14} className="mt-1" />
+              </div>
+
+              {/* Position Field */}
+              <div>
+                <Skeleton width={120} height={20} className="mb-2" />
+                <Skeleton width="100%" height={40} />
+              </div>
+
+              {/* Department Field */}
+              <div>
+                <Skeleton width={80} height={20} className="mb-2" />
+                <Skeleton width="100%" height={40} />
+              </div>
+            </div>
+
+            {/* Info Box Skeleton (only in add mode) */}
+            {!isEditMode && (
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+                <Skeleton width={120} height={20} className="mb-2" />
+                <div className="space-y-2">
+                  <Skeleton width="90%" height={16} />
+                  <Skeleton width="85%" height={16} />
+                  <Skeleton width="80%" height={16} />
+                </div>
+              </div>
+            )}
+
+            {/* Actions Skeleton */}
+            <div className="flex justify-end gap-3 pt-6 border-t">
+              <Skeleton width={80} height={40} />
+              <Skeleton width={180} height={40} />
+            </div>
+          </div>
+        </Card>
       </div>
     )
   }
@@ -140,80 +221,43 @@ const ManagersAdd = () => {
           icon={<HiOutlineArrowLeft />}
           onClick={() => navigate('/owner/managers')}
         >
-          بازگشت به لیست مدیران
+          بازگشت به لیست متقاضیان
         </Button>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {isEditMode ? 'ویرایش مدیر' : 'افزودن مدیر جدید'}
+          {isEditMode ? 'ویرایش متقاضی' : 'افزودن متقاضی جدید'}
         </h1>
       </div>
 
       {/* Form */}
       <Card className="p-6">
         <div className="space-y-6">
-          {/* Profile Image Upload */}
-          <div className="flex flex-col items-center space-y-4">
-            <div className="relative">
-              <Avatar
-                size="lg"
-                src={formData.avatar || undefined}
-                className="border-4 border-white shadow-lg"
-              >
-                {!formData.avatar && (
-                  <span className="text-2xl font-semibold text-gray-400">
-                    {formData.name ? formData.name.charAt(0).toUpperCase() : '?'}
-                  </span>
-                )}
-              </Avatar>
-              <div className="absolute bottom-0 right-0">
-                <Upload
-                  accept="image/*"
-                  beforeUpload={(files) => {
-                    if (files && files.length > 0) {
-                      const file = files[0]
-                      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-                        alert('حجم فایل نباید بیشتر از 5 مگابایت باشد.')
-                        return false
-                      }
-                      if (!file.type.startsWith('image/')) {
-                        alert('فقط فایل‌های تصویری مجاز هستند.')
-                        return false
-                      }
-                    }
-                    return true
-                  }}
-                  onChange={handleImageUpload}
-                  showList={false}
-                  uploadLimit={1}
-                >
-                  <Button
-                    variant="solid"
-                    size="sm"
-                    icon={<HiOutlineCamera />}
-                    className="rounded-full w-8 h-8 p-0"
-                  >
-                  </Button>
-                </Upload>
-              </div>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                تصویر پروفایل
-              </p>
-              {formData.avatar && (
-                <Button
-                  variant="plain"
-                  size="sm"
-                  color="red"
-                  onClick={handleImageRemove}
-                  className="mt-2"
-                >
-                  حذف تصویر
-                </Button>
-              )}
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Company Selection */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                سازمان *
+              </label>
+              <Select
+                value={
+                  formData.company_id
+                    ? activeCompanies.find(c => c.id === formData.company_id)
+                      ? { value: formData.company_id, label: activeCompanies.find(c => c.id === formData.company_id)!.name }
+                      : null
+                    : null
+                }
+                onChange={(option: any) => handleInputChange('company_id', option?.value || 0)}
+                options={activeCompanies.map(company => ({
+                  value: company.id,
+                  label: company.name
+                }))}
+                placeholder="سازمان مربوطه را انتخاب کنید"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                فقط سازمان‌های فعال نمایش داده می‌شوند
+              </p>
+            </div>
+
+            {/* Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 نام و نام خانوادگی *
@@ -221,33 +265,11 @@ const ManagersAdd = () => {
               <Input
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="نام و نام خانوادگی مدیر را وارد کنید"
+                placeholder="نام و نام خانوادگی متقاضی را وارد کنید"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                پست سازمانی *
-              </label>
-              <Input
-                value={formData.position}
-                onChange={(e) => handleInputChange('position', e.target.value)}
-                placeholder="پست سازمانی مدیر را وارد کنید"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                ایمیل *
-              </label>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="ایمیل مدیر را وارد کنید"
-              />
-            </div>
-
+            {/* Phone */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 شماره تلفن *
@@ -255,42 +277,60 @@ const ManagersAdd = () => {
               <Input
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="شماره تلفن مدیر را وارد کنید"
+                placeholder="09123456789"
+                maxLength={11}
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                شماره تلفن باید با 09 شروع شود و 11 رقم باشد
+              </p>
+            </div>
+
+            {/* Position */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                پست سازمانی *
+              </label>
+              <Input
+                value={formData.position}
+                onChange={(e) => handleInputChange('position', e.target.value)}
+                placeholder="مثال: مدیر منابع انسانی"
               />
             </div>
 
+            {/* Department */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 بخش *
               </label>
               <Select
                 value={formData.department ? { value: formData.department, label: formData.department } : null}
-                onChange={(option) => handleInputChange('department', option?.value || '')}
+                onChange={(option: any) => handleInputChange('department', option?.value || '')}
                 options={departmentOptions}
                 placeholder="بخش مربوطه را انتخاب کنید"
               />
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                دسترسی مشاهده نتایج آزمون
-              </label>
-              <div className="flex items-center gap-3">
-                <Switcher
-                  checked={formData.canViewResults}
-                  onChange={(checked) => handleInputChange('canViewResults', checked)}
-                />
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {formData.canViewResults ? 'فعال' : 'غیرفعال'}
-                </span>
-              </div>
-            </div>
           </div>
 
+          {/* Info Box */}
+          {!isEditMode && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                📋 نکات مهم:
+              </h4>
+              <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
+                <li>پس از افزودن متقاضی، ارزیابی‌ها به صورت خودکار به او تخصیص داده می‌شوند</li>
+                <li>وضعیت اولیه متقاضی "فعال" خواهد بود</li>
+                <li>متقاضی می‌تواند با شماره تلفن وارد شده وارد سیستم شود</li>
+              </ul>
+            </div>
+          )}
+
+          {/* Actions */}
           <div className="flex justify-end gap-3 pt-6 border-t">
             <Button
               variant="plain"
               onClick={() => navigate('/owner/managers')}
+              disabled={saving}
             >
               انصراف
             </Button>
@@ -300,7 +340,7 @@ const ManagersAdd = () => {
               loading={saving}
               onClick={handleSubmit}
             >
-              {isEditMode ? 'بروزرسانی' : 'ذخیره'}
+              {isEditMode ? 'بروزرسانی اطلاعات' : 'ذخیره و افزودن متقاضی'}
             </Button>
           </div>
         </div>

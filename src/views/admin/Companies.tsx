@@ -8,6 +8,7 @@ import {
     HiOutlineEye,
     HiOutlineSearch,
     HiOutlineOfficeBuilding,
+    HiOutlineUserGroup,
 } from 'react-icons/hi'
 import { getCompanies, deleteCompany } from '@/services/AdminService'
 import { Company } from '@/mock/data/adminData'
@@ -136,6 +137,7 @@ const Companies = () => {
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center gap-2">
+                    <Skeleton variant="circle" width={32} height={32} />
                     <Skeleton variant="circle" width={32} height={32} />
                     <Skeleton variant="circle" width={32} height={32} />
                     <Skeleton variant="circle" width={32} height={32} />
@@ -272,6 +274,14 @@ const Companies = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
+                                                    <Tooltip title="متقاضیان">
+                                                        <Button
+                                                            variant="plain"
+                                                            size="sm"
+                                                            icon={<HiOutlineUserGroup />}
+                                                            onClick={() => navigate(`/admin/companies/${company.id}/managers`)}
+                                                        />
+                                                    </Tooltip>
                                                     <Tooltip title="مشاهده جزئیات">
                                                         <Button
                                                             variant="plain"

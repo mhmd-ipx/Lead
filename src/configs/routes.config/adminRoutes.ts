@@ -28,6 +28,30 @@ const adminRoutes: Routes = [
         authority: [ADMIN],
     },
     {
+        key: 'adminCompanyManagers',
+        path: '/admin/companies/:companyId/managers',
+        component: lazy(() => import('@/views/admin/CompanyManagers')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminCompanyManagerAdd',
+        path: '/admin/companies/:companyId/managers/add',
+        component: lazy(() => import('@/views/admin/CompanyManagerAdd')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminCompanyManagerEdit',
+        path: '/admin/companies/:companyId/managers/:managerId/edit',
+        component: lazy(() => import('@/views/admin/CompanyManagerAdd')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminCompanyManagerDetails',
+        path: '/admin/companies/:companyId/managers/:managerId',
+        component: lazy(() => import('@/views/admin/CompanyManagerDetails')),
+        authority: [ADMIN],
+    },
+    {
         key: 'adminOwners',
         path: '/admin/owners',
         component: lazy(() => import('@/views/admin/Owners')),

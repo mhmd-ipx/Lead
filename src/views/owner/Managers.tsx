@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Card, Button, Avatar, Tag, Tooltip, Input } from '@/components/ui'
+import useSWR from 'swr'
+import { Card, Button, Avatar, Tag, Tooltip, Input, Select, Skeleton } from '@/components/ui'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import {
   HiOutlinePlus,
@@ -12,10 +12,11 @@ import {
   HiOutlineUserGroup,
   HiOutlineCheckCircle,
 } from 'react-icons/hi'
-import { getManagers, deleteManager, getAssessments, getExamResultsByManager } from '@/services/OwnerService'
-import { Manager, Assessment, ExamResult } from '@/mock/data/ownerData'
-import { useNavigate } from 'react-router-dom'
+import { getMyManagers } from '@/services/OwnerService'
+import { CompanyWithManagers, Manager } from '@/mock/data/ownerData'
+import { useNavigate, useLocation } from 'react-router-dom'
 import classNames from '@/utils/classNames'
+import { useEffect, useState } from 'react'
 
 type FilterCategory = 'all' | 'active' | 'assessmentDone' | 'examDone'
 
@@ -27,10 +28,11 @@ type StatisticCardProps = {
   label: FilterCategory
   active: boolean
   onClick: (label: FilterCategory) => void
+  loading?: boolean
 }
 
 const StatisticCard = (props: StatisticCardProps) => {
-  const { title, value, label, icon, iconClass, active, onClick } = props
+  const { title, value, label, icon, iconClass, active, onClick, loading } = props
 
   return (
     <button
@@ -39,13 +41,18 @@ const StatisticCard = (props: StatisticCardProps) => {
         active && 'bg-white dark:bg-gray-900 shadow-md',
       )}
       onClick={() => onClick(label)}
+      disabled={loading}
     >
       <div className="flex justify-between items-center">
         <div>
           <div className="mb-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
             {title}
           </div>
-          <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{value}</h3>
+          {loading ? (
+            <Skeleton width={60} height={36} />
+          ) : (
+            <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{value}</h3>
+          )}
         </div>
         <div
           className={classNames(
@@ -60,44 +67,84 @@ const StatisticCard = (props: StatisticCardProps) => {
   )
 }
 
+// Skeleton for table rows
+const TableRowSkeleton = () => (
+  <tr>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <div className="flex items-center gap-3">
+        <Skeleton variant="circle" width={32} height={32} />
+        <div className="space-y-2">
+          <Skeleton width={120} height={16} />
+          <Skeleton width={80} height={14} />
+        </div>
+      </div>
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <Skeleton width={100} height={16} />
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <div className="space-y-2">
+        <Skeleton width={150} height={14} />
+        <Skeleton width={100} height={14} />
+      </div>
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <Skeleton width={60} height={24} />
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <Skeleton width={80} height={24} />
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <Skeleton width={80} height={24} />
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <div className="flex items-center gap-2">
+        <Skeleton variant="circle" width={32} height={32} />
+        <Skeleton variant="circle" width={32} height={32} />
+        <Skeleton variant="circle" width={32} height={32} />
+        <Skeleton variant="circle" width={32} height={32} />
+        <Skeleton variant="circle" width={32} height={32} />
+      </div>
+    </td>
+  </tr>
+)
+
 const Managers = () => {
-  const [managers, setManagers] = useState<Manager[]>([])
-  const [assessments, setAssessments] = useState<Assessment[]>([])
-  const [examResults, setExamResults] = useState<ExamResult[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCompanyId, setSelectedCompanyId] = useState<number | ''>('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedManager, setSelectedManager] = useState<Manager | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all')
   const navigate = useNavigate()
+  const location = useLocation()
 
-  useEffect(() => {
-    loadManagers()
-  }, [])
-
-  const loadManagers = async () => {
-    try {
-      const [managersData, assessmentsData, examResultsData] = await Promise.all([
-        getManagers(),
-        getAssessments(),
-        getExamResultsByManager('')
-      ])
-      setManagers(managersData)
-      setAssessments(assessmentsData)
-      setExamResults(examResultsData)
-    } catch (error) {
-      console.error('Error loading data:', error)
-    } finally {
-      setLoading(false)
+  // Use SWR for data fetching with caching
+  const { data: companiesWithManagers, error, isLoading, mutate } = useSWR(
+    '/managers/my-managers',
+    getMyManagers,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 60000, // 1 minute
     }
-  }
+  )
+
+  // Revalidate data when returning from add/edit page
+  useEffect(() => {
+    if (location.state?.reload) {
+      mutate()
+      // Clear the state
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state, mutate])
 
   const handleDeleteManager = async () => {
     if (!selectedManager) return
 
     try {
-      await deleteManager(selectedManager.id)
-      setManagers(managers.filter(m => m.id !== selectedManager.id))
+      // await deleteManager(selectedManager.id)
+      // Revalidate data after delete
+      await mutate()
       setDeleteDialogOpen(false)
       setSelectedManager(null)
     } catch (error) {
@@ -116,54 +163,86 @@ const Managers = () => {
     }
   }
 
-  const getAssessmentStatus = (managerId: string) => {
-    const managerAssessments = assessments.filter(a => a.managerId === managerId)
-    if (managerAssessments.length === 0) {
-      return <Tag className="text-gray-600 bg-gray-100 dark:text-gray-100 dark:bg-gray-500/20 border-0">انجام نشده</Tag>
+  const getAssessmentStatusTag = (status: Manager['assessment_status']) => {
+    switch (status) {
+      case 'completed':
+        return <Tag className="text-green-600 bg-green-100 dark:text-green-100 dark:bg-green-500/20 border-0">تکمیل شده</Tag>
+      case 'incomplete':
+        return <Tag className="text-amber-600 bg-amber-100 dark:text-amber-100 dark:bg-amber-500/20 border-0">در حال انجام</Tag>
+      case 'not_started':
+        return <Tag className="text-gray-600 bg-gray-100 dark:text-gray-100 dark:bg-gray-500/20 border-0">انجام نشده</Tag>
+      default:
+        return <Tag className="text-gray-600 bg-gray-100 dark:text-gray-100 dark:bg-gray-500/20 border-0">نامشخص</Tag>
     }
-    const submitted = managerAssessments.filter(a => a.status === 'submitted').length
-    if (submitted > 0) {
-      return <Tag className="text-green-600 bg-green-100 dark:text-green-100 dark:bg-green-500/20 border-0">تکمیل شده ({submitted})</Tag>
-    }
-    return <Tag className="text-amber-600 bg-amber-100 dark:text-amber-100 dark:bg-amber-500/20 border-0">در حال انجام</Tag>
   }
 
-  const getExamCount = (managerId: string) => {
-    return examResults.filter(r => r.managerId === managerId).length
+  const getExamStatusTag = (status: Manager['exam_status']) => {
+    switch (status) {
+      case 'completed':
+        return <Tag className="text-green-600 bg-green-100 dark:text-green-100 dark:bg-green-500/20 border-0">تکمیل شده</Tag>
+      case 'in_progress':
+        return <Tag className="text-amber-600 bg-amber-100 dark:text-amber-100 dark:bg-amber-500/20 border-0">در حال انجام</Tag>
+      case 'not_started':
+        return <Tag className="text-gray-600 bg-gray-100 dark:text-gray-100 dark:bg-gray-500/20 border-0">شروع نشده</Tag>
+      default:
+        return <Tag className="text-gray-600 bg-gray-100 dark:text-gray-100 dark:bg-gray-500/20 border-0">نامشخص</Tag>
+    }
   }
+
+  // Flatten all managers from all companies
+  const allManagers = companiesWithManagers?.flatMap(company =>
+    company.managers.map(manager => ({
+      ...manager,
+      companyName: company.name,
+      companyStatus: company.status
+    }))
+  ) || []
 
   // Filter managers based on selected category
-  const filteredByCategory = managers.filter(manager => {
+  const filteredByCategory = allManagers.filter(manager => {
     switch (selectedCategory) {
       case 'active':
         return manager.status === 'active'
       case 'assessmentDone':
-        return manager.assessmentStatus === 'completed'
+        return manager.assessment_status === 'completed'
       case 'examDone':
-        return manager.examStatus === 'completed'
+        return manager.exam_status === 'completed'
       case 'all':
       default:
         return true
     }
   })
 
+  // Filter by company
+  const filteredByCompany = selectedCompanyId
+    ? filteredByCategory.filter(manager => manager.company_id === selectedCompanyId)
+    : filteredByCategory
+
   // Then filter by search query
-  const filteredManagers = filteredByCategory.filter(manager =>
-    manager.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    manager.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    manager.position.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredManagers = filteredByCompany.filter(manager =>
+    manager.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    manager.user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    manager.user.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    manager.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    manager.department.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // Calculate statistics
-  const totalManagers = managers.length
-  const activeManagers = managers.filter(m => m.status === 'active').length
-  const assessmentDone = managers.filter(m => m.assessmentStatus === 'completed').length
-  const examDone = managers.filter(m => m.examStatus === 'completed').length
+  // Get active companies only
+  const activeCompanies = companiesWithManagers?.filter(c => c.status === 'active') || []
 
-  if (loading) {
+  // Calculate statistics
+  const totalManagers = allManagers.length
+  const activeManagers = allManagers.filter(m => m.status === 'active').length
+  const assessmentDone = allManagers.filter(m => m.assessment_status === 'completed').length
+  const examDone = allManagers.filter(m => m.exam_status === 'completed').length
+
+  if (error) {
     return (
       <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+        <div className="text-center">
+          <p className="text-red-600 dark:text-red-400 mb-4">خطا در بارگذاری داده‌ها</p>
+          <Button onClick={() => mutate()}>تلاش مجدد</Button>
+        </div>
       </div>
     )
   }
@@ -181,17 +260,37 @@ const Managers = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Select
+            className="min-w-[200px]"
+            placeholder="همه سازمان‌ها"
+            value={
+              selectedCompanyId
+                ? activeCompanies.find(c => c.id === selectedCompanyId)
+                  ? { value: selectedCompanyId, label: activeCompanies.find(c => c.id === selectedCompanyId)!.name }
+                  : null
+                : null
+            }
+            onChange={(option: any) => setSelectedCompanyId(option?.value || '')}
+            options={activeCompanies.map(company => ({
+              value: company.id,
+              label: company.name
+            }))}
+            isClearable
+            isDisabled={isLoading}
+          />
           <Input
             className="w-64"
             placeholder="جستجو..."
             prefix={<HiOutlineSearch />}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            disabled={isLoading}
           />
           <Button
             variant="solid"
             icon={<HiOutlinePlus />}
             onClick={() => navigate('/owner/managers/add')}
+            disabled={isLoading}
           >
             افزودن متقاضی
           </Button>
@@ -208,6 +307,7 @@ const Managers = () => {
           label="all"
           active={selectedCategory === 'all'}
           onClick={setSelectedCategory}
+          loading={isLoading}
         />
         <StatisticCard
           title="فعال"
@@ -217,6 +317,7 @@ const Managers = () => {
           label="active"
           active={selectedCategory === 'active'}
           onClick={setSelectedCategory}
+          loading={isLoading}
         />
         <StatisticCard
           title="نیازسنجی شده"
@@ -226,6 +327,7 @@ const Managers = () => {
           label="assessmentDone"
           active={selectedCategory === 'assessmentDone'}
           onClick={setSelectedCategory}
+          loading={isLoading}
         />
         <StatisticCard
           title="آزمون داده‌اند"
@@ -235,6 +337,7 @@ const Managers = () => {
           label="examDone"
           active={selectedCategory === 'examDone'}
           onClick={setSelectedCategory}
+          loading={isLoading}
         />
       </div>
 
@@ -243,7 +346,7 @@ const Managers = () => {
         <div className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             لیست متقاضیان
-            {selectedCategory !== 'all' && (
+            {!isLoading && selectedCategory !== 'all' && (
               <span className="text-sm font-normal text-gray-500 dark:text-gray-400 mr-2">
                 ({filteredManagers.length} مورد)
               </span>
@@ -255,6 +358,9 @@ const Managers = () => {
                 <tr>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     متقاضی
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    سازمان
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     اطلاعات تماس
@@ -274,106 +380,120 @@ const Managers = () => {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredManagers.map((manager) => (
-                  <tr key={manager.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <Avatar size="sm" src="" />
-                        <div>
-                          <div className="font-medium text-gray-900 dark:text-white">
-                            {manager.name}
+                {isLoading ? (
+                  // Show skeleton rows based on companies count
+                  <>
+                    {[...Array(5)].map((_, index) => (
+                      <TableRowSkeleton key={index} />
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {filteredManagers.map((manager) => (
+                      <tr key={manager.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <Avatar size="sm" src={manager.user.avatar || ''} />
+                            <div>
+                              <div className="font-medium text-gray-900 dark:text-white">
+                                {manager.user.name}
+                              </div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                {manager.position}
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {manager.position}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 dark:text-white">
+                            {manager.companyName}
                           </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm text-gray-900 dark:text-white">
-                          {manager.email}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {manager.phone}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusTag(manager.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getAssessmentStatus(manager.id)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Tag className="text-indigo-600 bg-indigo-100 dark:text-indigo-100 dark:bg-indigo-500/20 border-0">
-                        {getExamCount(manager.id)} آزمون
-                      </Tag>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <Tooltip title="مشاهده جزئیات">
-                          <Button
-                            variant="plain"
-                            size="sm"
-                            icon={<HiOutlineEye />}
-                            onClick={() => navigate(`/owner/managers/${manager.id}`)}
-                          />
-                        </Tooltip>
-                        <Tooltip title="نیازسنجی">
-                          <Button
-                            variant="plain"
-                            size="sm"
-                            icon={<HiOutlineClipboardCheck />}
-                            onClick={() => navigate(`/owner/managers/${manager.id}/assessment`)}
-                            className="text-blue-600 hover:text-blue-700"
-                          />
-                        </Tooltip>
-                        <Tooltip title="آزمون‌ها">
-                          <Button
-                            variant="plain"
-                            size="sm"
-                            icon={<HiOutlineAcademicCap />}
-                            onClick={() => navigate(`/owner/managers/${manager.id}/exams`)}
-                            className="text-indigo-600 hover:text-indigo-700"
-                          />
-                        </Tooltip>
-                        <Tooltip title="ویرایش">
-                          <Button
-                            variant="plain"
-                            size="sm"
-                            icon={<HiOutlinePencil />}
-                            onClick={() => navigate(`/owner/managers/${manager.id}/edit`)}
-                          />
-                        </Tooltip>
-                        <Tooltip title="حذف">
-                          <Button
-                            variant="plain"
-                            size="sm"
-                            icon={<HiOutlineTrash />}
-                            onClick={() => {
-                              setSelectedManager(manager)
-                              setDeleteDialogOpen(true)
-                            }}
-                            className="text-red-600 hover:text-red-700"
-                          />
-                        </Tooltip>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredManagers.length === 0 && (
-                  <tr>
-                    <td colSpan={6}>
-                      <div className="text-center py-12">
-                        <p className="text-gray-500 dark:text-gray-400">
-                          {searchQuery || selectedCategory !== 'all'
-                            ? 'متقاضی با این فیلتر یافت نشد'
-                            : 'هنوز متقاضی‌ای ثبت نشده است'}
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm text-gray-900 dark:text-white">
+                              {manager.user.email || '-'}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {manager.user.phone}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {getStatusTag(manager.status)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {getAssessmentStatusTag(manager.assessment_status)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {getExamStatusTag(manager.exam_status)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Tooltip title="مشاهده جزئیات">
+                              <Button
+                                variant="plain"
+                                size="sm"
+                                icon={<HiOutlineEye />}
+                                onClick={() => navigate(`/owner/managers/${manager.id}`)}
+                              />
+                            </Tooltip>
+                            <Tooltip title="نیازسنجی">
+                              <Button
+                                variant="plain"
+                                size="sm"
+                                icon={<HiOutlineClipboardCheck />}
+                                onClick={() => navigate(`/owner/managers/${manager.id}/assessment`)}
+                                className="text-blue-600 hover:text-blue-700"
+                              />
+                            </Tooltip>
+                            <Tooltip title="آزمون‌ها">
+                              <Button
+                                variant="plain"
+                                size="sm"
+                                icon={<HiOutlineAcademicCap />}
+                                onClick={() => navigate(`/owner/managers/${manager.id}/exams`)}
+                                className="text-indigo-600 hover:text-indigo-700"
+                              />
+                            </Tooltip>
+                            <Tooltip title="ویرایش">
+                              <Button
+                                variant="plain"
+                                size="sm"
+                                icon={<HiOutlinePencil />}
+                                onClick={() => navigate(`/owner/managers/${manager.id}/edit`)}
+                              />
+                            </Tooltip>
+                            <Tooltip title="حذف">
+                              <Button
+                                variant="plain"
+                                size="sm"
+                                icon={<HiOutlineTrash />}
+                                onClick={() => {
+                                  setSelectedManager(manager)
+                                  setDeleteDialogOpen(true)
+                                }}
+                                className="text-red-600 hover:text-red-700"
+                              />
+                            </Tooltip>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {!isLoading && filteredManagers.length === 0 && (
+                      <tr>
+                        <td colSpan={7}>
+                          <div className="text-center py-12">
+                            <p className="text-gray-500 dark:text-gray-400">
+                              {searchQuery || selectedCategory !== 'all' || selectedCompanyId
+                                ? 'متقاضی با این فیلتر یافت نشد'
+                                : 'هنوز متقاضی‌ای ثبت نشده است'}
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 )}
               </tbody>
             </table>
@@ -402,7 +522,7 @@ const Managers = () => {
         }}
         onConfirm={handleDeleteManager}
       >
-        <p>آیا مطمئن هستید که می‌خواهید متقاضی "{selectedManager?.name}" را حذف کنید؟</p>
+        <p>آیا مطمئن هستید که می‌خواهید متقاضی "{selectedManager?.user.name}" را حذف کنید؟</p>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
           این عملیات قابل برگشت نیست و تمام نیازسنجی‌ها و نتایج آزمون‌های مرتبط نیز حذف خواهند شد.
         </p>

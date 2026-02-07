@@ -1,5 +1,7 @@
 import apiClient from '@/services/ApiClient'
 import { Company, mockCompanies } from '@/mock/data/adminData'
+import { Manager } from '@/mock/data/ownerData'
+import API_ENDPOINTS from '@/constants/api.endpoints'
 
 // Simulate API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -157,6 +159,26 @@ export async function deleteCompany(id: string): Promise<void> {
         console.log('🗑️ Company deleted:', id)
     } catch (error) {
         console.error('Error deleting company:', error)
+        throw error
+    }
+}
+
+// Manager services
+export async function getManagersByCompany(companyId: number): Promise<Manager[]> {
+    try {
+        const response = await apiClient.get<{ data: Manager[] }>(API_ENDPOINTS.MANAGER.GET_BY_COMPANY(companyId))
+        return response.data
+    } catch (error) {
+        console.error('Error fetching managers by company:', error)
+        throw error
+    }
+}
+
+export async function deleteManager(id: number): Promise<void> {
+    try {
+        await apiClient.delete(API_ENDPOINTS.MANAGER.DELETE(id))
+    } catch (error) {
+        console.error('Error deleting manager:', error)
         throw error
     }
 }

@@ -1,19 +1,89 @@
 // Mock data for Owner modules
 
-export interface Manager {
-  id: string
-  name: string
-  email: string
+export interface User {
+  id: number
   phone: string
+  avatar: string | null
+  role: string
+  status: string
+  last_login: string | null
+  name: string
+  email: string | null
+  email_verified_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Manager {
+  id: number
+  user_id: number
+  company_id: number
   position: string
   department: string
   status: 'active' | 'inactive'
-  assessmentStatus: 'completed' | 'incomplete' | 'not_started'
-  examStatus: 'completed' | 'in_progress' | 'not_started'
-  canViewResults: boolean
-  avatar?: string
-  createdAt: string
-  lastLogin?: string
+  assessment_status: 'not_started' | 'incomplete' | 'completed'
+  exam_status: 'not_started' | 'in_progress' | 'completed'
+  can_view_results: number
+  created_at: string
+  updated_at: string
+  user: User
+}
+
+export interface CompanyWithManagers {
+  id: number
+  name: string
+  legal_name: string | null
+  phone: string | null
+  email: string | null
+  address: string | null
+  national_id: string | null
+  economic_code: string | null
+  field_of_activity: string | null
+  logo: string | null
+  website: string | null
+  description: string | null
+  owner_id: number
+  status: 'active' | 'inactive'
+  created_at: string
+  updated_at: string
+  managers: Manager[]
+}
+
+export interface CreateManagerRequest {
+  company_id: number
+  name: string
+  phone: string
+  position: string
+  department: string
+  status?: 'active' | 'inactive'
+}
+
+export interface CreateManagerResponse {
+  success: boolean
+  message: string
+  data: Manager & {
+    company: CompanyWithManagers
+  }
+}
+
+export interface UpdateManagerRequest {
+  company_id: number
+  name: string
+  phone: string
+  position: string
+  department: string
+  status?: 'active' | 'inactive'
+}
+
+export interface UpdateManagerResponse {
+  success: boolean
+  message: string
+  data: Manager
+}
+
+export interface GetManagerResponse {
+  success: boolean
+  data: Manager
 }
 
 export interface CompanyProfile {
@@ -198,6 +268,7 @@ export const mockManagers: Manager[] = [
     phone: '+989123456789',
     position: 'مدیر فروش',
     department: 'فروش',
+    companyId: '1',
     status: 'active',
     assessmentStatus: 'completed',
     examStatus: 'completed',
@@ -212,6 +283,7 @@ export const mockManagers: Manager[] = [
     phone: '+989123456788',
     position: 'مدیر منابع انسانی',
     department: 'HR',
+    companyId: '2',
     status: 'active',
     assessmentStatus: 'incomplete',
     examStatus: 'in_progress',
@@ -226,6 +298,7 @@ export const mockManagers: Manager[] = [
     phone: '+989123456787',
     position: 'مدیر مالی',
     department: 'مالی',
+    companyId: '1',
     status: 'inactive',
     assessmentStatus: 'not_started',
     examStatus: 'not_started',
@@ -239,6 +312,7 @@ export const mockManagers: Manager[] = [
     phone: '+989123456786',
     position: 'مدیر بازاریابی',
     department: 'بازاریابی',
+    companyId: '2',
     status: 'active',
     assessmentStatus: 'completed',
     examStatus: 'completed',
@@ -260,8 +334,50 @@ export const mockCompanyProfile: CompanyProfile = {
   fieldOfActivity: 'فناوری اطلاعات',
   logo: '/img/logo/logo-light-full.png',
   website: 'https://samplecompany.com',
-  description: 'شرکت پیشرو در حوزه فناوری اطلاعات و ارائه خدمات نرم‌افزاری'
+  description: 'شرکت پیشرو در حوزه فناوری اطلاعات و ارائه خدمات نرم‌افزاری',
+  status: 'active'
 }
+
+// Mock companies list for filtering
+export const mockCompanies: CompanyProfile[] = [
+  {
+    id: '1',
+    name: 'شرکت فناوری پیشرو',
+    legalName: 'شرکت فناوری پیشرو سهامی خاص',
+    address: 'تهران، خیابان ولیعصر، پلاک 123',
+    phone: '+98211234567',
+    email: 'info@techcompany.com',
+    nationalId: '1234567890',
+    economicCode: '1234567890123',
+    fieldOfActivity: 'فناوری اطلاعات',
+    status: 'active'
+  },
+  {
+    id: '2',
+    name: 'شرکت بازرگانی آریا',
+    legalName: 'شرکت بازرگانی آریا سهامی خاص',
+    address: 'تهران، خیابان آزادی، پلاک 456',
+    phone: '+98211234568',
+    email: 'info@ariatrading.com',
+    nationalId: '0987654321',
+    economicCode: '3210987654321',
+    fieldOfActivity: 'بازرگانی',
+    status: 'active'
+  },
+  {
+    id: '3',
+    name: 'شرکت صنعتی سپهر',
+    legalName: 'شرکت صنعتی سپهر سهامی عام',
+    address: 'کرج، شهرک صنعتی، فاز 2',
+    phone: '+98261234567',
+    email: 'info@sepahrindustry.com',
+    nationalId: '1122334455',
+    economicCode: '5544332211001',
+    fieldOfActivity: 'صنعت',
+    status: 'inactive'
+  }
+]
+
 
 // Assessment Templates
 export const mockAssessmentTemplates: AssessmentTemplate[] = [

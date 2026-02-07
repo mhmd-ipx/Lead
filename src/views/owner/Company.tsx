@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Card, Button, Input, Upload, Avatar, toast, Notification } from '@/components/ui'
+import { Card, Button, Input, Upload, Avatar, toast, Notification, Skeleton } from '@/components/ui'
 import { HiOutlineOfficeBuilding, HiOutlineDocumentText, HiOutlinePhotograph, HiOutlineSave, HiOutlineArrowLeft, HiOutlineUser } from 'react-icons/hi'
 import { getCompanyById, updateCompanyProfile, createCompany } from '@/services/OwnerService'
 import { CompanyProfile } from '@/mock/data/ownerData'
@@ -227,8 +227,95 @@ const Company = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <Skeleton width={100} height={40} />
+            <Skeleton width={180} height={32} />
+          </div>
+          <Skeleton width={140} height={40} />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Logo Section Skeleton */}
+          <Card className="p-6">
+            <Skeleton width={120} height={24} className="mb-4" />
+            <div className="space-y-4">
+              <div className="flex justify-center">
+                <Skeleton variant="circle" width={120} height={120} />
+              </div>
+              <Skeleton width="100%" height={40} />
+              <Skeleton width="100%" height={14} />
+            </div>
+          </Card>
+
+          {/* Company Information Skeleton */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Basic Information */}
+            <Card className="p-6">
+              <Skeleton width={120} height={24} className="mb-4" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Skeleton width={100} height={20} className="mb-2" />
+                  <Skeleton width="100%" height={40} />
+                </div>
+                <div>
+                  <Skeleton width={80} height={20} className="mb-2" />
+                  <Skeleton width="100%" height={40} />
+                </div>
+                <div>
+                  <Skeleton width={90} height={20} className="mb-2" />
+                  <Skeleton width="100%" height={40} />
+                </div>
+                <div>
+                  <Skeleton width={60} height={20} className="mb-2" />
+                  <Skeleton width="100%" height={40} />
+                </div>
+                <div className="md:col-span-2">
+                  <Skeleton width={70} height={20} className="mb-2" />
+                  <Skeleton width="100%" height={40} />
+                </div>
+              </div>
+            </Card>
+
+            {/* Manager Information */}
+            <Card className="p-6">
+              <Skeleton width={100} height={24} className="mb-4" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Skeleton width={80} height={20} className="mb-2" />
+                  <Skeleton width="100%" height={40} />
+                </div>
+                <div>
+                  <Skeleton width={120} height={20} className="mb-2" />
+                  <Skeleton width="100%" height={40} />
+                </div>
+              </div>
+            </Card>
+
+            {/* Address & Description */}
+            <Card className="p-6">
+              <Skeleton width={130} height={24} className="mb-4" />
+              <div className="space-y-4">
+                <div>
+                  <Skeleton width={50} height={20} className="mb-2" />
+                  <Skeleton width="100%" height={60} />
+                </div>
+                <div>
+                  <Skeleton width={70} height={20} className="mb-2" />
+                  <Skeleton width="100%" height={80} />
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Action Buttons Skeleton */}
+        <div className="flex justify-end gap-3">
+          <Skeleton width={80} height={40} />
+          <Skeleton width={120} height={40} />
+        </div>
       </div>
     )
   }
