@@ -208,7 +208,7 @@ const adminRoutes: Routes = [
         authority: [ADMIN],
     },
     {
-        key: 'adminSettings',
+        key: 'adminSystemSettings',
         path: '/admin/settings',
         component: lazy(() => import('@/views/admin/Settings')),
         authority: [ADMIN],
