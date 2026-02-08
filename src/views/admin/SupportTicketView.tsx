@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Card, Button, Input, Tag, Skeleton, Notification, toast, Upload } from '@/components/ui'
+import { Card, Button, Input, Tag, Skeleton, Notification, toast, Upload, Select } from '@/components/ui'
 import {
     HiOutlineArrowLeft,
     HiOutlineReply,
@@ -10,7 +10,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom'
 import classNames from '@/utils/classNames'
 import useSWR from 'swr'
-import { apiGetTicketDetail, apiReplyTicket } from '@/services/SupportService'
+import { apiGetTicketDetail, apiReplyTicket, apiUpdateTicket } from '@/services/SupportService'
 import { TicketPriority, TicketStatus } from '@/@types/support'
 import { FcImageFile } from 'react-icons/fc'
 
@@ -19,6 +19,8 @@ const SupportTicketView = () => {
     const navigate = useNavigate()
     const [replyMessage, setReplyMessage] = useState('')
     const [isSending, setIsSending] = useState(false)
+    const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+    const [isUpdatingPriority, setIsUpdatingPriority] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     const { data: response, isLoading, mutate } = useSWR(
@@ -41,31 +43,66 @@ const SupportTicketView = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
 
-    const getPriorityTag = (priority: TicketPriority) => {
-        switch (priority) {
-            case 'high':
-                return <Tag className="bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-100 border-0">فوری</Tag>
-            case 'medium':
-                return <Tag className="bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-100 border-0">متوسط</Tag>
-            case 'low':
-                return <Tag className="bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-100 border-0">کم</Tag>
-            default:
-                return <Tag>{priority}</Tag>
+    const statusOptions = [
+        { label: 'باز', value: 'open' },
+        { label: 'در حال بررسی', value: 'in_progress' },
+        { label: 'در انتظار پاسخ کاربر', value: 'waiting_for_user' },
+        { label: 'بسته شده', value: 'closed' },
+    ]
+
+    const priorityOptions = [
+        { label: 'فوری', value: 'high' },
+        { label: 'متوسط', value: 'medium' },
+        { label: 'کم', value: 'low' },
+    ]
+
+    const handleUpdateStatus = async (newStatus: string) => {
+        if (!ticketId || !newStatus) return
+        setIsUpdatingStatus(true)
+        try {
+            const result = await apiUpdateTicket(ticketId, { status: newStatus as TicketStatus })
+            if (result.success) {
+                toast.push(
+                    <Notification title={'موفقیت'} type="success">
+                        وضعیت تیکت با موفقیت تغییر کرد
+                    </Notification>
+                )
+                mutate()
+            }
+        } catch (error) {
+            console.error('Error updating status:', error)
+            toast.push(
+                <Notification title={'خطا'} type="danger">
+                    خطا در تغییر وضعیت تیکت
+                </Notification>
+            )
+        } finally {
+            setIsUpdatingStatus(false)
         }
     }
 
-    const getStatusTag = (status: TicketStatus) => {
-        switch (status) {
-            case 'open':
-                return <Tag className="bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-100 border-0">باز</Tag>
-            case 'in_progress':
-                return <Tag className="bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-100 border-0">در حال بررسی</Tag>
-            case 'waiting_for_user':
-                return <Tag className="bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-100 border-0">در انتظار پاسخ شما</Tag>
-            case 'closed':
-                return <Tag className="bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400 border-0">بسته شده</Tag>
-            default:
-                return <Tag>{status}</Tag>
+    const handleUpdatePriority = async (newPriority: string) => {
+        if (!ticketId || !newPriority) return
+        setIsUpdatingPriority(true)
+        try {
+            const result = await apiUpdateTicket(ticketId, { priority: newPriority as TicketPriority })
+            if (result.success) {
+                toast.push(
+                    <Notification title={'موفقیت'} type="success">
+                        اولویت تیکت با موفقیت تغییر کرد
+                    </Notification>
+                )
+                mutate()
+            }
+        } catch (error) {
+            console.error('Error updating priority:', error)
+            toast.push(
+                <Notification title={'خطا'} type="danger">
+                    خطا در تغییر اولویت تیکت
+                </Notification>
+            )
+        } finally {
+            setIsUpdatingPriority(false)
         }
     }
 
@@ -116,8 +153,8 @@ const SupportTicketView = () => {
                 <div className="flex items-center justify-between">
                     <Skeleton width={200} height={32} />
                     <div className="flex gap-2">
-                        <Skeleton width={60} height={24} />
-                        <Skeleton width={60} height={24} />
+                        <Skeleton width={120} height={32} />
+                        <Skeleton width={120} height={32} />
                     </div>
                 </div>
                 <Card className="p-4">
@@ -138,7 +175,7 @@ const SupportTicketView = () => {
         return (
             <div className="text-center py-12">
                 <h3 className="text-xl font-bold text-gray-700">تیکت یافت نشد</h3>
-                <Button className="mt-4" onClick={() => navigate('/owner/support/tickets')}>
+                <Button className="mt-4" onClick={() => navigate('/admin/support/tickets')}>
                     بازگشت به لیست
                 </Button>
             </div>
@@ -148,12 +185,12 @@ const SupportTicketView = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <Button
                         variant="plain"
                         icon={<HiOutlineArrowLeft />}
-                        onClick={() => navigate('/owner/support/tickets')}
+                        onClick={() => navigate('/admin/support/tickets')}
                     >
                         بازگشت
                     </Button>
@@ -164,17 +201,41 @@ const SupportTicketView = () => {
                         <span className="font-mono text-sm text-gray-500">#{ticket.ticket_number}</span>
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    {getPriorityTag(ticket.priority as TicketPriority)}
-                    {getStatusTag(ticket.status as TicketStatus)}
+                <div className="flex flex-wrap gap-2 items-center">
+                    <div className="w-40">
+                        <Select
+                            size="sm"
+                            options={priorityOptions}
+                            value={priorityOptions.find(opt => opt.value === ticket.priority)}
+                            onChange={(opt) => handleUpdatePriority(opt?.value as string)}
+                            isLoading={isUpdatingPriority}
+                            isDisabled={isUpdatingPriority || isUpdatingStatus}
+                            placeholder="اولویت"
+                        />
+                    </div>
+                    <div className="w-48">
+                        <Select
+                            size="sm"
+                            options={statusOptions}
+                            value={statusOptions.find(opt => opt.value === ticket.status)}
+                            onChange={(opt) => handleUpdateStatus(opt?.value as string)}
+                            isLoading={isUpdatingStatus}
+                            isDisabled={isUpdatingStatus || isUpdatingPriority}
+                            placeholder="وضعیت"
+                        />
+                    </div>
                 </div>
             </div>
 
             {/* Ticket Info */}
             <Card className="p-4">
-                <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400 items-center">
+                    <span>کاربر: <span className="font-semibold text-gray-900 dark:text-gray-200">{ticket.user?.name || 'ناشناس'}</span></span>
+                    <span className="w-px h-4 bg-gray-300 dark:bg-gray-600 hidden sm:block"></span>
                     <span>دسته: <Tag className="bg-blue-50 text-blue-600 border-0">{ticket.category}</Tag></span>
+                    <span className="w-px h-4 bg-gray-300 dark:bg-gray-600 hidden sm:block"></span>
                     <span>ایجاد: {formatDate(ticket.created_at)}</span>
+                    <span className="w-px h-4 bg-gray-300 dark:bg-gray-600 hidden sm:block"></span>
                     <span>آخرین بروزرسانی: {formatDate(ticket.updated_at)}</span>
                 </div>
             </Card>
@@ -183,22 +244,22 @@ const SupportTicketView = () => {
             <Card className="p-6 bg-gray-50 dark:bg-gray-900 border-none shadow-none">
                 <div className="space-y-8">
                     {ticket.messages?.map((msg) => {
-                        const isUser = msg.type === 'user'
+                        const isSelf = msg.type === 'admin' // ادمین (من)
                         return (
                             <div
                                 key={msg.id}
                                 className={classNames(
                                     'flex w-full gap-3',
-                                    isUser ? 'justify-start flex-row' : 'justify-start flex-row-reverse'
+                                    isSelf ? 'justify-start flex-row' : 'justify-start flex-row-reverse'
                                 )}
                             >
                                 {/* Avatar */}
                                 <div className="flex-shrink-0 mt-auto">
                                     <div className={classNames(
                                         "w-8 h-8 rounded-full flex items-center justify-center shadow-sm",
-                                        isUser ? "bg-indigo-100 text-indigo-600" : "bg-emerald-100 text-emerald-600"
+                                        isSelf ? "bg-indigo-100 text-indigo-600" : "bg-emerald-100 text-emerald-600"
                                     )}>
-                                        {isUser ? <HiUser /> : <HiOutlineSupport />}
+                                        {isSelf ? <HiOutlineSupport /> : <HiUser />}
                                     </div>
                                 </div>
 
@@ -206,18 +267,18 @@ const SupportTicketView = () => {
                                 <div
                                     className={classNames(
                                         'max-w-[80%] md:max-w-[70%] rounded-2xl p-4 shadow-sm relative group transition-all',
-                                        isUser
-                                            ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-tr-none border border-gray-100 dark:border-gray-700'
-                                            : 'bg-indigo-600 text-white rounded-tl-none'
+                                        isSelf
+                                            ? 'bg-indigo-600 text-white rounded-tr-none'
+                                            : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-tl-none border border-gray-100 dark:border-gray-700'
                                     )}
                                 >
                                     {/* Sender Name & Time */}
                                     <div className={classNames(
                                         "flex items-center gap-2 mb-1 text-xs",
-                                        isUser ? "text-gray-400 dark:text-gray-500" : "text-indigo-100"
+                                        isSelf ? "text-indigo-100" : "text-gray-400 dark:text-gray-500"
                                     )}>
                                         <span className="font-bold">
-                                            {isUser ? 'شما' : (msg.user?.name || 'پشتیبانی')}
+                                            {isSelf ? 'شما (پشتیبانی)' : (msg.user?.name || 'کاربر')}
                                         </span>
                                         <span className="opacity-75 dir-ltr text-[10px]">
                                             {new Date(msg.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}
@@ -237,9 +298,9 @@ const SupportTicketView = () => {
                                                     key={i}
                                                     className={classNames(
                                                         "flex items-center gap-1 text-xs px-2 py-1.5 rounded cursor-pointer transition-colors max-w-full overflow-hidden",
-                                                        isUser
-                                                            ? "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
-                                                            : "bg-white/20 hover:bg-white/30 text-white"
+                                                        isSelf
+                                                            ? "bg-white/20 hover:bg-white/30 text-white"
+                                                            : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
                                                     )}
                                                 >
                                                     <HiOutlinePaperClip className="flex-shrink-0" />
@@ -252,7 +313,7 @@ const SupportTicketView = () => {
                                     {/* Date Tooltip (on hover) or Footer */}
                                     <div className={classNames(
                                         "absolute -bottom-5 text-[10px] text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap",
-                                        isUser ? "right-0" : "left-0"
+                                        isSelf ? "right-0" : "left-0"
                                     )}>
                                         {formatDate(msg.created_at)}
                                     </div>

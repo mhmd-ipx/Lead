@@ -219,6 +219,24 @@ const adminRoutes: Routes = [
         component: lazy(() => import('@/views/admin/Roles')),
         authority: [ADMIN],
     },
+    {
+        key: 'adminSupportTickets',
+        path: '/admin/support/tickets',
+        component: lazy(() => import('@/views/admin/Support')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminSupportCreate',
+        path: '/admin/support/create',
+        component: lazy(() => import('@/views/admin/CreateTicket')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminSupportTicketView',
+        path: '/admin/support/ticket/:ticketId',
+        component: lazy(() => import('@/views/admin/SupportTicketView')),
+        authority: [ADMIN],
+    },
 ]
 
 export default adminRoutes

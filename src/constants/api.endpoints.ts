@@ -24,6 +24,13 @@ export const API_ENDPOINTS = {
         GET_BY_COMPANY: (companyId: number) => `/managers/?company_id=${companyId}`,
         DELETE: (id: number) => `/managers/${id}`,
     },
+    // Support
+    SUPPORT: {
+        GET_TICKETS: '/support-tickets',
+        CREATE_TICKET: '/support-tickets',
+        GET_TICKET_DETAIL: (id: string) => `/support-tickets/${id}`,
+        REPLY_TICKET: (id: string) => `/support-tickets/${id}/messages`,
+    },
 } as const
 
 export default API_ENDPOINTS

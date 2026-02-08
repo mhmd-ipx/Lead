@@ -361,6 +361,16 @@ const navigationConfig: NavigationTree[] = [
         authority: [ADMIN],
         subMenu: [
             {
+                key: 'adminSupportTickets',
+                path: '/admin/support/tickets',
+                title: 'تیکت‌های پشتیبانی',
+                translateKey: 'nav.admin.support.tickets',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [ADMIN],
+                subMenu: [],
+            },
+            {
                 key: 'adminNotifications',
                 path: '/admin/notifications',
                 title: 'اعلان‌ها',

@@ -47,7 +47,7 @@ const CreateTicket = () => {
                         تیکت با موفقیت ایجاد شد
                     </Notification>
                 )
-                navigate('/owner/support/tickets')
+                navigate('/admin/support/tickets')
             }
         } catch (error) {
             toast.push(
@@ -81,7 +81,7 @@ const CreateTicket = () => {
                     <Button
                         variant="plain"
                         icon={<HiOutlineArrowLeft />}
-                        onClick={() => navigate('/owner/support/tickets')}
+                        onClick={() => navigate('/admin/support/tickets')}
                     >
                         بازگشت
                     </Button>
@@ -190,7 +190,7 @@ const CreateTicket = () => {
                     </div>
 
                     <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <Button variant="plain" type="button" onClick={() => navigate('/owner/support/tickets')}>
+                        <Button variant="plain" type="button" onClick={() => navigate('/admin/support/tickets')}>
                             انصراف
                         </Button>
                         <Button

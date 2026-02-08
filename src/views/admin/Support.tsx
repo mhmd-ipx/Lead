@@ -13,7 +13,6 @@ import { useNavigate } from 'react-router-dom'
 import useSWR from 'swr'
 import { apiGetSupportTickets } from '@/services/SupportService'
 import { SupportTicket, TicketStatus } from '@/@types/support'
-import appConfig from '@/configs/app.config'
 
 const { Tr, Th, Td, THead, TBody } = Table
 
@@ -54,7 +53,7 @@ const Support = () => {
             case 'in_progress':
                 return <Tag className="bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-100 border-0">در حال بررسی</Tag>
             case 'waiting_for_user':
-                return <Tag className="bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-100 border-0">در انتظار پاسخ شما</Tag>
+                return <Tag className="bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-100 border-0">در انتظار پاسخ کاربر</Tag>
             case 'closed':
                 return <Tag className="bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400 border-0">بسته شده</Tag>
             default:
@@ -67,8 +66,10 @@ const Support = () => {
 
         return tickets.filter(ticket => {
             const matchesFilter = selectedFilter === 'all' || ticket.status === selectedFilter
-            const matchesSearch = ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                ticket.ticket_number.toLowerCase().includes(searchQuery.toLowerCase())
+            const matchesSearch =
+                ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                ticket.ticket_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (ticket.user?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
             return matchesFilter && matchesSearch
         })
     }, [tickets, selectedFilter, searchQuery])
@@ -104,7 +105,7 @@ const Support = () => {
                 <Button
                     variant="solid"
                     icon={<HiOutlinePlus />}
-                    onClick={() => navigate('/owner/support/create')}
+                    onClick={() => navigate('/admin/support/create')}
                 >
                     ایجاد تیکت جدید
                 </Button>
@@ -187,7 +188,7 @@ const Support = () => {
                 >
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">پاسخ شما</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">در انتظار کاربر</p>
                             {isLoading ? (
                                 <Skeleton width={40} height={32} className="mt-1" />
                             ) : (
@@ -249,6 +250,7 @@ const Support = () => {
                             <THead>
                                 <Tr>
                                     <Th>شماره تیکت</Th>
+                                    <Th>کاربر</Th>
                                     <Th>موضوع</Th>
                                     <Th>دسته‌بندی</Th>
                                     <Th>اولویت</Th>
@@ -263,6 +265,7 @@ const Support = () => {
                                     Array(5).fill(0).map((_, index) => (
                                         <Tr key={index}>
                                             <Td><Skeleton width={80} /></Td>
+                                            <Td><Skeleton width={120} /></Td>
                                             <Td><Skeleton width={150} /></Td>
                                             <Td><Skeleton width={80} /></Td>
                                             <Td><Skeleton width={60} /></Td>
@@ -278,6 +281,11 @@ const Support = () => {
                                             <Td>
                                                 <span className="font-mono font-semibold text-primary">
                                                     {ticket.ticket_number}
+                                                </span>
+                                            </Td>
+                                            <Td>
+                                                <span className="font-semibold text-gray-900 dark:text-gray-200">
+                                                    {ticket.user?.name || 'ناشناس'}
                                                 </span>
                                             </Td>
                                             <Td>
@@ -298,7 +306,7 @@ const Support = () => {
                                                 <Button
                                                     size="sm"
                                                     variant="solid"
-                                                    onClick={() => navigate(`/owner/support/ticket/${ticket.id}`)}
+                                                    onClick={() => navigate(`/admin/support/ticket/${ticket.id}`)}
                                                 >
                                                     مشاهده
                                                 </Button>
