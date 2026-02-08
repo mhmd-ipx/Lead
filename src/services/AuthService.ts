@@ -13,6 +13,8 @@ import type {
     SendOtpResponse,
     VerifyOtpRequest,
     VerifyOtpResponse,
+    LoginRequest,
+    LoginResponse,
 } from '@/@types/auth'
 
 /**
@@ -28,6 +30,16 @@ export async function apiSendOtp(data: SendOtpRequest) {
 export async function apiVerifyOtp(data: VerifyOtpRequest) {
     return apiClient.post<VerifyOtpResponse>(
         API_ENDPOINTS.AUTH.VERIFY_OTP,
+        data,
+    )
+}
+
+/**
+ * Login with phone and password
+ */
+export async function apiLogin(data: LoginRequest) {
+    return apiClient.post<LoginResponse>(
+        API_ENDPOINTS.AUTH.LOGIN,
         data,
     )
 }

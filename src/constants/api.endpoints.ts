@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
     AUTH: {
         SEND_OTP: '/auth/send-otp',
         VERIFY_OTP: '/auth/verify-otp',
+        LOGIN: '/auth/login',
     },
     // Company
     COMPANY: {

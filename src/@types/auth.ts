@@ -40,6 +40,21 @@ export type VerifyOtpResponse = {
     }
 }
 
+// Login with Phone & Password Types
+export type LoginRequest = {
+    phone: string
+    password: string
+}
+
+export type LoginResponse = {
+    success: boolean
+    message: string
+    data: {
+        user: any  // API user structure (will be mapped to User type)
+        token: string
+    }
+}
+
 
 
 export type SignInResponse = {

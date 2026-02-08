@@ -71,9 +71,27 @@ function AuthProvider({ children }: AuthProviderProps) {
     }
 
     const handleSignOut = () => {
+        // پاک کردن توکن از cookies/localStorage/sessionStorage
         setToken('')
+
+        // پاک کردن اطلاعات کاربر از state
         setUser({})
         setSessionSignedIn(false)
+
+        // پاک کردن تمام localStorage
+        localStorage.clear()
+
+        // پاک کردن تمام sessionStorage
+        sessionStorage.clear()
+
+        // پاک کردن تمام کوکی‌ها
+        const cookies = document.cookie.split(';')
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i]
+            const eqPos = cookie.indexOf('=')
+            const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim()
+            document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/'
+        }
     }
 
     // تبدیل user از API به فرمت User type
@@ -151,9 +169,16 @@ function AuthProvider({ children }: AuthProviderProps) {
 
     const signOut = async () => {
         try {
+            // تلاش برای فراخوانی API logout (اگر موجود باشد)
             await apiSignOut()
+        } catch (error) {
+            // در صورت خطا در API، logout محلی را انجام می‌دهیم
+            console.warn('Logout API failed, performing local logout:', error)
         } finally {
+            // همیشه logout محلی را انجام می‌دهیم
             handleSignOut()
+
+            // هدایت به صفحه لاگین
             navigatorRef.current?.navigate(appConfig.unAuthenticatedEntryPath)
         }
     }

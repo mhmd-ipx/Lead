@@ -29,6 +29,8 @@ export async function getCompanies(): Promise<Company[]> {
             ownerName: item.owner?.name || 'نامشخص',
             ownerEmail: item.owner?.email || '-',
             ownerPhone: item.owner?.phone || '-',
+            // Map managers count
+            managers_count: item.managers_count || 0,
 
             status: item.status || 'active',
             createdAt: item.created_at,
@@ -75,6 +77,8 @@ export async function getCompanyById(id: string): Promise<Company | null> {
             ownerName: company.owner?.name || 'نامشخص',
             ownerEmail: company.owner?.email || '-',
             ownerPhone: company.owner?.phone || '-',
+            // Map managers count
+            managers_count: company.managers_count || 0,
 
             status: company.status || 'active',
             createdAt: company.created_at,
@@ -143,6 +147,7 @@ export async function updateCompany(id: string, data: Partial<Company>): Promise
             ownerName: company.owner?.name || 'نامشخص',
             ownerEmail: company.owner?.email || '-',
             ownerPhone: company.owner?.phone || '-',
+            managers_count: company.managers_count || 0,
             status: company.status || 'active',
             createdAt: company.created_at,
             updatedAt: company.updated_at

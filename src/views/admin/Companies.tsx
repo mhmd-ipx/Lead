@@ -127,6 +127,9 @@ const Companies = () => {
                 <Skeleton width={80} height={20} />
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
+                <Skeleton width={60} height={24} />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
                 <div className="space-y-2">
                     <Skeleton width={120} height={14} />
                     <Skeleton width={100} height={12} />
@@ -203,6 +206,9 @@ const Companies = () => {
                                         حوزه فعالیت
                                     </th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        تعداد متقاضیان
+                                    </th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                                         ایجادکننده
                                     </th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
@@ -258,6 +264,14 @@ const Companies = () => {
                                                 ) : (
                                                     <span className="text-gray-400">-</span>
                                                 )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center gap-2">
+                                                    <Tag className="text-purple-600 bg-purple-100 dark:text-purple-100 dark:bg-purple-500/20 border-0">
+                                                        <HiOutlineUserGroup className="inline-block ml-1" />
+                                                        {company.managers_count || 0}
+                                                    </Tag>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div>
@@ -317,7 +331,7 @@ const Companies = () => {
                                 ) : (
                                     // Show empty state
                                     <tr>
-                                        <td colSpan={7}>
+                                        <td colSpan={8}>
                                             <div className="text-center py-12">
                                                 <HiOutlineOfficeBuilding className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                                                 <p className="text-gray-500 dark:text-gray-400">

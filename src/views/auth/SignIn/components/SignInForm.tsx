@@ -5,7 +5,7 @@ import { FormItem, Form } from '@/components/ui/Form'
 import OTPInput from '@/components/shared/OtpInput'
 import OtpCodeModal from './OtpCodeModal'
 import { useAuth } from '@/auth'
-import { apiSendOtp, apiVerifyOtp } from '@/services/AuthService'
+import { apiSendOtp, apiVerifyOtp, apiLogin } from '@/services/AuthService'
 import { useToken, useSessionUser } from '@/store/authStore'
 import appConfig from '@/configs/app.config'
 import { useForm, Controller } from 'react-hook-form'
@@ -35,8 +35,8 @@ type RegisterFormSchema = {
     password?: string
 }
 
-type EmailPasswordFormSchema = {
-    email: string
+type PhonePasswordFormSchema = {
+    phone: string
     password: string
 }
 
@@ -62,10 +62,11 @@ const registerValidationSchema: ZodType<RegisterFormSchema> = z.object({
 })
 
 
-const emailPasswordValidationSchema: ZodType<EmailPasswordFormSchema> = z.object({
-    email: z
-        .string({ required_error: 'لطفاً ایمیل خود را وارد کنید' })
-        .email({ message: 'لطفاً ایمیل معتبر وارد کنید' }),
+const phonePasswordValidationSchema: ZodType<PhonePasswordFormSchema> = z.object({
+    phone: z
+        .string({ required_error: 'لطفاً شماره موبایل خود را وارد کنید' })
+        .min(10, { message: 'لطفاً شماره موبایل معتبر وارد کنید' })
+        .regex(/^09\d{9}$/, { message: 'شماره موبایل باید با 09 شروع شده و 11 رقم باشد' }),
     password: z
         .string({ required_error: 'لطفاً رمز عبور خود را وارد کنید' })
         .min(6, { message: 'رمز عبور باید حداقل 6 کاراکتر باشد' }),
@@ -73,7 +74,7 @@ const emailPasswordValidationSchema: ZodType<EmailPasswordFormSchema> = z.object
 
 const SignInForm = (props: SignInFormProps) => {
     const [isSubmitting, setSubmitting] = useState<boolean>(false)
-    const [step, setStep] = useState<'phone' | 'otp' | 'register' | 'emailPassword'>('phone')
+    const [step, setStep] = useState<'phone' | 'otp' | 'register' | 'phonePassword'>('phone')
     const [phoneNumber, setPhoneNumber] = useState<string>('')
     const [isRegistered, setIsRegistered] = useState<boolean>(true)
     const [timer, setTimer] = useState<number>(120) // 2 minutes in seconds
@@ -130,12 +131,12 @@ const SignInForm = (props: SignInFormProps) => {
         resolver: zodResolver(registerValidationSchema),
     })
 
-    const emailPasswordForm = useForm<EmailPasswordFormSchema>({
+    const phonePasswordForm = useForm<PhonePasswordFormSchema>({
         defaultValues: {
-            email: '',
+            phone: '',
             password: '',
         },
-        resolver: zodResolver(emailPasswordValidationSchema),
+        resolver: zodResolver(phonePasswordValidationSchema),
     })
 
     const { signIn } = useAuth()
@@ -237,8 +238,8 @@ const SignInForm = (props: SignInFormProps) => {
         setMessage?.('')
     }
 
-    const handleSwitchToEmailPassword = () => {
-        setStep('emailPassword')
+    const handleSwitchToPhonePassword = () => {
+        setStep('phonePassword')
         setMessage?.('')
     }
 
@@ -255,8 +256,8 @@ const SignInForm = (props: SignInFormProps) => {
                     code: otpForm.getValues('otp'),
                     data: {
                         name,
-                        // email,      // فعلاً کامنت - بعداً فعال می‌شود
-                        // password,   // فعلاً کامنت - بعداً فعال می‌شود
+                        email,
+                        password,
                     },
                 })
 
@@ -299,20 +300,50 @@ const SignInForm = (props: SignInFormProps) => {
 
 
 
-    const onEmailPasswordSignIn = async (values: EmailPasswordFormSchema) => {
-        const { email, password } = values
+    const onPhonePasswordSignIn = async (values: PhonePasswordFormSchema) => {
+        const { phone, password } = values
 
         if (!disableSubmit) {
             setSubmitting(true)
 
-            const result = await signIn({ email, password })
+            try {
+                const response = await apiLogin({ phone, password })
 
-            if (result?.status === 'failed') {
-                setMessage?.(result.message)
+                console.log('🔐 Login Response:', response)
+
+                if (response.success) {
+                    // لاگین موفق
+                    const { setToken } = useToken()
+                    const { setUser, setSessionSignedIn } = useSessionUser.getState()
+
+                    // ذخیره token
+                    setToken(response.data.token)
+
+                    // Map و ذخیره user
+                    const mappedUser = {
+                        userId: response.data.user.id?.toString() || null,
+                        userName: response.data.user.name || null,
+                        phone: response.data.user.phone || null,
+                        avatar: response.data.user.avatar || null,
+                        authority: response.data.user.role ? [response.data.user.role] : [],
+                    }
+
+                    setUser(mappedUser)
+                    setSessionSignedIn(true)
+
+                    console.log('✅ Login successful, redirecting...')
+
+                    // Redirect به dashboard
+                    window.location.href = appConfig.authenticatedEntryPath
+                }
+            } catch (error: any) {
+                console.error('❌ Login Error:', error)
+                const errorMessage = error?.message || 'خطا در ورود. لطفاً دوباره تلاش کنید.'
+                setMessage?.(errorMessage)
+            } finally {
+                setSubmitting(false)
             }
         }
-
-        setSubmitting(false)
     }
 
     const handleResendOTP = async () => {
@@ -378,9 +409,9 @@ const SignInForm = (props: SignInFormProps) => {
                             block
                             variant="plain"
                             type="button"
-                            onClick={handleSwitchToEmailPassword}
+                            onClick={handleSwitchToPhonePassword}
                         >
-                            ورود با نام کاربری و رمز عبور
+                            ورود با رمز ثابت
                         </Button>
                     </div>
                 </>
@@ -534,20 +565,25 @@ const SignInForm = (props: SignInFormProps) => {
                 </div>
             ) : (
                 <div>
-                    <Form onSubmit={emailPasswordForm.handleSubmit(onEmailPasswordSignIn)}>
+                    <div className="text-center mb-4">
+                        <p className="text-sm text-gray-600">
+                            ورود با شماره موبایل و رمز عبور ثابت
+                        </p>
+                    </div>
+                    <Form onSubmit={phonePasswordForm.handleSubmit(onPhonePasswordSignIn)}>
                         <FormItem
-                            label="ایمیل"
-                            invalid={Boolean(emailPasswordForm.formState.errors.email)}
-                            errorMessage={emailPasswordForm.formState.errors.email?.message}
+                            label="شماره موبایل"
+                            invalid={Boolean(phonePasswordForm.formState.errors.phone)}
+                            errorMessage={phonePasswordForm.formState.errors.phone?.message}
                         >
                             <Controller
-                                name="email"
-                                control={emailPasswordForm.control}
+                                name="phone"
+                                control={phonePasswordForm.control}
                                 render={({ field }) => (
                                     <Input
-                                        type="email"
-                                        placeholder="example@email.com"
-                                        autoComplete="email"
+                                        type="tel"
+                                        placeholder="09123456789"
+                                        autoComplete="tel"
                                         {...field}
                                     />
                                 )}
@@ -555,12 +591,12 @@ const SignInForm = (props: SignInFormProps) => {
                         </FormItem>
                         <FormItem
                             label="رمز عبور"
-                            invalid={Boolean(emailPasswordForm.formState.errors.password)}
-                            errorMessage={emailPasswordForm.formState.errors.password?.message}
+                            invalid={Boolean(phonePasswordForm.formState.errors.password)}
+                            errorMessage={phonePasswordForm.formState.errors.password?.message}
                         >
                             <Controller
                                 name="password"
-                                control={emailPasswordForm.control}
+                                control={phonePasswordForm.control}
                                 render={({ field }) => (
                                     <Input
                                         type="password"

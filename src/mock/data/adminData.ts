@@ -28,6 +28,7 @@ export interface Company {
     description?: string | null
     owner_id?: number | string
     owner?: CompanyOwner
+    managers_count?: number // تعداد متقاضیان (managers) این سازمان
     createdAt: string // mapped from created_at
     updatedAt?: string // mapped from updated_at
     status: 'active' | 'inactive'
