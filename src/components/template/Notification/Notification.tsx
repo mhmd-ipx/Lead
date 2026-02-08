@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import classNames from 'classnames'
 import withHeaderItem from '@/utils/hoc/withHeaderItem'
 import Dropdown from '@/components/ui/Dropdown'
@@ -9,11 +9,11 @@ import Button from '@/components/ui/Button'
 import Tooltip from '@/components/ui/Tooltip'
 import NotificationAvatar from './NotificationAvatar'
 import NotificationToggle from './NotificationToggle'
-import { HiOutlineMailOpen } from 'react-icons/hi'
+import { HiOutlineMailOpen, HiOutlineBell } from 'react-icons/hi'
 import isLastChild from '@/utils/isLastChild'
 import useResponsive from '@/utils/hooks/useResponsive'
-import { useNavigate } from 'react-router-dom'
-
+import { useNavigate, useLocation } from 'react-router-dom'
+import { apiGetUnreadNotifications, apiMarkNotificationAsRead } from '@/services/NotificationService'
 import type { DropdownRef } from '@/components/ui/Dropdown'
 
 type NotificationList = {
@@ -38,128 +38,81 @@ const _Notification = ({ className }: { className?: string }) => {
     const [loading, setLoading] = useState(false)
 
     const { larger } = useResponsive()
-
     const navigate = useNavigate()
+    const location = useLocation()
+    const notificationDropdownRef = useRef<DropdownRef>(null)
 
-    const getNotificationCount = async () => {
-        // Mock data - فقط خوانده نشده‌ها
-        const mockNotifications: NotificationList[] = [
-            {
-                id: '1',
-                target: 'علی محمدی',
-                description: 'نیازسنجی مهارت‌های مدیریتی را تکمیل کرد',
-                date: '14:30',
-                image: '',
-                type: 1,
-                location: '/owner/managers/mgr-001/assessment/assess-001/view',
-                locationLabel: 'مشاهده',
-                status: 'assessment',
-                readed: false,
-            },
-            {
-                id: '2',
-                target: 'مریم احمدی',
-                description: 'آزمون مدیریت منابع انسانی را تکمیل کرد',
-                date: '16:45',
-                image: '',
-                type: 2,
-                location: '/owner/managers/mgr-002/exams/examset-004/results',
-                locationLabel: 'نتایج',
-                status: 'exam',
-                readed: false,
-            },
-            {
-                id: '6',
-                target: 'حسن رضایی',
-                description: 'آزمون فروش و بازاریابی را تکمیل کرد',
-                date: '15:30',
-                image: '',
-                type: 2,
-                location: '/owner/managers/mgr-003/exams/examset-005/results',
-                locationLabel: 'نتایج',
-                status: 'exam',
-                readed: false,
-            },
-        ]
-
-        const unreadCount = mockNotifications.filter(n => !n.readed).length
-
-        if (unreadCount > 0) {
-            setNoResult(false)
-            setUnreadNotification(true)
-        } else {
-            setNoResult(true)
+    const mapTypeToId = (type: string) => {
+        switch (type) {
+            case 'system': return 3
+            case 'payment': return 4
+            case 'support': return 5
+            case 'assessment': return 6
+            default: return 0
         }
     }
 
-    useEffect(() => {
-        getNotificationCount()
+    const fetchUnreadNotifications = useCallback(async () => {
+        setLoading(true)
+        try {
+            const resp = await apiGetUnreadNotifications()
+            const list = resp.data.map(n => ({
+                id: n.id.toString(),
+                target: n.title,
+                description: n.message,
+                date: new Date(n.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
+                image: '',
+                type: mapTypeToId(n.type),
+                location: n.action_url || '',
+                locationLabel: 'مشاهده',
+                status: '',
+                readed: n.is_read
+            }))
+
+            setNotificationList(list)
+
+            if (list.length > 0) {
+                setNoResult(false)
+                setUnreadNotification(true)
+            } else {
+                setNoResult(true)
+                setUnreadNotification(false)
+            }
+        } catch (error) {
+            console.error('Failed to fetch notifications', error)
+            setNoResult(true)
+        } finally {
+            setLoading(false)
+        }
     }, [])
+
+    useEffect(() => {
+        fetchUnreadNotifications()
+    }, [fetchUnreadNotifications, location.pathname])
 
     const onNotificationOpen = async () => {
         if (notificationList.length === 0) {
-            setLoading(true)
-
-            // Mock API call delay
-            await new Promise(resolve => setTimeout(resolve, 500))
-
-            // Mock data - فقط خوانده نشده‌ها
-            const mockNotifications: NotificationList[] = [
-                {
-                    id: '1',
-                    target: 'علی محمدی',
-                    description: 'نیازسنجی مهارت‌های مدیریتی را تکمیل کرد',
-                    date: '14:30',
-                    image: '',
-                    type: 1,
-                    location: '/owner/managers/mgr-001/assessment/assess-001/view',
-                    locationLabel: 'مشاهده',
-                    status: 'assessment',
-                    readed: false,
-                },
-                {
-                    id: '2',
-                    target: 'مریم احمدی',
-                    description: 'آزمون مدیریت منابع انسانی را تکمیل کرد',
-                    date: '16:45',
-                    image: '',
-                    type: 2,
-                    location: '/owner/managers/mgr-002/exams/examset-004/results',
-                    locationLabel: 'نتایج',
-                    status: 'exam',
-                    readed: false,
-                },
-                {
-                    id: '6',
-                    target: 'حسن رضایی',
-                    description: 'آزمون فروش و بازاریابی را تکمیل کرد',
-                    date: '15:30',
-                    image: '',
-                    type: 2,
-                    location: '/owner/managers/mgr-003/exams/examset-005/results',
-                    locationLabel: 'نتایج',
-                    status: 'exam',
-                    readed: false,
-                },
-            ]
-
-            setLoading(false)
-            setNotificationList(mockNotifications)
+            await fetchUnreadNotifications()
         }
     }
 
-    const onMarkAllAsRead = () => {
-        const list = notificationList.map((item: NotificationList) => {
-            if (!item.readed) {
-                item.readed = true
-            }
-            return item
-        })
+    const onMarkAllAsRead = async () => {
+        const list = notificationList.map((item) => ({ ...item, readed: true }))
         setNotificationList(list)
         setUnreadNotification(false)
+
+        // Call API for all unread items
+        const unreadIds = notificationList.filter(n => !n.readed).map(n => n.id)
+        if (unreadIds.length > 0) {
+            try {
+                await Promise.all(unreadIds.map(id => apiMarkNotificationAsRead(Number(id))))
+            } catch (error) {
+                console.error('Error marking all as read', error)
+            }
+        }
     }
 
-    const onMarkAsRead = (id: string, location?: string) => {
+    const onMarkAsRead = async (id: string, loc?: string) => {
         const list = notificationList.map((item) => {
             if (item.id === id) {
                 item.readed = true
@@ -167,31 +120,37 @@ const _Notification = ({ className }: { className?: string }) => {
             return item
         })
         setNotificationList(list)
-        const hasUnread = notificationList.some((item) => !item.readed)
+        const hasUnread = list.some((item) => !item.readed)
 
         if (!hasUnread) {
             setUnreadNotification(false)
         }
 
-        // Navigate if location exists
-        if (location) {
-            navigate(location)
+        // API Call
+        try {
+            await apiMarkNotificationAsRead(Number(id))
+        } catch (error) {
+            console.error('Error marking as read', error)
+        }
+
+        if (loc) {
+            navigate(loc)
             if (notificationDropdownRef.current) {
                 notificationDropdownRef.current.handleDropdownClose()
             }
         }
     }
 
-    const notificationDropdownRef = useRef<DropdownRef>(null)
-
     const handleViewAllActivity = () => {
-        navigate('/owner/notifications')
+        const path = location.pathname.startsWith('/admin')
+            ? '/admin/notifications'
+            : '/owner/notifications'
+        navigate(path)
         if (notificationDropdownRef.current) {
             notificationDropdownRef.current.handleDropdownClose()
         }
     }
 
-    // Calculate unread count
     const unreadCount = notificationList.filter(n => !n.readed).length
 
     return (
@@ -271,7 +230,7 @@ const _Notification = ({ className }: { className?: string }) => {
                         <Spinner size={40} />
                     </div>
                 )}
-                {noResult && notificationList.length === 0 && (
+                {noResult && !loading && (
                     <div
                         className={classNames(
                             'flex items-center justify-center',
@@ -279,13 +238,10 @@ const _Notification = ({ className }: { className?: string }) => {
                         )}
                     >
                         <div className="text-center">
-                            <img
-                                className="mx-auto mb-2 max-w-[150px]"
-                                src="/img/others/no-notification.png"
-                                alt="no-notification"
-                            />
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 mb-4 text-gray-400">
+                                <HiOutlineBell className="text-3xl" />
+                            </div>
                             <h6 className="font-semibold">هیچ اعلانی نیست!</h6>
-                            <p className="mt-1">لطفاً بعداً دوباره امتحان کنید</p>
                         </div>
                     </div>
                 )}

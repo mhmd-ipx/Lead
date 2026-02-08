@@ -5,6 +5,10 @@ import {
     HiOutlineCalendar,
     HiOutlineClipboardCheck,
     HiOutlineBan,
+    HiOutlineInformationCircle,
+    HiOutlineCreditCard,
+    HiOutlineSupport,
+    HiOutlineClipboardList,
 } from 'react-icons/hi'
 
 const imagePath = '/img/avatars/'
@@ -56,6 +60,38 @@ const NotificationAvatar = (props: {
                             <HiOutlineBan />
                         )
                     }
+                />
+            )
+        case 3: // system
+            return (
+                <Avatar
+                    shape="circle"
+                    className="bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-100"
+                    icon={<HiOutlineInformationCircle />}
+                />
+            )
+        case 4: // payment
+            return (
+                <Avatar
+                    shape="circle"
+                    className="bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-100"
+                    icon={<HiOutlineCreditCard />}
+                />
+            )
+        case 5: // support
+            return (
+                <Avatar
+                    shape="circle"
+                    className="bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-100"
+                    icon={<HiOutlineSupport />}
+                />
+            )
+        case 6: // assessment
+            return (
+                <Avatar
+                    shape="circle"
+                    className="bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-100"
+                    icon={<HiOutlineClipboardList />}
                 />
             )
         default:
