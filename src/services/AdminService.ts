@@ -254,3 +254,149 @@ export async function getExamItems(): Promise<ExamItem[]> {
     return mockExamItems
 }
 
+
+import { AssessmentTemplate as ApiAssessmentTemplate, AssessmentTemplateListResponse } from '@/@types/assessment'
+
+export async function getAssessmentTemplate(id: number = 1): Promise<ApiAssessmentTemplate | null> {
+    try {
+        const response = await apiClient.get<AssessmentTemplateListResponse>(`/assessment-templates/?template=${id}`)
+
+
+        if (response.success && response.data.length > 0) {
+            const apiData = response.data[0]
+
+            // Map apiData (snake_case) to frontend model (camelCase)
+            return {
+                id: apiData.id,
+                name: apiData.name,
+                description: apiData.description,
+                category: apiData.category,
+                estimatedTime: apiData.estimated_time,
+                status: apiData.status,
+                createdBy: apiData.created_by,
+                createdAt: apiData.created_at,
+                updatedAt: apiData.updated_at,
+                steps: apiData.steps ? apiData.steps.map(step => ({
+                    id: step.id,
+                    templateId: step.template_id,
+                    title: step.title,
+                    description: step.description,
+                    order: step.order,
+                    createdAt: step.created_at,
+                    updatedAt: step.updated_at,
+                    questions: step.questions ? step.questions.map(q => ({
+                        id: q.id,
+                        stepId: q.step_id,
+                        question: q.question,
+                        type: q.type,
+                        options: q.options || [],
+                        required: q.required,
+                        order: q.order,
+                        createdAt: q.created_at,
+                        updatedAt: q.updated_at
+                    })) : []
+                })) : [],
+                creator: apiData.creator ? {
+                    id: apiData.creator.id,
+                    name: apiData.creator.name,
+                    email: apiData.creator.email,
+                    phone: apiData.creator.phone,
+                    role: apiData.creator.role,
+                    status: apiData.creator.status,
+                    avatar: apiData.creator.avatar,
+                    lastLogin: apiData.creator.last_login,
+                    createdAt: apiData.creator.created_at,
+                    updatedAt: apiData.creator.updated_at
+                } : undefined
+            }
+        }
+        return null
+    } catch (error) {
+        console.error('Error fetching assessment template:', error)
+        // Ensure we don't break the UI if API fails, return null
+        return null
+    }
+}
+
+// Step API
+export async function createAssessmentStep(data: any): Promise<any> {
+    try {
+        const response = await apiClient.post<any>('/assessment-steps', {
+            template_id: 1, // Fixed ID as requested for now
+            title: data.title,
+            description: data.description,
+            order: data.order
+        })
+        return response
+    } catch (error) {
+        console.error('Error creating step:', error)
+        throw error
+    }
+}
+
+export async function updateAssessmentStep(id: number, data: any): Promise<any> {
+    try {
+        const response = await apiClient.put<any>(`/assessment-steps/${id}`, {
+            title: data.title,
+            description: data.description,
+            order: data.order
+        })
+        return response
+    } catch (error) {
+        console.error('Error updating step:', error)
+        throw error
+    }
+}
+
+export async function deleteAssessmentStep(id: number): Promise<void> {
+    try {
+        await apiClient.delete(`/assessment-steps/${id}`)
+    } catch (error) {
+        console.error('Error deleting step:', error)
+        throw error
+    }
+}
+
+// Question API
+export async function createAssessmentQuestion(data: any): Promise<any> {
+    try {
+        const response = await apiClient.post<any>('/assessment-questions', {
+            step_id: data.stepId,
+            question: data.question,
+            type: data.type,
+            options: data.options,
+            required: data.required,
+            order: data.order
+        })
+        return response
+    } catch (error) {
+        console.error('Error creating question:', error)
+        throw error
+    }
+}
+
+export async function updateAssessmentQuestion(id: number, data: any): Promise<any> {
+    try {
+        const response = await apiClient.put<any>(`/assessment-questions/${id}`, {
+            step_id: data.stepId,
+            question: data.question,
+            type: data.type,
+            options: data.options,
+            required: data.required,
+            order: data.order
+        })
+        return response
+    } catch (error) {
+        console.error('Error updating question:', error)
+        throw error
+    }
+}
+
+export async function deleteAssessmentQuestion(id: number): Promise<void> {
+    try {
+        await apiClient.delete(`/assessment-questions/${id}`)
+    } catch (error) {
+        console.error('Error deleting question:', error)
+        throw error
+    }
+}
