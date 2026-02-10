@@ -1,414 +1,426 @@
 import { useEffect, useState } from 'react'
-import { Card, Button, Tag, Table } from '@/components/ui'
-import {
-    HiOutlineArrowLeft,
-    HiOutlinePlus,
-    HiOutlineEye,
-    HiOutlinePencil,
-    HiOutlineTrash,
-    HiOutlineClipboardCheck,
-    HiOutlineAcademicCap,
-    HiOutlineClock,
-} from 'react-icons/hi'
+import { Card, Button, Input, Select, Radio, Checkbox, Notification, toast, Skeleton } from '@/components/ui'
+import { HiOutlineArrowLeft, HiOutlineSave, HiOutlinePencil, HiOutlineCheckCircle, HiOutlineExclamationCircle } from 'react-icons/hi'
 import { useNavigate, useParams } from 'react-router-dom'
-import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import classNames from '@/utils/classNames'
-
-const { Tr, Th, Td, THead, TBody } = Table
-
-interface Assessment {
-    id: string
-    applicantId: string
-    title: string
-    description: string
-    status: 'pending' | 'completed'
-    createdDate: string
-    submittedDate?: string
-    examSetId?: string
-    examSetTitle?: string
-}
-
-type FilterCategory = 'all' | 'completed' | 'pending' | 'withExamSet'
-
-type StatisticCardProps = {
-    title: string
-    value: number
-    icon: React.ReactNode
-    iconClass: string
-    label: FilterCategory
-    active: boolean
-    onClick: (label: FilterCategory) => void
-}
-
-const StatisticCard = (props: StatisticCardProps) => {
-    const { title, value, label, icon, iconClass, active, onClick } = props
-
-    return (
-        <button
-            className={classNames(
-                'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full',
-                active && 'bg-white dark:bg-gray-900 shadow-md',
-            )}
-            onClick={() => onClick(label)}
-        >
-            <div className="flex justify-between items-center">
-                <div>
-                    <div className="mb-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
-                        {title}
-                    </div>
-                    <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{value}</h3>
-                </div>
-                <div
-                    className={classNames(
-                        'flex items-center justify-center min-h-12 min-w-12 max-h-12 max-w-12 rounded-full text-2xl',
-                        iconClass,
-                    )}
-                >
-                    {icon}
-                </div>
-            </div>
-        </button>
-    )
-}
+import { getApplicantAssessment, submitApplicantAssessment, AssessmentSubmissionPayload } from '@/services/OwnerService'
+import { Assessment, AssessmentQuestion } from '@/mock/data/ownerData'
 
 const ApplicantAssessment = () => {
     const { managerId } = useParams<{ managerId: string }>()
     const navigate = useNavigate()
+
+    const [assessment, setAssessment] = useState<Assessment | null>(null)
     const [loading, setLoading] = useState(true)
-    const [applicantName, setApplicantName] = useState('')
-    const [assessments, setAssessments] = useState<Assessment[]>([])
-    const [deleteDialog, setDeleteDialog] = useState(false)
-    const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null)
-    const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all')
+    const [submitting, setSubmitting] = useState(false)
+    const [answers, setAnswers] = useState<Record<string, any>>({})
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+    const [isEditing, setIsEditing] = useState(false)
 
     useEffect(() => {
         if (managerId) {
-            loadData()
+            loadAssessment()
         }
     }, [managerId])
 
-    const loadData = async () => {
+    const loadAssessment = async () => {
         try {
-            // Mock data
-            setApplicantName('علی محمدی')
+            setLoading(true)
+            const data = await getApplicantAssessment(managerId!)
+            setAssessment(data)
 
-            const mockAssessments: Assessment[] = [
-                {
-                    id: 'assess-001',
-                    applicantId: managerId || '',
-                    title: 'نیازسنجی مهارت‌های مدیریتی',
-                    description: 'ارزیابی مهارت‌های مدیریت پروژه و رهبری تیم',
-                    status: 'completed',
-                    createdDate: '2024-11-15T10:00:00Z',
-                    submittedDate: '2024-11-20T10:00:00Z',
-                    examSetId: 'examset-001',
-                    examSetTitle: 'مجموعه آزمون مدیریت پروژه',
-                },
-                {
-                    id: 'assess-002',
-                    applicantId: managerId || '',
-                    title: 'نیازسنجی مهارت‌های فنی',
-                    description: 'بررسی دانش فنی و تخصصی',
-                    status: 'pending',
-                    createdDate: '2024-12-01T10:00:00Z',
-                },
-                {
-                    id: 'assess-003',
-                    applicantId: managerId || '',
-                    title: 'نیازسنجی مهارت‌های ارتباطی',
-                    description: 'بررسی توانایی‌های ارتباطی و تیم‌سازی',
-                    status: 'completed',
-                    createdDate: '2024-10-10T10:00:00Z',
-                    submittedDate: '2024-10-15T10:00:00Z',
-                },
-            ]
-
-            setAssessments(mockAssessments)
+            // Initialize answers from existing data if any
+            if (data && data.answers) {
+                // If the API returns answers in a specific structure, we might need to parse it.
+                // Assuming data.answers is already in the format we can use or a simple key-value map.
+                // For now, if it's the complex structure we send, we might need to extract values.
+                // But typically draft returns what was saved. 
+                // Let's assume for now it returns a map of questionId -> value or the complex object.
+                // If it's the complex object:
+                const initialAnswers: Record<string, any> = {}
+                if (typeof data.answers === 'object') {
+                    Object.keys(data.answers).forEach(key => {
+                        const val = data.answers[key]
+                        // If val is our complex object with 'answer' field
+                        if (val && typeof val === 'object' && 'answer' in val) {
+                            initialAnswers[key] = val.answer
+                        } else {
+                            initialAnswers[key] = val
+                        }
+                    })
+                }
+                setAnswers(initialAnswers)
+            }
         } catch (error) {
-            console.error('Error loading data:', error)
+            console.error('Error loading assessment:', error)
+            toast.push(<Notification title="خطا" type="danger">خطا در بارگذاری نیازسنجی</Notification>)
         } finally {
             setLoading(false)
         }
     }
 
-    const handleDeleteAssessment = () => {
-        if (selectedAssessment) {
-            setAssessments(assessments.filter(a => a.id !== selectedAssessment.id))
-            setDeleteDialog(false)
-            setSelectedAssessment(null)
+    const handleAnswerChange = (questionId: string, value: any) => {
+        setAnswers(prev => ({
+            ...prev,
+            [questionId]: value
+        }))
+
+        // Clear error if exists
+        if (formErrors[questionId]) {
+            setFormErrors(prev => {
+                const newErrors = { ...prev }
+                delete newErrors[questionId]
+                return newErrors
+            })
         }
     }
 
-    const getStatusTag = (status: Assessment['status']) => {
-        switch (status) {
-            case 'completed':
+    const validateForm = () => {
+        const errors: Record<string, string> = {}
+        let isValid = true
+
+        if (!assessment) return false
+
+        assessment.steps.forEach(step => {
+            step.questions.forEach(question => {
+                if (question.required) {
+                    const ans = answers[question.id]
+                    if (ans === undefined || ans === null || ans === '' || (Array.isArray(ans) && ans.length === 0)) {
+                        errors[question.id] = 'این سوال اجباری است'
+                        isValid = false
+                    }
+                }
+            })
+        })
+
+        setFormErrors(errors)
+        return isValid
+    }
+
+    const handleSubmit = async () => {
+        if (!assessment) return
+
+        if (!validateForm()) {
+            toast.push(<Notification title="خطا" type="danger">لطفا تمام سوالات اجباری را پاسخ دهید</Notification>)
+            return
+        }
+
+        try {
+            setSubmitting(true)
+
+            // Construct payload
+            const payloadAnswers: Record<string, any> = {}
+
+            assessment.steps.forEach(step => {
+                step.questions.forEach(question => {
+                    const value = answers[question.id]
+                    // Always include answer if present, or if required check passed.
+                    // Even if not required and empty, we can skip or send null.
+                    if (value !== undefined) {
+                        payloadAnswers[question.id] = {
+                            step_number: step.order,
+                            step_title: step.title,
+                            question_number: question.order,
+                            question_title: question.question,
+                            question_type: question.type,
+                            answer: value
+                        }
+                    }
+                })
+            })
+
+            const payload: AssessmentSubmissionPayload = {
+                answers: payloadAnswers
+            }
+
+            await submitApplicantAssessment(assessment.id, payload)
+
+            toast.push(<Notification title="موفقیت" type="success">نیازسنجی با موفقیت ثبت شد</Notification>)
+
+            // Reload to update status
+            loadAssessment()
+
+        } catch (error) {
+            console.error('Error submitting assessment:', error)
+            toast.push(<Notification title="خطا" type="danger">خطا در ثبت نیازسنجی</Notification>)
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    const renderQuestionInput = (question: AssessmentQuestion) => {
+        const value = answers[question.id]
+        const isReadOnly = assessment?.status === 'submitted' && !isEditing
+
+        switch (question.type) {
+            case 'text':
                 return (
-                    <Tag className="bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-100 border-0">
-                        تکمیل شده
-                    </Tag>
+                    <Input
+                        value={value || ''}
+                        onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                        placeholder="پاسخ خود را بنویسید..."
+                        disabled={isReadOnly}
+                        invalid={!!formErrors[question.id]}
+                    />
                 )
-            case 'pending':
+            case 'select':
                 return (
-                    <Tag className="bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-100 border-0">
-                        در انتظار
-                    </Tag>
+                    <Select
+                        options={question.options?.map(opt => ({ value: opt, label: opt })) || []}
+                        value={value ? { value: value, label: value } : null}
+                        onChange={(opt: any) => handleAnswerChange(question.id, opt?.value)}
+                        isDisabled={isReadOnly}
+                        placeholder="انتخاب کنید..."
+                    />
+                )
+            case 'radio':
+                return (
+                    <div className="space-y-2">
+                        <Radio.Group value={value} onChange={(val) => handleAnswerChange(question.id, val)} disabled={isReadOnly}>
+                            {question.options?.map((opt, idx) => (
+                                <Radio key={idx} value={opt}>{opt}</Radio>
+                            ))}
+                        </Radio.Group>
+                    </div>
+                )
+            case 'checkbox':
+                // Checkbox needs array value
+                const selectedValues = Array.isArray(value) ? value : []
+                return (
+                    <div className="space-y-2">
+                        {question.options?.map((opt, idx) => (
+                            <Checkbox
+                                key={idx}
+                                checked={selectedValues.includes(opt)}
+                                onChange={(checked) => {
+                                    // checked is boolean here based on Checkbox component
+                                    const newValues = checked
+                                        ? [...selectedValues, opt]
+                                        : selectedValues.filter((v: string) => v !== opt)
+                                    handleAnswerChange(question.id, newValues)
+                                }}
+                                disabled={isReadOnly}
+                            >
+                                {opt}
+                            </Checkbox>
+                        ))}
+                    </div>
+                )
+            case 'rating':
+                // Custom star rating input
+                const ratingValue = Number(value) || 0
+                return (
+                    <div className="flex flex-col items-start gap-2">
+                        <div className="flex gap-2">
+                            {[1, 2, 3, 4, 5].map(rating => (
+                                <div
+                                    key={rating}
+                                    className={`
+                                       cursor-pointer transition-all transform hover:scale-110
+                                       ${isReadOnly ? 'cursor-default' : ''}
+                                   `}
+                                    onClick={() => !isReadOnly && handleAnswerChange(question.id, rating)}
+                                >
+                                    <svg
+                                        className={`w-10 h-10 ${rating <= ratingValue ? 'text-yellow-400 fill-current' : 'text-gray-300 dark:text-gray-600'}`}
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        strokeWidth="1.5"
+                                        fill="none"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                    </svg>
+                                </div>
+                            ))}
+                        </div>
+                        <span className="text-xs text-gray-500">از ۱ تا ۵ امتیاز دهید</span>
+                    </div>
                 )
             default:
-                return <Tag className="border-0">نامشخص</Tag>
+                return <Input disabled placeholder="نوع سوال پشتیبانی نمی‌شود" />
         }
     }
-
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('fa-IR')
-    }
-
-    // Filter assessments based on selected category
-    const filteredAssessments = assessments.filter(assessment => {
-        switch (selectedCategory) {
-            case 'completed':
-                return assessment.status === 'completed'
-            case 'pending':
-                return assessment.status === 'pending'
-            case 'withExamSet':
-                return !!assessment.examSetId
-            case 'all':
-            default:
-                return true
-        }
-    })
-
-    // Calculate statistics
-    const totalAssessments = assessments.length
-    const completedAssessments = assessments.filter(a => a.status === 'completed').length
-    const pendingAssessments = assessments.filter(a => a.status === 'pending').length
-    const withExamSet = assessments.filter(a => a.examSetId).length
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-96">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+            <div className="space-y-6">
+                <Skeleton height={200} className="rounded-2xl" />
+                <div className="space-y-4">
+                    <Skeleton height={150} />
+                    <Skeleton height={150} />
+                </div>
             </div>
         )
     }
 
+    if (!assessment) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 text-center">
+                <HiOutlineExclamationCircle className="w-16 h-16 text-gray-400 mb-4" />
+                <h3 className="text-xl font-bold text-gray-700 dark:text-gray-200">نیازسنجی یافت نشد</h3>
+                <p className="text-gray-500 mt-2">هیچ فرم نیازسنجی فعال برای این متقاضی وجود ندارد.</p>
+                <Button className="mt-6" variant="solid" onClick={() => navigate(-1)}>بازگشت</Button>
+            </div>
+        )
+    }
+
+    const { templateName, managerName, status, steps } = assessment
+    const isSubmitted = status === 'submitted'
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 pb-20">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Button
-                        variant="plain"
-                        icon={<HiOutlineArrowLeft />}
-                        onClick={() => navigate('/owner/managers')}
-                    >
-                        بازگشت
-                    </Button>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                            نیازسنجی‌های {applicantName}
+            <div className="relative bg-blue-600 from-primary-600 to-primary-800 rounded-2xl shadow-xl overflow-hidden text-white p-8">
+                <div className="absolute top-0 left-0 p-4 opacity-5">
+                    <HiOutlineCheckCircle className="w-64 h-64 transform rotate-12 translate-x-16 -translate-y-16" />
+                </div>
+
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div className="order-2 md:order-1">
+                        <h1 className="text-3xl text-white md:text-4xl font-extrabold tracking-tight mb-2">
+                            {templateName}
                         </h1>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            مدیریت و مشاهده تمام نیازسنجی‌ها و نتایج مرتبط
-                        </p>
+                        <div className="flex flex-wrap items-center gap-4 text-white/90">
+                            <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
+                                <span className="opacity-80 text-sm">متقاضی:</span>
+                                <span className="font-semibold">{managerName}</span>
+                            </div>
+                            <div className={`px-3 py-1 rounded-full text-sm font-bold backdrop-blur-sm ${isSubmitted ? 'bg-green-500/40 text-green-50' : 'bg-yellow-500/40 text-yellow-50'}`}>
+                                {isSubmitted ? 'تکمیل شده' : 'پیش‌نویس'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="order-1 md:order-2 self-end md:self-center">
+                        <Button
+                            variant="plain"
+                            className="text-white hover:bg-white/20 p-2"
+                            onClick={() => navigate('/owner/managers')}
+                            icon={<HiOutlineArrowLeft className="text-xl" />}
+                        />
                     </div>
                 </div>
-                <Button
-                    variant="solid"
-                    icon={<HiOutlinePlus />}
-                    onClick={() => navigate(`/owner/managers/${managerId}/assessment/new`)}
-                >
-                    ایجاد نیازسنجی جدید
-                </Button>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
-                <StatisticCard
-                    title="همه نیازسنجی‌ها"
-                    value={totalAssessments}
-                    iconClass="bg-blue-200 text-blue-700"
-                    icon={<HiOutlineClipboardCheck />}
-                    label="all"
-                    active={selectedCategory === 'all'}
-                    onClick={setSelectedCategory}
-                />
-                <StatisticCard
-                    title="تکمیل شده"
-                    value={completedAssessments}
-                    iconClass="bg-emerald-200 text-emerald-700"
-                    icon={<HiOutlineClipboardCheck />}
-                    label="completed"
-                    active={selectedCategory === 'completed'}
-                    onClick={setSelectedCategory}
-                />
-                <StatisticCard
-                    title="در انتظار"
-                    value={pendingAssessments}
-                    iconClass="bg-amber-200 text-amber-700"
-                    icon={<HiOutlineClock />}
-                    label="pending"
-                    active={selectedCategory === 'pending'}
-                    onClick={setSelectedCategory}
-                />
-                <StatisticCard
-                    title="دارای مجموعه آزمون"
-                    value={withExamSet}
-                    iconClass="bg-purple-200 text-purple-700"
-                    icon={<HiOutlineAcademicCap />}
-                    label="withExamSet"
-                    active={selectedCategory === 'withExamSet'}
-                    onClick={setSelectedCategory}
-                />
-            </div>
+            {/* Form Content */}
+            <div className="relative">
+                {/* Connector Line */}
+                <div className="absolute top-0 bottom-0 right-6 md:right-8 w-0.5 bg-gray-200 dark:bg-gray-700 z-0 h-full"></div>
 
-            {/* Assessments Table */}
-            <Card>
-                <div className="p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                        لیست نیازسنجی‌ها
-                        {selectedCategory !== 'all' && (
-                            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 mr-2">
-                                ({filteredAssessments.length} مورد)
-                            </span>
-                        )}
-                    </h2>
-                    <Table>
-                        <THead>
-                            <Tr>
-                                <Th>عنوان نیازسنجی</Th>
-                                <Th>تاریخ ایجاد</Th>
-                                <Th>وضعیت نتیجه</Th>
-                                <Th>مجموعه آزمون</Th>
-                                <Th>عملیات</Th>
-                            </Tr>
-                        </THead>
-                        <TBody>
-                            {filteredAssessments.map((assessment) => (
-                                <Tr key={assessment.id}>
-                                    <Td>
-                                        <div>
-                                            <p className="font-medium text-gray-900 dark:text-white">
-                                                {assessment.title}
-                                            </p>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                {assessment.description}
-                                            </p>
+                <div className="space-y-12">
+                    {steps.map((step, stepIndex) => (
+                        <div key={step.id} className="relative z-10">
+                            {/* Step Header */}
+                            <div className="flex items-center gap-4 mb-6 group">
+                                <div className="flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 z-10 relative">
+                                    <span className="text-xl md:text-2xl font-bold text-primary-600 dark:text-primary-400">
+                                        {stepIndex + 1}
+                                    </span>
+                                </div>
+                                <div className="flex-1 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                                    <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                                        {step.title}
+                                    </h2>
+                                    {step.description && (
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                            {step.description}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Questions List */}
+                            <div className="mr-8 md:mr-12 space-y-4">
+                                {step.questions.map((question, qIndex) => (
+                                    <Card
+                                        key={question.id}
+                                        className={`hover:shadow-md transition-all duration-300 border-l-4 group ${formErrors[question.id] ? 'border-l-red-500 border-red-200' : 'border-l-transparent hover:border-l-primary-500'}`}
+                                        bodyClass="p-5"
+                                    >
+                                        <div className="flex items-start gap-4">
+                                            <div className="flex-shrink-0 mt-1">
+                                                {/* Question Type Icons matching Admin Panel */}
+                                                {question.type === 'text' && <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" /></svg></div>}
+                                                {question.type === 'select' && <div className="p-2 bg-purple-50 text-purple-600 rounded-lg"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></div>}
+                                                {question.type === 'radio' && <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>}
+                                                {question.type === 'checkbox' && <div className="p-2 bg-pink-50 text-pink-600 rounded-lg"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg></div>}
+                                                {question.type === 'rating' && <div className="p-2 bg-yellow-50 text-yellow-600 rounded-lg"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg></div>}
+                                            </div>
+
+                                            <div className="flex-1">
+                                                <div className="mb-4">
+                                                    <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center gap-2">
+                                                        {question.question}
+                                                        {question.required && <span className="text-red-500 text-sm" title="اجباری">*</span>}
+                                                    </h3>
+                                                </div>
+
+                                                <div className="mt-2">
+                                                    {renderQuestionInput(question)}
+                                                    {formErrors[question.id] && (
+                                                        <p className="text-red-500 text-sm mt-2 flex items-center gap-1 bg-red-50 p-2 rounded-lg inline-flex">
+                                                            <HiOutlineExclamationCircle />
+                                                            {formErrors[question.id]}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </Td>
-                                    <Td>{formatDate(assessment.createdDate)}</Td>
-                                    <Td>{getStatusTag(assessment.status)}</Td>
-                                    <Td>
-                                        {assessment.examSetId ? (
-                                            <Tag className="bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-100 border-0">
-                                                {assessment.examSetTitle}
-                                            </Tag>
-                                        ) : assessment.status === 'completed' ? (
-                                            <Tag className="bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-100 border-0">
-                                                در انتظار تخصیص
-                                            </Tag>
-                                        ) : (
-                                            <span className="text-sm text-gray-500 dark:text-gray-400">-</span>
-                                        )}
-                                    </Td>
-                                    <Td>
-                                        <div className="flex items-center gap-2">
-                                            {/* For completed assessments: only view */}
-                                            {assessment.status === 'completed' ? (
-                                                <Button
-                                                    variant="plain"
-                                                    size="sm"
-                                                    icon={<HiOutlineEye />}
-                                                    onClick={() => navigate(`/owner/managers/${managerId}/assessment/${assessment.id}/view`)}
-                                                >
-                                                    مشاهده
-                                                </Button>
-                                            ) : (
-                                                /* For pending assessments: edit, delete, view */
-                                                <>
-                                                    <Button
-                                                        variant="plain"
-                                                        size="sm"
-                                                        icon={<HiOutlinePencil />}
-                                                        onClick={() => navigate(`/owner/managers/${managerId}/assessment/${assessment.id}/edit`)}
-                                                    >
-                                                        ویرایش
-                                                    </Button>
-                                                    <Button
-                                                        variant="plain"
-                                                        size="sm"
-                                                        icon={<HiOutlineEye />}
-                                                        onClick={() => navigate(`/owner/managers/${managerId}/assessment/${assessment.id}/view`)}
-                                                    />
-                                                    <Button
-                                                        variant="plain"
-                                                        size="sm"
-                                                        icon={<HiOutlineTrash />}
-                                                        onClick={() => {
-                                                            setSelectedAssessment(assessment)
-                                                            setDeleteDialog(true)
-                                                        }}
-                                                        className="text-red-600 hover:text-red-700"
-                                                    />
-                                                </>
-                                            )}
-                                        </div>
-                                    </Td>
-                                </Tr>
-                            ))}
-                            {filteredAssessments.length === 0 && (
-                                <Tr>
-                                    <Td colSpan={5}>
-                                        <div className="text-center py-12">
-                                            <HiOutlineClipboardCheck className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                                            <p className="text-gray-500 dark:text-gray-400 mb-4">
-                                                {selectedCategory === 'all'
-                                                    ? 'هنوز هیچ نیازسنجی برای این متقاضی ثبت نشده است'
-                                                    : 'نیازسنجی با این فیلتر یافت نشد'}
-                                            </p>
-                                            {selectedCategory === 'all' && (
-                                                <Button
-                                                    variant="solid"
-                                                    icon={<HiOutlinePlus />}
-                                                    onClick={() => navigate(`/owner/managers/${managerId}/assessment/new`)}
-                                                >
-                                                    ایجاد اولین نیازسنجی
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </Td>
-                                </Tr>
-                            )}
-                        </TBody>
-                    </Table>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
                 </div>
-            </Card>
 
-            {/* Delete Confirmation */}
-            <ConfirmDialog
-                isOpen={deleteDialog}
-                type="danger"
-                title="حذف نیازسنجی"
-                confirmText="بله، حذف کن"
-                cancelText="انصراف"
-                onClose={() => {
-                    setDeleteDialog(false)
-                    setSelectedAssessment(null)
-                }}
-                onRequestClose={() => {
-                    setDeleteDialog(false)
-                    setSelectedAssessment(null)
-                }}
-                onCancel={() => {
-                    setDeleteDialog(false)
-                    setSelectedAssessment(null)
-                }}
-                onConfirm={handleDeleteAssessment}
-            >
-                <p>آیا از حذف نیازسنجی "{selectedAssessment?.title}" اطمینان دارید؟</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                    با حذف این نیازسنجی، نتیجه و مجموعه آزمون‌های مرتبط نیز حذف خواهند شد.
-                </p>
-            </ConfirmDialog>
+                {/* Actions */}
+                <div className="sticky bottom-6 mt-6 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex justify-end gap-4">
+                    {isSubmitted && !isEditing ? (
+                        <div className="flex justify-between w-full items-center">
+                            <span className="text-gray-500 text-sm">برای تغییر پاسخ‌ها وارد حالت ویرایش شوید</span>
+                            <div className="flex gap-2">
+                                <Button variant="plain" onClick={() => navigate('/owner/managers')}>
+                                    بازگشت
+                                </Button>
+                                <Button
+                                    variant="solid"
+                                    icon={<HiOutlinePencil />}
+                                    onClick={() => setIsEditing(true)}
+                                >
+                                    حالت ویرایش
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <Button
+                                variant="plain"
+                                onClick={() => {
+                                    if (isSubmitted) {
+                                        setIsEditing(false)
+                                        // Reset answers to original load state if cancelled? 
+                                        // For now just exit edit mode, keeping client state is ok or reload.
+                                        loadAssessment()
+                                    } else {
+                                        navigate('/owner/managers')
+                                    }
+                                }}
+                            >
+                                انصراف
+                            </Button>
+
+                            <Button
+                                variant="solid"
+                                loading={submitting}
+                                icon={<HiOutlineSave />}
+                                onClick={handleSubmit}
+                            >
+                                {isSubmitted ? 'ذخیره تغییرات' : 'ثبت نهایی نیازسنجی'}
+                            </Button>
+                        </>
+                    )}
+                </div>
+            </div>
         </div>
     )
 }

@@ -27,8 +27,11 @@ import {
   mockExamResults,
   mockNotifications,
   mockSupportMessages,
-  mockDashboardStats
+  mockDashboardStats,
+  AssessmentStep,
+  AssessmentQuestion
 } from '@/mock/data/ownerData'
+
 import apiClient from '@/services/ApiClient'
 import API_ENDPOINTS from '@/constants/api.endpoints'
 
@@ -299,6 +302,132 @@ export const updateAssessment = async (id: string, data: Partial<Assessment>): P
       }
     }, 500)
   })
+}
+
+// Applicant Assessment APIs
+export interface AssessmentSubmissionPayload {
+  answers: {
+    [key: string]: {
+      step_number: number
+      step_title: string
+      question_number: number
+      question_title: string
+      question_type: string
+      answer: string | string[] | number | null
+    }
+  }
+}
+
+export const getApplicantAssessment = async (managerId: string): Promise<Assessment | null> => {
+  try {
+    // First, fetch the manager details to get the user_id
+    // We assume managerId passed here is the ID from the managers table (row id)
+    const managerData = await getManagerByIdFromAPI(parseInt(managerId))
+
+    if (!managerData || !managerData.user_id) {
+      console.error('Manager user_id not found')
+      return null
+    }
+
+    const userId = managerData.user_id
+
+    // Now call the assessment API with the user_id
+    const response = await apiClient.get<{ success: boolean; data: any[] }>(`/assessments?manager_id=${userId}`)
+
+    // Helper to map steps
+    const mapSteps = (steps: any[]) => steps?.map((step: any) => ({
+      id: step.id.toString(),
+      title: step.title,
+      description: step.description,
+      order: step.order,
+      questions: step.questions?.map((q: any) => ({
+        id: q.id.toString(),
+        question: q.question,
+        type: q.type,
+        options: q.options || [],
+        required: !!q.required,
+        order: q.order
+      })) || []
+    })) || []
+
+    let assessmentData: any = null
+    let templateData: any = null
+    let steps: any[] = []
+
+    if (response.data && response.data.length > 0) {
+      // Find the assessment with template_id 1
+      assessmentData = response.data.find(a => a.template_id === 1) || response.data[0]
+
+      // Check if steps exist in the assessment response
+      steps = mapSteps(assessmentData.template?.steps)
+
+      // If steps are missing, fetch the template details
+      if ((!steps || steps.length === 0) && assessmentData.template_id) {
+        try {
+          const tmplRes = await apiClient.get<{ success: boolean; data: any[] }>(`/assessment-templates/?template=${assessmentData.template_id}`)
+          if (tmplRes.data && tmplRes.data.length > 0) {
+            templateData = tmplRes.data[0]
+            steps = mapSteps(templateData.steps)
+          }
+        } catch (e) {
+          console.error('Failed to fetch template details for existing assessment', e)
+        }
+      }
+
+      return {
+        id: assessmentData.id.toString(),
+        managerId: assessmentData.manager_id.toString(),
+        managerName: assessmentData.manager?.position || 'Unknown',
+        templateId: assessmentData.template_id.toString(),
+        templateName: assessmentData.template?.name || templateData?.name || '',
+        steps: steps,
+        currentStep: assessmentData.current_step,
+        answers: assessmentData.answers || {},
+        status: assessmentData.status,
+        createdAt: assessmentData.created_at,
+        updatedAt: assessmentData.updated_at,
+        score: assessmentData.score,
+        items: []
+      } as unknown as Assessment
+    } else {
+      // If no assessment found, fetch Template ID 1
+      const templateResponse = await apiClient.get<{ success: boolean; data: any[] }>(`/assessment-templates/?template=1`)
+
+      if (templateResponse.data && templateResponse.data.length > 0) {
+        const template = templateResponse.data[0]
+        return {
+          id: 'new', // Virtual ID indicating new assessment
+          managerId: managerId, // We use the managerId passed to the function
+          managerName: managerData.position || 'Unknown',
+          templateId: template.id.toString(),
+          templateName: template.name,
+          steps: mapSteps(template.steps),
+          currentStep: 1,
+          answers: {},
+          status: 'draft',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          score: 0,
+          items: []
+        } as unknown as Assessment
+      }
+    }
+    return null
+  } catch (error) {
+    console.error('Error fetching applicant assessment:', error)
+    // Fallback to mock if API fails for dev purposes, or throw
+    throw error
+  }
+}
+
+export const submitApplicantAssessment = async (assessmentId: string, payload: AssessmentSubmissionPayload): Promise<any> => {
+  try {
+    const response = await apiClient.post(`/assessments/${assessmentId}/submit`, payload)
+    return response.data
+  } catch (error) {
+    console.error('Error submitting assessment:', error)
+    throw error
+  }
 }
 
 export const submitAssessment = async (id: string): Promise<Assessment> => {

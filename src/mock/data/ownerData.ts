@@ -124,6 +124,7 @@ export interface AssessmentStep {
   id: string
   title: string
   description?: string
+  order?: number
   questions: AssessmentQuestion[]
 }
 
@@ -142,6 +143,7 @@ export interface AssessmentQuestion {
   type: 'text' | 'select' | 'radio' | 'checkbox' | 'rating'
   options?: string[]
   required: boolean
+  order?: number
 }
 
 export interface Payment {
