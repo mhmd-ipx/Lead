@@ -167,16 +167,25 @@ const AssessmentForms = () => {
 
     const handleSaveQuestion = async () => {
         if (!questionFormData.question) {
-            toast.push(<Notification title="خطا" type="danger">عنوان سوال الزامی است</Notification>)
+            toast.push(<Notification title="خطا" type="danger">متن سوال الزامی است</Notification>)
             return
+        }
+
+
+        // Filter out empty options
+        const updatedFormData = {
+            ...questionFormData,
+            // Enforce required: true for all questions as requested
+            required: true,
+            options: questionFormData.options ? questionFormData.options.filter(o => o.trim() !== '') : []
         }
 
         try {
             if (newQuestionStepId) {
-                await createAssessmentQuestion(questionFormData)
+                await createAssessmentQuestion(updatedFormData)
                 toast.push(<Notification title="موفقیت" type="success">سوال با موفقیت ایجاد شد</Notification>)
             } else if (editingQuestionId) {
-                await updateAssessmentQuestion(editingQuestionId, questionFormData)
+                await updateAssessmentQuestion(editingQuestionId, updatedFormData)
                 toast.push(<Notification title="موفقیت" type="success">سوال با موفقیت ویرایش شد</Notification>)
             }
 
@@ -228,9 +237,8 @@ const AssessmentForms = () => {
         setQuestionFormData({})
     }
 
-    const handleOptionsChange = (val: string) => {
-        const optionsArray = val.split(',').map(s => s.trim()).filter(s => s !== '')
-        setQuestionFormData(prev => ({ ...prev, options: optionsArray }))
+    const handleOptionsChange = (newOptions: string[]) => {
+        setQuestionFormData(prev => ({ ...prev, options: newOptions }))
     }
 
     if (loading && !template) {
@@ -278,7 +286,7 @@ const AssessmentForms = () => {
                     <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2 text-balck ">
                         {template?.name}
                     </h1>
-                    <p className="text-lg text-white font-medium opacity-100 max-w-2xl leading-relaxed drop-shadow-sm">
+                    <p className="text-lg text-gray font-medium opacity-100 max-w-2xl leading-relaxed drop-shadow-sm">
                         {template?.description}
                     </p>
                 </div>
@@ -380,44 +388,31 @@ const AssessmentForms = () => {
                                                         </h4>
                                                     </div>
                                                     <div>
-                                                        <label className="mb-1 block text-sm font-medium">عنوان سوال</label>
+                                                        <label className="mb-1 block text-sm font-medium">متن سوال</label>
                                                         <Input
                                                             value={questionFormData.question || ''}
                                                             onChange={(e) => setQuestionFormData({ ...questionFormData, question: e.target.value })}
                                                         />
                                                     </div>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        <div>
-                                                            <label className="mb-1 block text-sm font-medium">نوع سوال</label>
-                                                            <Select
-                                                                options={[
-                                                                    { value: 'text', label: 'متنی' },
-                                                                    { value: 'select', label: 'انتخابی' },
-                                                                    { value: 'radio', label: 'رادیو باتن' },
-                                                                    { value: 'checkbox', label: 'چند گزینه‌ای' },
-                                                                    { value: 'rating', label: 'امتیازدهی' },
-                                                                ]}
-                                                                value={{ value: questionFormData.type, label: getTypeLabel(questionFormData.type) }}
-                                                                onChange={(opt: any) => setQuestionFormData({ ...questionFormData, type: opt.value })}
-                                                            />
-                                                        </div>
-                                                        <div className="flex items-center pt-6">
-                                                            <Switcher
-                                                                checked={questionFormData.required}
-                                                                onChange={(checked) => setQuestionFormData({ ...questionFormData, required: !checked })}
-                                                            />
-                                                            <span className="mr-2">پاسخ اجباری باشد</span>
-                                                        </div>
+                                                    <div>
+                                                        <label className="mb-1 block text-sm font-medium">نوع سوال</label>
+                                                        <Select
+                                                            options={[
+                                                                { value: 'text', label: 'متنی' },
+                                                                { value: 'select', label: 'انتخابی' },
+                                                                { value: 'radio', label: 'تستی (تک انتخابی)' },
+                                                                { value: 'checkbox', label: 'تستی (چند انتخابی)' },
+                                                                { value: 'rating', label: 'امتیازدهی' },
+                                                            ]}
+                                                            value={{ value: questionFormData.type, label: getTypeLabel(questionFormData.type) }}
+                                                            onChange={(opt: any) => setQuestionFormData({ ...questionFormData, type: opt.value })}
+                                                        />
                                                     </div>
                                                     {['select', 'radio', 'checkbox'].includes(questionFormData.type || '') && (
-                                                        <div>
-                                                            <label className="mb-1 block text-sm font-medium">گزینه‌ها (با کاما جدا کنید)</label>
-                                                            <Input
-                                                                value={questionFormData.options?.join(', ') || ''}
-                                                                onChange={(e) => handleOptionsChange(e.target.value)}
-                                                                placeholder="گزینه 1, گزینه 2, ..."
-                                                            />
-                                                        </div>
+                                                        <OptionsEditor
+                                                            options={questionFormData.options || []}
+                                                            onChange={handleOptionsChange}
+                                                        />
                                                     )}
                                                     <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
                                                         <Button size="sm" onClick={handleCancel}>انصراف</Button>
@@ -499,45 +494,32 @@ const AssessmentForms = () => {
                                                 </h4>
                                             </div>
                                             <div>
-                                                <label className="mb-1 block text-sm font-medium">عنوان سوال</label>
+                                                <label className="mb-1 block text-sm font-medium">متن سوال</label>
                                                 <Input
                                                     value={questionFormData.question || ''}
                                                     onChange={(e) => setQuestionFormData({ ...questionFormData, question: e.target.value })}
                                                     placeholder="مثلا: سابقه کاری شما چقدر است؟"
                                                 />
                                             </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="mb-1 block text-sm font-medium">نوع سوال</label>
-                                                    <Select
-                                                        options={[
-                                                            { value: 'text', label: 'متنی' },
-                                                            { value: 'select', label: 'انتخابی' },
-                                                            { value: 'radio', label: 'رادیو باتن' },
-                                                            { value: 'checkbox', label: 'چند گزینه‌ای' },
-                                                            { value: 'rating', label: 'امتیازدهی' },
-                                                        ]}
-                                                        value={{ value: questionFormData.type, label: getTypeLabel(questionFormData.type) }}
-                                                        onChange={(opt: any) => setQuestionFormData({ ...questionFormData, type: opt.value })}
-                                                    />
-                                                </div>
-                                                <div className="flex items-center pt-6">
-                                                    <Switcher
-                                                        checked={questionFormData.required}
-                                                        onChange={(checked) => setQuestionFormData({ ...questionFormData, required: !checked })}
-                                                    />
-                                                    <span className="mr-2">پاسخ اجباری باشد</span>
-                                                </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">نوع سوال</label>
+                                                <Select
+                                                    options={[
+                                                        { value: 'text', label: 'متنی' },
+                                                        { value: 'select', label: 'انتخابی' },
+                                                        { value: 'radio', label: 'تستی (تک انتخابی)' },
+                                                        { value: 'checkbox', label: 'تستی (چند انتخابی)' },
+                                                        { value: 'rating', label: 'امتیازدهی' },
+                                                    ]}
+                                                    value={{ value: questionFormData.type, label: getTypeLabel(questionFormData.type) }}
+                                                    onChange={(opt: any) => setQuestionFormData({ ...questionFormData, type: opt.value })}
+                                                />
                                             </div>
                                             {['select', 'radio', 'checkbox'].includes(questionFormData.type || '') && (
-                                                <div>
-                                                    <label className="mb-1 block text-sm font-medium">گزینه‌ها (با کاما جدا کنید)</label>
-                                                    <Input
-                                                        value={questionFormData.options?.join(', ') || ''}
-                                                        onChange={(e) => handleOptionsChange(e.target.value)}
-                                                        placeholder="گزینه 1, گزینه 2, ..."
-                                                    />
-                                                </div>
+                                                <OptionsEditor
+                                                    options={questionFormData.options || []}
+                                                    onChange={handleOptionsChange}
+                                                />
                                             )}
                                             <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
                                                 <Button size="sm" onClick={handleCancel}>انصراف</Button>
@@ -564,8 +546,8 @@ const AssessmentForms = () => {
 
                     {/* Add Step Button */}
                     {newStepMode ? (
-                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-2 border-primary-500 mb-6 animate-fade-in-up md:ml-12">
-                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                        <div className="bg-white dark:bg-gray-800 p-6  rounded-xl shadow-lg border-2 border-primary-500 mb-6 animate-fade-in-up md:mr-12">
+                            <h3 className="text-lg font-bold mb-4  flex items-center gap-2">
                                 <HiOutlinePlus /> افزودن مرحله جدید
                             </h3>
                             <div className="grid gap-4">
@@ -593,10 +575,10 @@ const AssessmentForms = () => {
                             </div>
                         </div>
                     ) : (
-                        <div className="flex justify-center md:ml-12 py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl hover:border-primary-400 transition-colors cursor-pointer group" onClick={() => { setNewStepMode(true); setEditingStepId(null); setStepFormData({ description: '' }) }}>
+                        <div className="flex justify-center md:mr-12 py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl hover:border-primary-400 transition-colors cursor-pointer group" onClick={() => { setNewStepMode(true); setEditingStepId(null); setStepFormData({ description: '' }) }}>
                             <div className="text-center text-gray-500 group-hover:text-primary-600 transition-colors">
-                                <HiOutlinePlus className="mx-auto text-2xl mb-1" />
-                                <span className="font-medium">افزودن مرحله جدید</span>
+                                <HiOutlinePlus className="mx-auto text-2xl mb-1 text-blue-600" />
+                                <span className="font-medium text-blue-600">افزودن مرحله جدید</span>
                             </div>
                         </div>
                     )}
@@ -702,11 +684,63 @@ const getTypeLabel = (type?: string) => {
     switch (type) {
         case 'text': return 'متنی';
         case 'select': return 'انتخابی';
-        case 'radio': return 'تک انتخابی';
-        case 'checkbox': return 'چند انتخابی';
+        case 'radio': return 'تستی (تک انتخابی)';
+        case 'checkbox': return 'تستی (چند انتخابی)';
         case 'rating': return 'امتیازدهی';
         default: return type;
     }
+}
+
+const OptionsEditor = ({ options, onChange }: { options: string[], onChange: (options: string[]) => void }) => {
+    const handleAddOption = () => {
+        onChange([...options, ''])
+    }
+
+    const handleRemoveOption = (index: number) => {
+        const newOptions = [...options]
+        newOptions.splice(index, 1)
+        onChange(newOptions)
+    }
+
+    const handleOptionChange = (index: number, value: string) => {
+        const newOptions = [...options]
+        newOptions[index] = value
+        onChange(newOptions)
+    }
+
+    return (
+        <div>
+            <label className="mb-2 block text-sm font-medium">گزینه‌ها</label>
+            <div className="space-y-2">
+                {options.map((option, index) => (
+                    <div key={index} className="flex gap-2 items-center">
+                        <Input
+                            value={option}
+                            onChange={e => handleOptionChange(index, e.target.value)}
+                            placeholder={`گزینه ${index + 1}`}
+                            size="sm"
+                        />
+                        <Button
+                            type="button"
+                            icon={<HiOutlineTrash />}
+                            className="text-red-500 hover:bg-red-50 hover:text-red-600 border-red-200"
+                            size="sm"
+                            onClick={() => handleRemoveOption(index)}
+                        />
+                    </div>
+                ))}
+                <Button
+                    type="button"
+                    size="sm"
+                    icon={<HiOutlinePlus />}
+                    onClick={handleAddOption}
+                    className="w-full border-dashed text-primary-600 border-primary-300 hover:bg-primary-50 mt-2"
+                >
+                    افزودن گزینه جدید
+                </Button>
+            </div>
+        </div>
+    )
 }
 
 export default AssessmentForms
