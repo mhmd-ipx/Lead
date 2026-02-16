@@ -196,6 +196,12 @@ const adminRoutes: Routes = [
         authority: [ADMIN],
     },
     {
+        key: 'adminBillView',
+        path: '/admin/accounting/bills/:id',
+        component: lazy(() => import('@/views/admin/BillView')),
+        authority: [ADMIN],
+    },
+    {
         key: 'adminNotifications',
         path: '/admin/notifications',
         component: lazy(() => import('@/views/admin/Notifications')),

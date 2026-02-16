@@ -579,9 +579,9 @@ export async function createBillFromDocuments(data: {
     }
 }
 
-export async function getBills() {
+export async function getBills(params?: any) {
     try {
-        const response = await apiClient.get('/bills')
+        const response = await apiClient.get('/bills', { params })
         return response
     } catch (error) {
         console.error('Error fetching bills:', error)
