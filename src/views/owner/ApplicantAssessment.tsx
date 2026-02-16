@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Card, Button, Input, Select, Radio, Checkbox, Notification, toast, Skeleton } from '@/components/ui'
+import { Card, Button, Input, Select, Radio, Checkbox, Notification, toast, Skeleton, Dialog } from '@/components/ui'
 import { HiOutlineArrowLeft, HiOutlineSave, HiOutlinePencil, HiOutlineCheckCircle, HiOutlineExclamationCircle } from 'react-icons/hi'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getApplicantAssessment, submitApplicantAssessment, AssessmentSubmissionPayload } from '@/services/OwnerService'
@@ -15,6 +15,7 @@ const ApplicantAssessment = () => {
     const [answers, setAnswers] = useState<Record<string, any>>({})
     const [formErrors, setFormErrors] = useState<Record<string, string>>({})
     const [isEditing, setIsEditing] = useState(false)
+    const [confirmDialogIsOpen, setConfirmDialogIsOpen] = useState(false)
 
     useEffect(() => {
         if (managerId) {
@@ -104,6 +105,13 @@ const ApplicantAssessment = () => {
             return
         }
 
+        // Open Dialog instead of immediate submit
+        setConfirmDialogIsOpen(true)
+    }
+
+    const confirmSubmit = async () => {
+        if (!assessment) return
+
         try {
             setSubmitting(true)
 
@@ -138,12 +146,15 @@ const ApplicantAssessment = () => {
 
             // Reload to update status
             loadAssessment()
+            // Exit edit mode if we were editing
+            setIsEditing(false)
 
         } catch (error) {
             console.error('Error submitting assessment:', error)
             toast.push(<Notification title="خطا" type="danger">خطا در ثبت نیازسنجی</Notification>)
         } finally {
             setSubmitting(false)
+            setConfirmDialogIsOpen(false)
         }
     }
 
@@ -421,6 +432,45 @@ const ApplicantAssessment = () => {
                     )}
                 </div>
             </div>
+
+            {/* Confirmation Dialog */}
+            <Dialog
+                isOpen={confirmDialogIsOpen}
+                onClose={() => setConfirmDialogIsOpen(false)}
+                onRequestClose={() => setConfirmDialogIsOpen(false)}
+            >
+                <div className="flex flex-col h-full justify-between">
+                    <h5 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                        <HiOutlineExclamationCircle className="text-yellow-500 text-2xl" />
+                        تایید ثبت نهایی
+                    </h5>
+                    <div className="max-h-96 overflow-y-auto">
+                        <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                            آیا از ثبت نهایی پاسخ‌های خود اطمینان دارید؟
+                        </p>
+                        <div className="bg-yellow-50 border-r-4 border-yellow-400 p-4 mt-4 rounded-md">
+                            <p className="text-yellow-700 text-sm font-medium">
+                                توجه: لطفاً پیش از ثبت، تمام موارد را به دقت بررسی کنید. پس از ثبت نهایی، امکان ویرایش پاسخ‌ها وجود نخواهد داشت.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="text-right mt-6 flex justify-end gap-2">
+                        <Button
+                            variant="plain"
+                            onClick={() => setConfirmDialogIsOpen(false)}
+                        >
+                            بررسی مجدد
+                        </Button>
+                        <Button
+                            variant="solid"
+                            onClick={confirmSubmit}
+                            loading={submitting}
+                        >
+                            تایید و ثبت نهایی
+                        </Button>
+                    </div>
+                </div>
+            </Dialog>
         </div>
     )
 }

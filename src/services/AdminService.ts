@@ -195,15 +195,128 @@ import {
     AssessmentTemplate,
     mockAssessmentTemplates
 } from '@/mock/data/adminData'
+import { AdminCompletedAssessmentListResponse, AdminCompletedAssessment } from '@/@types/adminAssessment'
 
-export async function getCompletedAssessments(): Promise<CompletedAssessment[]> {
-    await delay(500)
-    return mockCompletedAssessments
+export async function getCompletedAssessments(): Promise<AdminCompletedAssessment[]> {
+    try {
+        const response = await apiClient.get<AdminCompletedAssessmentListResponse>('/assessments/?status=submitted')
+
+        if (response.success && Array.isArray(response.data)) {
+            // Return the data directly with assignedExams initialized to empty array
+            return response.data.map(item => ({
+                ...item,
+                assignedExams: item.assignedExams || []
+            }))
+        }
+        return []
+    } catch (error) {
+        console.error('Error fetching completed assessments:', error)
+        return []
+    }
 }
 
 export async function getAssessmentById(id: string): Promise<CompletedAssessment | null> {
-    await delay(300)
-    return mockCompletedAssessments.find(assessment => assessment.id === id) || null
+    try {
+        // Since we don't have a direct /assessments/{id} endpoint mentioned in the prompt (only list),
+        // we can fetch the list and find the item, OR if there is one, use it. 
+        // Typically REST is /assessments/{id}. Let's try that or fallback to list filtering.
+        // User provided: {{base}}/assessments/?status=submitted
+
+        // Let's try to fetch the specific assessment. 
+        // Assuming /assessments/{id} exists or filtering the list.
+
+        const response = await apiClient.get<AdminCompletedAssessmentListResponse>(`/assessments/?status=submitted`)
+        if (response.success && Array.isArray(response.data)) {
+            const item = response.data.find(a => a.id.toString() === id)
+            if (!item) return null
+
+            // Now we need to fully hydrate this object for the view
+            // 1. Get Template details to have Steps and Questions
+            // 2. Map Answers to the Steps/Questions structure
+
+            const templateId = item.template_id
+            const template = await getAssessmentTemplate(templateId)
+
+            if (!template) return null // Should't happen if data integrity is good
+
+            // Parse Answers
+            // The answers in API are either:
+            // Type A: { "1": "Value", "2": "Value" } (Key is QuestionID)
+            // Type B: { "4": { step_number: 0, question_number: 1, answer: "..." } }
+
+            const mappedAnswers: Record<string, Record<string, any>> = {}
+
+            // Initialize mapped answers structure based on template steps
+            // template.steps.forEach(s => mappedAnswers[s.id] = {}) 
+            // BUT template step IDs are numbers in API (e.g., 1), UI might expect strings 'step-1'.
+            // The Mock data used string IDs 'step-1', 'q1'.
+            // The Real API uses number IDs.
+            // We need to adhere to the CompletedAssessment interface which uses `steps: AssessmentStep[]`.
+            // And `AssessmentStep` has `id: string`.
+
+            // Let's convert Template structure to the UI expected structure
+            const uiSteps = template.steps.map(step => ({
+                id: step.id.toString(),
+                title: step.title,
+                description: step.description,
+                questions: step.questions.map(q => ({
+                    id: q.id.toString(),
+                    question: q.question,
+                    type: q.type,
+                    options: q.options,
+                    required: q.required
+                }))
+            }))
+
+            // Process Answers
+            const rawAnswers = item.answers
+
+            uiSteps.forEach(step => {
+                const stepAnswers: Record<string, any> = {}
+                step.questions.forEach(q => {
+                    // Try to find answer for question q.id (e.g., "1")
+                    const key = q.id
+
+                    if (rawAnswers[key]) {
+                        const val = rawAnswers[key]
+                        // Check if it's complex object or direct value
+                        if (val && typeof val === 'object' && 'answer' in val && !Array.isArray(val)) {
+                            stepAnswers[key] = (val as any).answer
+                        } else {
+                            stepAnswers[key] = val
+                        }
+                    }
+                })
+                mappedAnswers[step.id] = stepAnswers
+            })
+
+            return {
+                id: item.id.toString(),
+                managerId: item.manager_id.toString(),
+                managerName: `User ${item.manager.user_id}`, // In real app, fetch user name
+                companyId: item.manager.company_id.toString(),
+                companyName: `Company ${item.manager.company_id}`, // In real app, fetch company name
+                ownerId: '0',
+                ownerName: 'Unknown', // Need extra data
+                templateId: item.template_id.toString(),
+                templateName: item.template.name,
+                steps: uiSteps,
+                currentStep: item.current_step,
+                answers: mappedAnswers,
+                status: item.status as 'draft' | 'submitted',
+                score: 0, // Removed score
+                createdAt: item.created_at,
+                updatedAt: item.updated_at,
+                submittedAt: item.submitted_at || undefined,
+                assignedExams: [] // Placeholder
+            }
+        }
+
+        return null
+    } catch (error) {
+        console.error('Error fetching assessment by ID:', error)
+        return null
+    }
 }
 
 export async function getAssessmentTemplates(): Promise<AssessmentTemplate[]> {
@@ -397,6 +510,143 @@ export async function deleteAssessmentQuestion(id: number): Promise<void> {
         await apiClient.delete(`/assessment-questions/${id}`)
     } catch (error) {
         console.error('Error deleting question:', error)
+        throw error
+    }
+}
+
+// Financial Documents
+export async function getFinancialDocuments(params?: any) {
+    try {
+        const response = await apiClient.get('/financial-documents', { params })
+        return response
+    } catch (error) {
+        console.error('Error fetching financial documents:', error)
+        throw error
+    }
+}
+
+export async function createFinancialDocument(data: any) {
+    try {
+        const response = await apiClient.post('/financial-documents', data)
+        return response
+    } catch (error) {
+        console.error('Error creating financial document:', error)
+        throw error
+    }
+}
+
+export async function getFinancialDocument(id: number) {
+    try {
+        const response = await apiClient.get(`/financial-documents/${id}`)
+        return response
+    } catch (error) {
+        console.error('Error fetching financial document:', error)
+        throw error
+    }
+}
+
+export async function updateFinancialDocument(id: number, data: any) {
+    try {
+        const response = await apiClient.put(`/financial-documents/${id}`, data)
+        return response
+    } catch (error) {
+        console.error('Error updating financial document:', error)
+        throw error
+    }
+}
+
+export async function deleteFinancialDocument(id: number) {
+    try {
+        const response = await apiClient.delete(`/financial-documents/${id}`)
+        return response
+    } catch (error) {
+        console.error('Error deleting financial document:', error)
+        throw error
+    }
+}
+
+export async function createBillFromDocuments(data: {
+    company_id: number
+    financial_document_ids: number[]
+    official_invoice_requested: boolean
+}) {
+    try {
+        const response = await apiClient.post('/bills/from-documents', data)
+        return response
+    } catch (error) {
+        console.error('Error creating bill from documents:', error)
+        throw error
+    }
+}
+
+export async function getBills() {
+    try {
+        const response = await apiClient.get('/bills')
+        return response
+    } catch (error) {
+        console.error('Error fetching bills:', error)
+        throw error
+    }
+}
+
+export async function getBill(id: number) {
+    try {
+        const response = await apiClient.get(`/bills/${id}`)
+        return response
+    } catch (error) {
+        console.error('Error fetching bill:', error)
+        throw error
+    }
+}
+
+export async function updateBill(id: number, data: any) {
+    try {
+        const response = await apiClient.put(`/bills/${id}`, data)
+        return response
+    } catch (error) {
+        console.error('Error updating bill:', error)
+        throw error
+    }
+}
+
+export async function payBill(id: number) {
+    try {
+        const response = await apiClient.post(`/bills/${id}/pay`)
+        return response
+    } catch (error) {
+        console.error('Error paying bill:', error)
+        throw error
+    }
+}
+
+export async function deleteBill(id: number) {
+    try {
+        const response = await apiClient.delete(`/bills/${id}`)
+        return response
+    } catch (error) {
+        console.error('Error deleting bill:', error)
+        throw error
+    }
+}
+
+export async function addDocumentToBill(billId: number, documentIds: number[]) {
+    try {
+        const response = await apiClient.post(`/bills/${billId}/documents`, {
+            financial_document_ids: documentIds
+        })
+        return response
+    } catch (error) {
+        console.error('Error adding documents to bill:', error)
+        throw error
+    }
+}
+
+export async function removeDocumentFromBill(billId: number, documentId: number) {
+    try {
+        const response = await apiClient.delete(`/bills/${billId}/documents/${documentId}`)
+        return response
+    } catch (error) {
+        console.error('Error removing document from bill:', error)
         throw error
     }
 }

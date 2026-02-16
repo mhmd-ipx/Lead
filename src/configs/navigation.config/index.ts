@@ -292,13 +292,34 @@ const navigationConfig: NavigationTree[] = [
 
     {
         key: 'adminAccounting',
-        path: '/admin/accounting',
+        path: '',
         title: 'حسابداری',
         translateKey: 'nav.admin.accounting',
         icon: 'cash',
-        type: NAV_ITEM_TYPE_ITEM,
+        type: NAV_ITEM_TYPE_COLLAPSE,
         authority: [ADMIN],
-        subMenu: [],
+        subMenu: [
+            {
+                key: 'adminFinancialDocuments',
+                path: '/admin/accounting/documents',
+                title: 'اسناد مالی',
+                translateKey: 'nav.admin.accounting.documents',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [ADMIN],
+                subMenu: [],
+            },
+            {
+                key: 'adminBills',
+                path: '/admin/accounting/bills',
+                title: 'صورتحساب‌ها',
+                translateKey: 'nav.admin.accounting.bills',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [ADMIN],
+                subMenu: [],
+            },
+        ],
     },
     {
         key: 'adminSupportTickets',

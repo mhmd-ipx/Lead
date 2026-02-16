@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Card, Button, Tag, Tooltip } from '@/components/ui'
+import { Card, Button, Tag, Tooltip, Skeleton } from '@/components/ui'
+import Cookies from 'js-cookie'
 import {
     HiOutlineEye,
-    HiOutlinePencil,
+
     HiOutlineTrash,
     HiOutlineCash,
     HiOutlineDocumentText,
@@ -14,7 +15,9 @@ import { useNavigate } from 'react-router-dom'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import Table from '@/components/ui/Table'
 import classNames from '@/utils/classNames'
-import type { Bill } from '@/mock/data/ownerData'
+import { getBills, deleteBill, updateBill } from '@/services/AdminService'
+import type { Bill } from '@/@types/financialDocument'
+import { toast, Notification } from '@/components/ui'
 
 const { Tr, Th, Td, THead, TBody } = Table
 
@@ -51,7 +54,10 @@ const StatisticCard = (props: StatisticCardProps) => {
                     <div className="mb-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
                         {title}
                     </div>
-                    <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{value}</h3>
+                    <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
+                        {/* Skeleton handled in parent or here if needed, but usually stats load fast or can use simple skeleton */}
+                        {value}
+                    </h3>
                     {amount !== undefined && (
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             {formatCurrency(amount)}
@@ -71,57 +77,63 @@ const StatisticCard = (props: StatisticCardProps) => {
     )
 }
 
+const SkeletonRow = () => (
+    <Tr>
+        <Td><Skeleton width={100} /></Td>
+        <Td><Skeleton width={80} /></Td>
+        <Td><Skeleton width={120} /></Td>
+        <Td><Skeleton width={60} /></Td>
+        <Td><Skeleton width={100} /></Td>
+        <Td><Skeleton width={100} /></Td>
+        <Td>
+            <div className="flex gap-2">
+                <Skeleton width={30} height={30} variant="circle" />
+                <Skeleton width={30} height={30} variant="circle" />
+                <Skeleton width={30} height={30} variant="circle" />
+            </div>
+        </Td>
+    </Tr>
+)
+
 const Bills = () => {
     const [bills, setBills] = useState<Bill[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all')
     const [deleteBillDialog, setDeleteBillDialog] = useState(false)
-    const [billToDelete, setBillToDelete] = useState<string | null>(null)
+    const [billToDelete, setBillToDelete] = useState<number | null>(null)
     const navigate = useNavigate()
 
     useEffect(() => {
         loadData()
     }, [])
 
-    const loadData = async () => {
+    const loadData = async (forceUpdate = false) => {
         try {
-            const mockBills: Bill[] = [
-                {
-                    id: 'bill-001',
-                    billNumber: 'B-2024-001',
-                    financialDocumentIds: ['fd-002'],
-                    totalAmount: 300000,
-                    currency: 'IRR',
-                    status: 'paid',
-                    createdDate: '2024-11-25T10:00:00Z',
-                    paidDate: '2024-11-26T10:00:00Z',
-                    officialInvoiceRequested: true,
-                    officialInvoicePdfUrl: '/bills/bill-001.pdf',
-                },
-                {
-                    id: 'bill-002',
-                    billNumber: 'B-2024-002',
-                    financialDocumentIds: ['fd-001', 'fd-003'],
-                    totalAmount: 1250000,
-                    currency: 'IRR',
-                    status: 'pending',
-                    createdDate: '2024-12-05T10:00:00Z',
-                    dueDate: '2024-12-20T10:00:00Z',
-                    officialInvoiceRequested: false,
-                },
-                {
-                    id: 'bill-003',
-                    billNumber: 'B-2024-003',
-                    financialDocumentIds: ['fd-004'],
-                    totalAmount: 600000,
-                    currency: 'IRR',
-                    status: 'paid',
-                    createdDate: '2024-11-20T10:00:00Z',
-                    paidDate: '2024-11-22T10:00:00Z',
-                    officialInvoiceRequested: false,
-                },
-            ]
-            setBills(mockBills)
+            setLoading(true)
+
+            if (!forceUpdate) {
+                const cookieData = Cookies.get('owner_bills_cache')
+                if (cookieData) {
+                    try {
+                        setBills(JSON.parse(cookieData))
+                        setLoading(false)
+                        // Background refresh if needed, or just return
+                        // return 
+                        // Let's return cached data immediately but still fetch fresh data if needed?
+                        // Usually cache-first strategy returns and maybe re-fetches.
+                        // Here we just return cached data.
+                        return
+                    } catch (e) {
+                        console.error('Error parsing cookie data', e)
+                    }
+                }
+            }
+
+            const response = await getBills()
+            if (response.success && Array.isArray(response.data)) {
+                setBills(response.data)
+                Cookies.set('owner_bills_cache', JSON.stringify(response.data), { expires: 1 })
+            }
         } catch (error) {
             console.error('Error loading bills:', error)
         } finally {
@@ -129,25 +141,52 @@ const Bills = () => {
         }
     }
 
-    const handleDeleteBill = (billId: string) => {
+    const handleDeleteBill = (billId: number) => {
         setBillToDelete(billId)
         setDeleteBillDialog(true)
     }
 
-    const confirmDeleteBill = () => {
+    const confirmDeleteBill = async () => {
         if (billToDelete) {
-            setBills(bills.filter((b) => b.id !== billToDelete))
-            setDeleteBillDialog(false)
-            setBillToDelete(null)
+            try {
+                await deleteBill(billToDelete)
+                const updatedBills = bills.filter((b) => b.id !== billToDelete)
+                setBills(updatedBills)
+                Cookies.set('owner_bills_cache', JSON.stringify(updatedBills), { expires: 1 })
+                setDeleteBillDialog(false)
+                setBillToDelete(null)
+            } catch (error) {
+                console.error('Error deleting bill:', error)
+            }
         }
     }
 
-    const handleRequestOfficialInvoice = async (billId: string) => {
+    const handleRequestOfficialInvoice = async (billId: number) => {
         try {
-            alert('درخواست فاکتور رسمی با موفقیت ثبت شد')
-            loadData()
-        } catch (error) {
+            const response = await updateBill(billId, { official_invoice_requested: true })
+            if (response.success) {
+                toast.push(
+                    <Notification type="success" title="موفقیت">
+                        درخواست فاکتور رسمی ثبت شد
+                    </Notification>
+                )
+                // Update the bill in state
+                const updatedBills = bills.map(b => b.id === billId
+                    ? { ...b, official_invoice_requested: true, status: 'paid' as const }
+                    : b
+                )
+
+                setBills(updatedBills)
+                Cookies.set('owner_bills_cache', JSON.stringify(updatedBills), { expires: 1 })
+                // loadData(true) // No need to reload if state is updated correctly
+            }
+        } catch (error: any) {
             console.error('Error requesting invoice:', error)
+            toast.push(
+                <Notification type="danger" title="خطا">
+                    {error?.response?.data?.message || 'خطا در ثبت درخواست'}
+                </Notification>
+            )
         }
     }
 
@@ -171,8 +210,9 @@ const Bills = () => {
     const paidBills = bills.filter(b => b.status === 'paid').length
     const unpaidBills = bills.filter(b => b.status === 'pending').length
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('fa-IR').format(amount) + ' تومان'
+    const formatCurrency = (amount: string) => {
+        const num = parseFloat(amount)
+        return new Intl.NumberFormat('fa-IR').format(num) + ' تومان'
     }
 
     const formatDate = (dateString: string) => {
@@ -194,13 +234,8 @@ const Bills = () => {
         )
     }
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center h-96">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
-            </div>
-        )
-    }
+    // Loading check moved to Table body for skeleton
+    // if (loading) { ... }
 
     return (
         <div className="space-y-6">
@@ -270,100 +305,103 @@ const Bills = () => {
                                 </Tr>
                             </THead>
                             <TBody>
-                                {filteredBills.map((bill) => (
-                                    <Tr key={bill.id}>
-                                        <Td>
-                                            <span className="font-mono font-semibold">
-                                                {bill.billNumber}
-                                            </span>
-                                        </Td>
-                                        <Td>{formatDate(bill.createdDate)}</Td>
-                                        <Td>
-                                            <span className="font-bold">
-                                                {formatCurrency(bill.totalAmount)}
-                                            </span>
-                                        </Td>
-                                        <Td>
-                                            <Tag className="bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-100 border-0">
-                                                {bill.financialDocumentIds.length} سند
-                                            </Tag>
-                                        </Td>
-                                        <Td>{getStatusTag(bill.status)}</Td>
-                                        <Td>
-                                            {bill.officialInvoiceRequested ? (
-                                                bill.officialInvoicePdfUrl ? (
-                                                    <Tag className="bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-100 border-0">
-                                                        صادر شده
-                                                    </Tag>
-                                                ) : (
-                                                    <Tag className="bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-100 border-0">
-                                                        در حال پردازش
-                                                    </Tag>
-                                                )
-                                            ) : (
-                                                <Tag className="bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-100 border-0">
-                                                    درخواست نشده
+                                {loading ? (
+                                    <>
+                                        <SkeletonRow />
+                                        <SkeletonRow />
+                                        <SkeletonRow />
+                                        <SkeletonRow />
+                                        <SkeletonRow />
+                                    </>
+                                ) : (
+                                    filteredBills.map((bill) => (
+                                        <Tr key={bill.id}>
+                                            <Td>
+                                                <span className="font-mono font-semibold">
+                                                    {bill.bill_number}
+                                                </span>
+                                            </Td>
+                                            <Td>{formatDate(bill.created_at)}</Td>
+                                            <Td>
+                                                <span className="font-bold">
+                                                    {formatCurrency(bill.total_amount)}
+                                                </span>
+                                            </Td>
+                                            <Td>
+                                                <Tag className="bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-100 border-0">
+                                                    {bill.financial_documents_count || 0} سند
                                                 </Tag>
-                                            )}
-                                        </Td>
-                                        <Td>
-                                            <div className="flex items-center gap-2">
-                                                {bill.status === 'paid' && !bill.officialInvoiceRequested && (
-                                                    <Tooltip title="درخواست فاکتور رسمی">
-                                                        <Button
-                                                            variant="default"
-                                                            size="sm"
-                                                            icon={<HiOutlineDocumentText />}
-                                                            onClick={() => handleRequestOfficialInvoice(bill.id)}
-                                                        >
-                                                            درخواست فاکتور
-                                                        </Button>
-                                                    </Tooltip>
+                                            </Td>
+                                            <Td>{getStatusTag(bill.status)}</Td>
+                                            <Td>
+                                                {bill.official_invoice_requested ? (
+                                                    bill.official_invoice_pdf_url ? (
+                                                        <Tag className="bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-100 border-0">
+                                                            صادر شده
+                                                        </Tag>
+                                                    ) : (
+                                                        <Tag className="bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-100 border-0">
+                                                            در حال پردازش
+                                                        </Tag>
+                                                    )
+                                                ) : (
+                                                    <Tag className="bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-100 border-0">
+                                                        درخواست نشده
+                                                    </Tag>
                                                 )}
-                                                {bill.status === 'pending' && (
-                                                    <>
-                                                        <Tooltip title="ویرایش">
+                                            </Td>
+                                            <Td>
+                                                <div className="flex items-center gap-2">
+                                                    {bill.status === 'paid' && !bill.official_invoice_requested && (
+                                                        <Tooltip title="درخواست فاکتور رسمی">
                                                             <Button
-                                                                variant="plain"
+                                                                variant="default"
                                                                 size="sm"
-                                                                icon={<HiOutlinePencil />}
-                                                                onClick={() => navigate(`/owner/accounting/bills/${bill.id}?edit=true`)}
-                                                            />
-                                                        </Tooltip>
-                                                        <Tooltip title="حذف">
-                                                            <Button
-                                                                variant="plain"
-                                                                size="sm"
-                                                                icon={<HiOutlineTrash />}
-                                                                onClick={() => handleDeleteBill(bill.id)}
-                                                                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                                                            />
-                                                        </Tooltip>
-                                                        <Tooltip title="پرداخت">
-                                                            <Button
-                                                                variant="solid"
-                                                                size="sm"
-                                                                icon={<HiOutlineCash />}
-                                                                onClick={() => navigate(`/owner/accounting/bills/${bill.id}/payment`)}
+                                                                icon={<HiOutlineDocumentText />}
+                                                                onClick={() => handleRequestOfficialInvoice(bill.id)}
                                                             >
-                                                                پرداخت
+                                                                درخواست فاکتور
                                                             </Button>
                                                         </Tooltip>
-                                                    </>
-                                                )}
-                                                <Tooltip title="مشاهده جزئیات">
-                                                    <Button
-                                                        variant="plain"
-                                                        size="sm"
-                                                        icon={<HiOutlineEye />}
-                                                        onClick={() => navigate(`/owner/accounting/bills/${bill.id}`)}
-                                                    />
-                                                </Tooltip>
-                                            </div>
-                                        </Td>
-                                    </Tr>
-                                ))}
-                                {filteredBills.length === 0 && (
+                                                    )}
+                                                    {bill.status === 'pending' && (
+                                                        <>
+
+                                                            <Tooltip title="حذف">
+                                                                <Button
+                                                                    variant="plain"
+                                                                    size="sm"
+                                                                    icon={<HiOutlineTrash />}
+                                                                    onClick={() => handleDeleteBill(bill.id)}
+                                                                    className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                                                />
+                                                            </Tooltip>
+                                                            <Tooltip title="پرداخت">
+                                                                <Button
+                                                                    variant="solid"
+                                                                    size="sm"
+                                                                    icon={<HiOutlineCash />}
+                                                                    onClick={() => navigate(`/owner/accounting/bills/${bill.id}/payment`)}
+                                                                >
+                                                                    پرداخت
+                                                                </Button>
+                                                            </Tooltip>
+                                                        </>
+                                                    )}
+                                                    <Tooltip title="مشاهده جزئیات">
+                                                        <Button
+                                                            variant="plain"
+                                                            size="sm"
+                                                            icon={<HiOutlineEye />}
+                                                            onClick={() => navigate(`/owner/accounting/bills/${bill.id}`)}
+                                                        />
+                                                    </Tooltip>
+                                                </div>
+                                            </Td>
+                                        </Tr>
+                                    ))
+                                )}
+                                {!loading && filteredBills.length === 0 && (
                                     <Tr>
                                         <Td colSpan={7}>
                                             <div className="text-center py-12">

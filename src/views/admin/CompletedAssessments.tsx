@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Card, Button, Tag, Tooltip, Input, Checkbox, Dialog } from '@/components/ui'
+import { Card, Button, Tag, Tooltip, Input, Checkbox, Dialog, Skeleton } from '@/components/ui'
 import {
     HiOutlineSearch,
     HiOutlineClipboardCheck,
@@ -11,7 +11,8 @@ import {
     HiOutlineCheckCircle,
 } from 'react-icons/hi'
 import { getCompletedAssessments, getExams, assignExamsToAssessment } from '@/services/AdminService'
-import { CompletedAssessment, Exam } from '@/mock/data/adminData'
+import { AdminCompletedAssessment } from '@/@types/adminAssessment'
+import { Exam } from '@/mock/data/adminData'
 import { useNavigate } from 'react-router-dom'
 import classNames from '@/utils/classNames'
 
@@ -59,13 +60,13 @@ const StatisticCard = (props: StatisticCardProps) => {
 }
 
 const CompletedAssessments = () => {
-    const [assessments, setAssessments] = useState<CompletedAssessment[]>([])
+    const [assessments, setAssessments] = useState<AdminCompletedAssessment[]>([])
     const [exams, setExams] = useState<Exam[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all')
     const [assignDialogOpen, setAssignDialogOpen] = useState(false)
-    const [selectedAssessment, setSelectedAssessment] = useState<CompletedAssessment | null>(null)
+    const [selectedAssessment, setSelectedAssessment] = useState<AdminCompletedAssessment | null>(null)
     const [selectedExamIds, setSelectedExamIds] = useState<string[]>([])
     const navigate = useNavigate()
 
@@ -88,7 +89,7 @@ const CompletedAssessments = () => {
         }
     }
 
-    const handleOpenAssignDialog = (assessment: CompletedAssessment) => {
+    const handleOpenAssignDialog = (assessment: AdminCompletedAssessment) => {
         setSelectedAssessment(assessment)
         setSelectedExamIds(assessment.assignedExams || [])
         setAssignDialogOpen(true)
@@ -98,7 +99,7 @@ const CompletedAssessments = () => {
         if (!selectedAssessment) return
 
         try {
-            await assignExamsToAssessment(selectedAssessment.id, selectedExamIds)
+            await assignExamsToAssessment(selectedAssessment.id.toString(), selectedExamIds)
 
             // Update local state
             setAssessments(assessments.map(a =>
@@ -124,7 +125,7 @@ const CompletedAssessments = () => {
         }
     }
 
-    const getStatusTag = (status: CompletedAssessment['status']) => {
+    const getStatusTag = (status: AdminCompletedAssessment['status']) => {
         switch (status) {
             case 'submitted':
                 return <Tag className="text-green-600 bg-green-100 dark:text-green-100 dark:bg-green-500/20 border-0">تکمیل شده</Tag>
@@ -139,9 +140,9 @@ const CompletedAssessments = () => {
     const filteredByCategory = assessments.filter(assessment => {
         switch (selectedCategory) {
             case 'assigned':
-                return assessment.assignedExams.length > 0
+                return (assessment.assignedExams?.length || 0) > 0
             case 'pending':
-                return assessment.assignedExams.length === 0
+                return (assessment.assignedExams?.length || 0) === 0
             case 'all':
             default:
                 return true
@@ -150,21 +151,113 @@ const CompletedAssessments = () => {
 
     // Then filter by search query
     const filteredAssessments = filteredByCategory.filter(assessment =>
-        assessment.managerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        assessment.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        assessment.ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        assessment.templateName.toLowerCase().includes(searchQuery.toLowerCase())
+        assessment.manager.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        assessment.manager.company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        assessment.template.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
     // Calculate statistics
     const totalAssessments = assessments.length
-    const assignedAssessments = assessments.filter(a => a.assignedExams.length > 0).length
-    const pendingAssessments = assessments.filter(a => a.assignedExams.length === 0).length
+    const assignedAssessments = assessments.filter(a => (a.assignedExams?.length || 0) > 0).length
+    const pendingAssessments = assessments.filter(a => (a.assignedExams?.length || 0) === 0).length
+
+    // Skeleton loading component
+    const SkeletonRow = () => (
+        <tr>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <Skeleton width={120} height={16} />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <Skeleton width={140} height={14} />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <Skeleton width={80} height={20} />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <Skeleton width={80} height={24} />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex items-center gap-2">
+                    <Skeleton variant="circle" width={32} height={32} />
+                    <Skeleton variant="circle" width={32} height={32} />
+                </div>
+            </td>
+        </tr>
+    )
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-96">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="flex justify-between items-center gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                            نیازسنجی‌های تکمیل شده
+                        </h1>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            مدیریت نیازسنجی‌ها و اختصاص آزمون‌ها
+                        </p>
+                    </div>
+                    <Input
+                        className="w-64"
+                        placeholder="جستجو..."
+                        prefix={<HiOutlineSearch />}
+                        disabled
+                    />
+                </div>
+
+                {/* Statistics Cards Skeleton */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="p-4 rounded-2xl bg-white dark:bg-gray-900">
+                            <div className="flex justify-between items-center">
+                                <div className="space-y-2">
+                                    <Skeleton width={100} height={14} />
+                                    <Skeleton width={60} height={32} />
+                                </div>
+                                <Skeleton variant="circle" width={48} height={48} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Table Skeleton */}
+                <Card>
+                    <div className="p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                            <HiOutlineClipboardCheck className="w-5 h-5" />
+                            لیست نیازسنجی‌ها
+                        </h2>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead className="bg-gray-50 dark:bg-gray-800">
+                                    <tr>
+                                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
+                                            متقاضی
+                                        </th>
+                                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
+                                            سازمان
+                                        </th>
+                                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
+                                            آزمون‌های اختصاص داده شده
+                                        </th>
+                                        <th className="px-6 py-3 text-right font-bold text-xs  text-gray-500 dark:text-gray-400 uppercase">
+                                            وضعیت
+                                        </th>
+                                        <th className="px-6 py-3 text-right text-xs font-bol text-gray-500 dark:text-gray-400 uppercase">
+                                            عملیات
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                                    <SkeletonRow />
+                                    <SkeletonRow />
+                                    <SkeletonRow />
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </Card>
             </div>
         )
     }
@@ -237,28 +330,19 @@ const CompletedAssessments = () => {
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead className="bg-gray-50 dark:bg-gray-800">
                                 <tr>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                    <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
                                         متقاضی
                                     </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                    <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
                                         سازمان
                                     </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                                        درخواست‌دهنده
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                                        فرم نیازسنجی
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                                        امتیاز
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                    <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
                                         آزمون‌های اختصاص داده شده
                                     </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                    <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
                                         وضعیت
                                     </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                    <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
                                         عملیات
                                     </th>
                                 </tr>
@@ -269,37 +353,22 @@ const CompletedAssessments = () => {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2">
                                                 <HiOutlineUser className="w-5 h-5 text-gray-400" />
-                                                <div className="font-medium text-gray-900 dark:text-white">
-                                                    {assessment.managerName}
+                                                <div className=" font-bold text-gray-900 dark:text-white">
+                                                    {assessment.manager.user.name}
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2">
                                                 <HiOutlineOfficeBuilding className="w-5 h-5 text-gray-400" />
-                                                <div className="text-sm text-gray-900 dark:text-white">
-                                                    {assessment.companyName}
+                                                <div className="text-sm font-bold text-gray-900 dark:text-white">
+                                                    {assessment.manager.company.name}
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900 dark:text-white">
-                                                {assessment.ownerName}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900 dark:text-white">
-                                                {assessment.templateName}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="font-semibold text-primary-600">
-                                                {assessment.score || '-'}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
                                             <Tag className="text-indigo-600 bg-indigo-100 dark:text-indigo-100 dark:bg-indigo-500/20 border-0">
-                                                {assessment.assignedExams.length} آزمون
+                                                {(assessment.assignedExams?.length || 0)} آزمون
                                             </Tag>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -330,7 +399,7 @@ const CompletedAssessments = () => {
                                 ))}
                                 {filteredAssessments.length === 0 && (
                                     <tr>
-                                        <td colSpan={8}>
+                                        <td colSpan={5}>
                                             <div className="text-center py-12">
                                                 <HiOutlineClipboardCheck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                                                 <p className="text-gray-500 dark:text-gray-400">
@@ -372,7 +441,7 @@ const CompletedAssessments = () => {
                         <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                             <div className="text-sm">
                                 <p className="text-gray-600 dark:text-gray-400">نیازسنجی:</p>
-                                <p className="font-semibold text-gray-900 dark:text-white">{selectedAssessment.managerName} - {selectedAssessment.companyName}</p>
+                                <p className="font-semibold text-gray-900 dark:text-white">{selectedAssessment.manager.user.name} - {selectedAssessment.manager.company.name}</p>
                             </div>
                         </div>
                     )}
