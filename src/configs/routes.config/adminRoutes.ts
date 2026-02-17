@@ -190,6 +190,12 @@ const adminRoutes: Routes = [
         authority: [ADMIN],
     },
     {
+        key: 'adminFinancialDocumentView',
+        path: '/admin/accounting/documents/:id',
+        component: lazy(() => import('@/views/admin/FinancialDocumentView')),
+        authority: [ADMIN],
+    },
+    {
         key: 'adminBills',
         path: '/admin/accounting/bills',
         component: lazy(() => import('@/views/admin/Bills')),

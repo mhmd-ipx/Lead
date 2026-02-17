@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Card, Button, Tag, Tooltip, Skeleton, Select, Notification, toast } from '@/components/ui'
+import { Card, Button, Tag, Tooltip, Skeleton, Select, Notification, toast, Input } from '@/components/ui'
 import Cookies from 'js-cookie'
 import {
     HiOutlineEye,
@@ -9,7 +9,8 @@ import {
     HiOutlineCreditCard,
     HiOutlineDocumentText,
     HiOutlineCash,
-    HiOutlineFilter
+    HiOutlineFilter,
+    HiOutlineSearch
 } from 'react-icons/hi'
 import { useNavigate } from 'react-router-dom'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
@@ -92,6 +93,7 @@ const Bills = () => {
     const [companies, setCompanies] = useState<{ label: string; value: number }[]>([])
     const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all')
     const [selectedCompany, setSelectedCompany] = useState<number | null>(null)
+    const [searchQuery, setSearchQuery] = useState('')
     const [deleteBillDialog, setDeleteBillDialog] = useState(false)
     const [billToDelete, setBillToDelete] = useState<number | null>(null)
     const navigate = useNavigate()
@@ -189,25 +191,42 @@ const Bills = () => {
     // Filter bills based on selected category (status)
     const filteredBills = useMemo(() => {
         return bills.filter(bill => {
+            let matchesCategory = false
             switch (selectedCategory) {
                 case 'paid':
-                    return bill.status === 'paid'
+                    matchesCategory = bill.status === 'paid'
+                    break
                 case 'unpaid':
-                    return bill.status === 'pending'
+                    matchesCategory = bill.status === 'pending'
+                    break
                 case 'all':
                 default:
-                    return true
+                    matchesCategory = true
             }
+
+            if (!matchesCategory) return false
+
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase()
+                return (
+                    bill.bill_number.toLowerCase().includes(query) ||
+                    bill.id.toString().includes(query) ||
+                    (bill.company?.name && bill.company.name.toLowerCase().includes(query))
+                )
+            }
+
+            return true
         })
-    }, [bills, selectedCategory])
+    }, [bills, selectedCategory, searchQuery])
 
     const totalBills = bills.length
     const paidBills = bills.filter(b => b.status === 'paid').length
     const unpaidBills = bills.filter(b => b.status === 'pending').length
 
-    const formatCurrency = (amount: string | number) => {
+    const formatCurrency = (amount: string | number, currency: string = 'IRR') => {
         const num = typeof amount === 'string' ? parseFloat(amount) : amount
-        return new Intl.NumberFormat('fa-IR').format(num) + ' تومان'
+        const formatted = new Intl.NumberFormat('fa-IR').format(num)
+        return `${formatted} ${currency === 'IRR' ? 'ریال' : currency}`
     }
 
     const formatDate = (dateString: string) => {
@@ -241,14 +260,24 @@ const Bills = () => {
                         مدیریت و مشاهده صورتحساب‌های سیستم
                     </p>
                 </div>
-                <div className="w-full md:w-64">
-                    <Select
-                        placeholder="فیلتر بر اساس شرکت"
-                        options={[{ label: 'همه شرکت‌ها', value: null }, ...companies]}
-                        value={companies.find(c => c.value === selectedCompany) || { label: 'همه شرکت‌ها', value: null }}
-                        onChange={(option) => setSelectedCompany(option?.value || null)}
-                        isClearable
-                    />
+                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                    <div className="w-full md:w-64">
+                        <Input
+                            placeholder="جستجو..."
+                            prefix={<HiOutlineSearch className="text-gray-400" />}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    <div className="w-full md:w-64">
+                        <Select
+                            placeholder="فیلتر بر اساس شرکت"
+                            options={[{ label: 'همه شرکت‌ها', value: null }, ...companies]}
+                            value={companies.find(c => c.value === selectedCompany) || { label: 'همه شرکت‌ها', value: null }}
+                            onChange={(option) => setSelectedCompany(option?.value || null)}
+                            isClearable
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -323,7 +352,7 @@ const Bills = () => {
                                             <Td>{formatDate(bill.created_at)}</Td>
                                             <Td>
                                                 <span className="font-bold">
-                                                    {formatCurrency(bill.total_amount)}
+                                                    {formatCurrency(bill.total_amount, bill.currency)}
                                                 </span>
                                             </Td>
                                             <Td>

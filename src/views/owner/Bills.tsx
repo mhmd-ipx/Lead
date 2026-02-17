@@ -34,11 +34,12 @@ type StatisticCardProps = {
     onClick: (label: FilterCategory) => void
 }
 
-const StatisticCard = (props: StatisticCardProps) => {
-    const { title, value, amount, label, icon, iconClass, active, onClick } = props
+const StatisticCard = (props: StatisticCardProps & { currency?: string }) => {
+    const { title, value, amount, label, icon, iconClass, active, onClick, currency = 'IRR' } = props
 
-    const formatCurrency = (amt: number) => {
-        return new Intl.NumberFormat('fa-IR').format(amt) + ' تومان'
+    const formatCurrency = (amt: number, currency: string = 'IRR') => {
+        const formatted = new Intl.NumberFormat('fa-IR').format(amt)
+        return `${formatted} ${currency === 'IRR' ? 'ریال' : currency}`
     }
 
     return (
@@ -60,7 +61,7 @@ const StatisticCard = (props: StatisticCardProps) => {
                     </h3>
                     {amount !== undefined && (
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {formatCurrency(amount)}
+                            {formatCurrency(amount, currency)}
                         </p>
                     )}
                 </div>
@@ -210,9 +211,10 @@ const Bills = () => {
     const paidBills = bills.filter(b => b.status === 'paid').length
     const unpaidBills = bills.filter(b => b.status === 'pending').length
 
-    const formatCurrency = (amount: string) => {
-        const num = parseFloat(amount)
-        return new Intl.NumberFormat('fa-IR').format(num) + ' تومان'
+    const formatCurrency = (amount: string | number, currency: string = 'IRR') => {
+        const num = typeof amount === 'string' ? parseFloat(amount) : amount
+        const formatted = new Intl.NumberFormat('fa-IR').format(num)
+        return `${formatted} ${currency === 'IRR' ? 'ریال' : currency}`
     }
 
     const formatDate = (dateString: string) => {
@@ -324,7 +326,7 @@ const Bills = () => {
                                             <Td>{formatDate(bill.created_at)}</Td>
                                             <Td>
                                                 <span className="font-bold">
-                                                    {formatCurrency(bill.total_amount)}
+                                                    {formatCurrency(bill.total_amount, bill.currency)}
                                                 </span>
                                             </Td>
                                             <Td>

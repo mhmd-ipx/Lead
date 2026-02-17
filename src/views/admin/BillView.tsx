@@ -109,9 +109,10 @@ const BillView = () => {
         }
     }
 
-    const formatCurrency = (amount: string | number) => {
+    const formatCurrency = (amount: string | number, currency: string = 'IRR') => {
         const num = typeof amount === 'string' ? parseFloat(amount) : amount
-        return new Intl.NumberFormat('fa-IR').format(num) + ' تومان'
+        const formatted = new Intl.NumberFormat('fa-IR').format(num)
+        return `${formatted} ${currency === 'IRR' ? 'ریال' : currency}`
     }
 
     const formatDate = (dateString: string) => {
@@ -335,7 +336,7 @@ const BillView = () => {
                         <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                             مبلغ کل
                         </label>
-                        <p className="text-2xl font-bold text-primary">{formatCurrency(bill.total_amount)}</p>
+                        <p className="text-2xl font-bold text-primary">{formatCurrency(bill.total_amount, bill.currency)}</p>
                     </div>
 
                     <div>
@@ -452,7 +453,7 @@ const BillView = () => {
                                         </Td>
                                         <Td>{doc.title}</Td>
                                         <Td>{formatDate(doc.created_date)}</Td>
-                                        <Td className="font-semibold">{formatCurrency(doc.amount)}</Td>
+                                        <Td className="font-semibold">{formatCurrency(doc.amount, doc.currency)}</Td>
                                         <Td>
                                             <div className="flex justify-center">
                                                 {/* Allow admin to always delete/modify? Or only pending? Assuming admin can modify pending bills */}
@@ -562,7 +563,7 @@ const BillView = () => {
                                         </Td>
                                         <Td>{doc.title}</Td>
                                         <Td>{formatDate(doc.created_date)}</Td>
-                                        <Td>{formatCurrency(doc.amount)}</Td>
+                                        <Td>{formatCurrency(doc.amount, doc.currency)}</Td>
                                         <Td>{getStatusTag(doc.status)}</Td>
                                     </Tr>
                                 ))}

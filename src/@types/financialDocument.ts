@@ -12,6 +12,22 @@ export interface FinancialDocument {
     created_at: string
     updated_at: string
     company_id: number
+    bills_exists: boolean
+    bills?: {
+        id: number
+        company_id: number
+        bill_number: string
+        total_amount: string
+        currency: string
+        status: string
+        due_date: string
+        paid_date: string | null
+        official_invoice_requested: boolean
+        official_invoice_pdf_url: string | null
+        description: string | null
+        created_at: string
+        updated_at: string
+    }[]
     company: {
         id: number
         name: string

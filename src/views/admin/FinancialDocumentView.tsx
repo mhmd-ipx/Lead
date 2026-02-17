@@ -39,10 +39,9 @@ const FinancialDocumentView = () => {
         }
     }
 
-    const formatCurrency = (amount: string | number, currency: string) => {
+    const formatCurrency = (amount: string | number) => {
         const num = typeof amount === 'string' ? parseFloat(amount) : amount
-        const formatted = new Intl.NumberFormat('fa-IR').format(num)
-        return `${formatted} ${currency === 'IRR' ? 'ریال' : currency}`
+        return new Intl.NumberFormat('fa-IR').format(num) + ' تومان'
     }
 
     const formatDate = (dateString: string) => {
@@ -106,7 +105,7 @@ const FinancialDocumentView = () => {
         return (
             <div className="text-center py-12">
                 <p className="text-gray-500 dark:text-gray-400">سند مالی مورد نظر یافت نشد</p>
-                <Button variant="plain" onClick={() => navigate('/owner/accounting/documents')} className="mt-4">
+                <Button variant="plain" onClick={() => navigate('/admin/accounting/documents')} className="mt-4">
                     بازگشت
                 </Button>
             </div>
@@ -120,7 +119,7 @@ const FinancialDocumentView = () => {
                 <Button
                     variant="plain"
                     icon={<HiOutlineArrowLeft />}
-                    onClick={() => navigate('/owner/accounting/documents')}
+                    onClick={() => navigate('/admin/accounting/documents')}
                 >
                     بازگشت به لیست اسناد
                 </Button>
@@ -155,7 +154,7 @@ const FinancialDocumentView = () => {
                             مبلغ
                         </label>
                         <p className="text-2xl font-bold text-primary">
-                            {formatCurrency(document.amount, document.currency)}
+                            {formatCurrency(document.amount)}
                         </p>
                     </div>
 
@@ -215,7 +214,7 @@ const FinancialDocumentView = () => {
                                                 <span className="font-mono text-sm font-semibold">{bill.bill_number}</span>
                                             </Td>
                                             <Td>{formatDate(bill.created_at)}</Td>
-                                            <Td>{formatCurrency(bill.total_amount, bill.currency)}</Td>
+                                            <Td>{formatCurrency(bill.total_amount)}</Td>
                                             <Td>
                                                 {bill.status === 'paid' ? (
                                                     <Tag className="bg-emerald-100 text-emerald-600 border-0">پرداخت شده</Tag>
@@ -227,7 +226,7 @@ const FinancialDocumentView = () => {
                                                 <Button
                                                     size="xs"
                                                     icon={<HiOutlineEye />}
-                                                    onClick={() => navigate(`/owner/accounting/bills/${bill.id}`)}
+                                                    onClick={() => navigate(`/admin/accounting/bills/${bill.id}`)}
                                                 >
                                                     مشاهده
                                                 </Button>

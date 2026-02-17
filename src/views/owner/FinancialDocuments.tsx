@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
+import Cookies from 'js-cookie'
 import { Card, Button, Tag, Tooltip, Checkbox, Skeleton, toast, Notification, Dialog } from '@/components/ui'
 import {
     HiOutlineDocumentDownload,
@@ -57,6 +58,7 @@ type StatisticCardProps = {
     title: string
     value: number
     amount?: number
+    currency?: string
     icon: React.ReactNode
     iconClass: string
     label: FilterCategory
@@ -66,10 +68,11 @@ type StatisticCardProps = {
 }
 
 const StatisticCard = (props: StatisticCardProps) => {
-    const { title, value, amount, label, icon, iconClass, active, loading, onClick } = props
+    const { title, value, amount, label, icon, iconClass, active, loading, onClick, currency = 'IRR' } = props
 
     const formatCurrency = (amt: number) => {
-        return new Intl.NumberFormat('fa-IR').format(amt) + ' تومان'
+        const formatted = new Intl.NumberFormat('fa-IR').format(amt)
+        return `${formatted} ${currency === 'IRR' ? 'ریال' : currency}`
     }
 
     return (
@@ -177,8 +180,9 @@ const FinancialDocuments = () => {
     const pendingAmount = documents.filter(d => d.status === 'pending').reduce((sum, d) => sum + parseFloat(d.amount), 0)
     const cancelledAmount = documents.filter(d => d.status === 'cancelled').reduce((sum, d) => sum + parseFloat(d.amount), 0)
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('fa-IR').format(amount) + ' تومان'
+    const formatCurrency = (amount: number, currency: string = 'IRR') => {
+        const formatted = new Intl.NumberFormat('fa-IR').format(amount)
+        return `${formatted} ${currency === 'IRR' ? 'ریال' : currency}`
     }
 
     const formatDate = (dateString: string) => {
@@ -252,7 +256,7 @@ const FinancialDocuments = () => {
                 accessorKey: 'amount',
                 cell: ({ row }) => (
                     <span className="font-semibold">
-                        {formatCurrency(parseFloat(row.original.amount))}
+                        {formatCurrency(parseFloat(row.original.amount), row.original.currency)}
                     </span>
                 ),
             },
@@ -296,7 +300,7 @@ const FinancialDocuments = () => {
         state: {
             rowSelection,
         },
-        enableRowSelection: (row) => row.original.status === 'pending',
+        enableRowSelection: (row) => row.original.status === 'pending' && !row.original.bills_exists,
         onRowSelectionChange: setRowSelection,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
@@ -339,6 +343,9 @@ const FinancialDocuments = () => {
             })
 
             if (response.success) {
+                // Clear bills cache so the new bill appears in the list
+                Cookies.remove('owner_bills_cache')
+
                 toast.push(
                     <Notification type="success" title="موفقیت">
                         {response.message || 'صورتحساب با موفقیت ایجاد شد'}
@@ -387,6 +394,7 @@ const FinancialDocuments = () => {
                     active={selectedCategory === 'all'}
                     loading={loading}
                     onClick={setSelectedCategory}
+                    currency={documents[0]?.currency}
                 />
                 <StatisticCard
                     title="در انتظار"
@@ -398,6 +406,7 @@ const FinancialDocuments = () => {
                     active={selectedCategory === 'pending'}
                     loading={loading}
                     onClick={setSelectedCategory}
+                    currency={documents[0]?.currency}
                 />
                 <StatisticCard
                     title="پرداخت شده"
@@ -409,6 +418,7 @@ const FinancialDocuments = () => {
                     active={selectedCategory === 'paid'}
                     loading={loading}
                     onClick={setSelectedCategory}
+                    currency={documents[0]?.currency}
                 />
                 <StatisticCard
                     title="لغو شده"
@@ -420,6 +430,7 @@ const FinancialDocuments = () => {
                     active={selectedCategory === 'cancelled'}
                     loading={loading}
                     onClick={setSelectedCategory}
+                    currency={documents[0]?.currency}
                 />
             </div>
 
@@ -432,7 +443,7 @@ const FinancialDocuments = () => {
                                 {selectedRows.length} سند انتخاب شده
                             </p>
                             <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                                مجموع: {formatCurrency(selectedTotal)}
+                                مجموع: {formatCurrency(selectedTotal, selectedRows[0]?.original.currency)}
                             </p>
                         </div>
                         <Button
@@ -444,7 +455,8 @@ const FinancialDocuments = () => {
                         </Button>
                     </div>
                 </Card>
-            )}
+            )
+            }
 
             {/* Table */}
             <Card>

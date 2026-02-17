@@ -2,23 +2,23 @@ import { useState, useEffect, useMemo } from 'react'
 import { Card, Button, Input, Tag, Tooltip, Skeleton, Notification, toast, Dialog, Select, FormItem, FormContainer, Badge, Spinner } from '@/components/ui'
 import { HiOutlineDocumentText, HiOutlineSearch, HiOutlinePlus, HiOutlineEye, HiOutlinePencil, HiOutlineTrash, HiOutlineOfficeBuilding, HiOutlineCash, HiOutlineCheckCircle, HiOutlineCog, HiOutlineClock, HiOutlineXCircle } from 'react-icons/hi'
 import { getFinancialDocuments, createFinancialDocument, getCompanies, getFinancialDocument, updateFinancialDocument, deleteFinancialDocument } from '@/services/AdminService'
-import type { FinancialDocument, CreateFinancialDocumentRequest } from '@/@types/financialDocument'
+import type { FinancialDocument } from '@/@types/financialDocument'
 import { Field, Form, Formik } from 'formik'
 import * as Yup from 'yup'
 import classNames from '@/utils/classNames'
-
 import Cookies from 'js-cookie'
+import { useNavigate } from 'react-router-dom'
 
 type FilterType = 'all' | 'pending' | 'paid' | 'cancelled'
 
 const FinancialDocuments = () => {
+    const navigate = useNavigate()
     const [documents, setDocuments] = useState<FinancialDocument[]>([])
     const [companies, setCompanies] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedFilter, setSelectedFilter] = useState<FilterType>('all')
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
-    const [viewDialogOpen, setViewDialogOpen] = useState(false)
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [selectedDocument, setSelectedDocument] = useState<FinancialDocument | null>(null)
@@ -30,20 +30,6 @@ const FinancialDocuments = () => {
         fetchDocuments()
         fetchCompanies()
     }, [])
-
-    // ... (fetchDocuments and fetchCompanies remain same)
-
-    const companyOptions = useMemo(() => {
-        const uniqueCompanies = Array.from(new Set(documents.map(d => JSON.stringify({ id: d.company_id, name: d.company.name }))))
-            .map((s: string) => JSON.parse(s))
-
-        return [
-            { value: 'all', label: 'همه سازمان‌ها' },
-            ...uniqueCompanies.map((c: any) => ({ value: c.id.toString(), label: c.name }))
-        ]
-    }, [documents])
-
-
 
     const fetchDocuments = async (forceUpdate = false) => {
         try {
@@ -162,6 +148,16 @@ const FinancialDocuments = () => {
         })
     }, [documents, selectedFilter, searchQuery, selectedCompany])
 
+    const companyOptions = useMemo(() => {
+        const uniqueCompanies = Array.from(new Set(documents.map(d => JSON.stringify({ id: d.company_id, name: d.company.name }))))
+            .map((s: string) => JSON.parse(s))
+
+        return [
+            { value: 'all', label: 'همه سازمان‌ها' },
+            ...uniqueCompanies.map((c: any) => ({ value: c.id.toString(), label: c.name }))
+        ]
+    }, [documents])
+
     const pendingCount = useMemo(() => documents.filter(d => d.status === 'pending').length, [documents])
     const paidCount = useMemo(() => documents.filter(d => d.status === 'paid').length, [documents])
     const cancelledCount = useMemo(() => documents.filter(d => d.status === 'cancelled').length, [documents])
@@ -186,8 +182,9 @@ const FinancialDocuments = () => {
         return <Tag className={`${config.className} border-0`}>{config.label}</Tag>
     }
 
-    const formatAmount = (amount: string, currency: string) => {
-        const formatted = new Intl.NumberFormat('fa-IR').format(parseFloat(amount))
+    const formatAmount = (amount: string | number, currency: string) => {
+        const num = typeof amount === 'string' ? parseFloat(amount) : amount
+        const formatted = new Intl.NumberFormat('fa-IR').format(num)
         return `${formatted} ${currency === 'IRR' ? 'ریال' : currency}`
     }
 
@@ -214,10 +211,8 @@ const FinancialDocuments = () => {
         }
     }
 
-    const handleView = async (document: FinancialDocument) => {
-        setSelectedDocument(document)
-        setViewDialogOpen(true)
-        await fetchDocumentDetails(document.id)
+    const handleView = (document: FinancialDocument) => {
+        navigate(`/admin/accounting/documents/${document.id}`)
     }
 
     const handleEdit = async (document: FinancialDocument) => {
@@ -314,6 +309,9 @@ const FinancialDocuments = () => {
                 <Skeleton width={80} height={20} />
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
+                <Skeleton width={80} height={20} />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center gap-2">
                     <Skeleton variant="circle" width={32} height={32} />
                     <Skeleton variant="circle" width={32} height={32} />
@@ -367,6 +365,12 @@ const FinancialDocuments = () => {
                                             <div className="flex items-center gap-2">
                                                 <HiOutlineCheckCircle className="w-4 h-4" />
                                                 وضعیت
+                                            </div>
+                                        </th>
+                                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
+                                            <div className="flex items-center gap-2">
+                                                <HiOutlineDocumentText className="w-4 h-4" />
+                                                وضعیت صورتحساب
                                             </div>
                                         </th>
                                         <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
@@ -546,6 +550,12 @@ const FinancialDocuments = () => {
                                     </th>
                                     <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
                                         <div className="flex items-center gap-2">
+                                            <HiOutlineDocumentText className="w-4 h-4" />
+                                            وضعیت صورتحساب
+                                        </div>
+                                    </th>
+                                    <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
+                                        <div className="flex items-center gap-2">
                                             <HiOutlineCog className="w-4 h-4" />
                                             عملیات
                                         </div>
@@ -588,6 +598,17 @@ const FinancialDocuments = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {getStatusTag(document.status)}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {document.bills_exists ? (
+                                                <Tag className="bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-100 border-0">
+                                                    در صورتحساب
+                                                </Tag>
+                                            ) : (
+                                                <Tag className="bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-100 border-0">
+                                                    آزاد
+                                                </Tag>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2">
@@ -784,65 +805,6 @@ const FinancialDocuments = () => {
                 </Formik>
             </Dialog>
 
-            {/* View Dialog */}
-            <Dialog
-                isOpen={viewDialogOpen}
-                onClose={() => setViewDialogOpen(false)}
-                onRequestClose={() => setViewDialogOpen(false)}
-                width={700}
-            >
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        جزئیات سند مالی #{selectedDocument?.id}
-                    </h3>
-                    {detailLoading && <Spinner />}
-                </div>
-
-                {selectedDocument && (
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="text-gray-500 dark:text-gray-400 text-sm block mb-1">عنوان</label>
-                                <p className="font-medium text-gray-900 dark:text-gray-100">{selectedDocument.title}</p>
-                            </div>
-                            <div>
-                                <label className="text-gray-500 dark:text-gray-400 text-sm block mb-1">سازمان</label>
-                                <p className="font-medium text-gray-900 dark:text-gray-100">{selectedDocument.company.name}</p>
-                            </div>
-                            <div>
-                                <label className="text-gray-500 dark:text-gray-400 text-sm block mb-1">مبلغ</label>
-                                <p className="font-medium text-gray-900 dark:text-gray-100 text-lg">
-                                    {formatAmount(selectedDocument.amount, selectedDocument.currency)}
-                                </p>
-                            </div>
-                            <div>
-                                <label className="text-gray-500 dark:text-gray-400 text-sm block mb-1">وضعیت</label>
-                                <div>{getStatusTag(selectedDocument.status)}</div>
-                            </div>
-                            <div>
-                                <label className="text-gray-500 dark:text-gray-400 text-sm block mb-1">تاریخ ایجاد</label>
-                                <p className="font-medium text-gray-900 dark:text-gray-100">{formatDate(selectedDocument.created_date)}</p>
-                            </div>
-                            {selectedDocument.paid_date && (
-                                <div>
-                                    <label className="text-gray-500 dark:text-gray-400 text-sm block mb-1">تاریخ پرداخت</label>
-                                    <p className="font-medium text-gray-900 dark:text-gray-100">{formatDate(selectedDocument.paid_date)}</p>
-                                </div>
-                            )}
-                            <div className="md:col-span-2">
-                                <label className="text-gray-500 dark:text-gray-400 text-sm block mb-1">توضیحات</label>
-                                <p className="font-medium text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                                    {selectedDocument.description || 'بدون توضیحات'}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex justify-end pt-4">
-                            <Button onClick={() => setViewDialogOpen(false)}>بستن</Button>
-                        </div>
-                    </div>
-                )}
-            </Dialog>
-
             {/* Edit Dialog */}
             <Dialog
                 isOpen={editDialogOpen}
@@ -862,11 +824,11 @@ const FinancialDocuments = () => {
                         initialValues={{
                             company_id: selectedDocument.company_id,
                             title: selectedDocument.title,
-                            amount: parseFloat(selectedDocument.amount),
+                            amount: parseFloat(selectedDocument.amount as unknown as string),
                             currency: selectedDocument.currency,
                             status: selectedDocument.status,
                             description: selectedDocument.description || '',
-                            paid_date: selectedDocument.paid_date ? selectedDocument.paid_date.split('T')[0] : '',
+                            paid_date: selectedDocument.paid_date ? (selectedDocument.paid_date as string).split('T')[0] : '',
                         }}
                         validationSchema={validationSchema}
                         onSubmit={handleUpdateDocument}

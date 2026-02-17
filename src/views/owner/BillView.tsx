@@ -80,9 +80,10 @@ const BillView = () => {
         }
     }
 
-    const formatCurrency = (amount: string | number) => {
+    const formatCurrency = (amount: string | number, currency: string = 'IRR') => {
         const num = typeof amount === 'string' ? parseFloat(amount) : amount
-        return new Intl.NumberFormat('fa-IR').format(num) + ' تومان'
+        const formatted = new Intl.NumberFormat('fa-IR').format(num)
+        return `${formatted} ${currency === 'IRR' ? 'ریال' : currency}`
     }
 
     const formatDate = (dateString: string) => {
@@ -198,28 +199,63 @@ const BillView = () => {
         }
     }
 
-    const handleAddDocuments = async () => {
+    const [isLoadingDocs, setIsLoadingDocs] = useState(false)
+
+    const handleAddDocuments = () => {
         setAddDocDialog(true)
         setAvailableDocs([])
         setSelectedDocIds([])
+        fetchAvailableDocuments()
+    }
 
+    const fetchAvailableDocuments = async () => {
+        if (!bill) return
+
+        setIsLoadingDocs(true)
         try {
-            // Fetch all documents to ensure we have the complete list
-            // Then filter client-side for "pending" and "not in this bill"
-            // Also ensure they belong to the same company (though in owner panel usually all are same company)
+            // Fetch all financial documents
             const response = await getFinancialDocuments()
+
             if (response.success && Array.isArray(response.data)) {
-                // Directly set available docs to everything returned by API
-                // Just to be sure we see SOMETHING
-                setAvailableDocs(response.data)
+                console.log('All Documents:', response.data)
+
+                // Filter logic:
+                // 1. Must belong to the same company as the bill
+                // 2. Must be 'pending' (unpaid)
+                // 3. Must NOT be associated with another bill (bills_exists is falsy)
+                // 4. Must NOT be already in the ALL documents list of ANY bill (if bills_exists covers this, good, but explicit check matches UI)
+                // 5. Must NOT be in current displayed documents list
+
+                const currentDocIds = documents.map(d => d.id)
+
+                const validDocs = response.data.filter((doc: FinancialDocument) => {
+                    // Check Company
+                    if (doc.company_id !== bill.company_id) return false
+
+                    // Check Status
+                    if (doc.status !== 'pending') return false
+
+                    // Check Bill Existence (API flag)
+                    if (doc.bills_exists) return false
+
+                    // Check if already in current list (Client side safety)
+                    if (currentDocIds.includes(doc.id)) return false
+
+                    return true
+                })
+
+                console.log('Filtered Valid Docs:', validDocs)
+                setAvailableDocs(validDocs)
             }
         } catch (error) {
             console.error('Error fetching available docs:', error)
             toast.push(
                 <Notification type="danger" title="خطا">
-                    خطا در دریافت لیست اسناد قابل افزودن
+                    خطا در دریافت لیست اسناد
                 </Notification>
             )
+        } finally {
+            setIsLoadingDocs(false)
         }
     }
 
@@ -230,19 +266,21 @@ const BillView = () => {
     }
 
     const confirmAddDocuments = async () => {
-        if (!bill) return
+        if (!bill || selectedDocIds.length === 0) return
 
         try {
+            setProcessing(true)
             const response = await addDocumentToBill(bill.id, selectedDocIds)
 
             if (response.success) {
                 toast.push(
                     <Notification type="success" title="موفقیت">
-                        اسناد با موفقیت به صورتحساب اضافه شدند
+                        {response.message || 'اسناد با موفقیت افزوده شدند'}
                     </Notification>
                 )
                 setAddDocDialog(false)
                 setSelectedDocIds([])
+                // Refresh full bill data
                 loadBill()
             }
         } catch (error: any) {
@@ -252,10 +290,12 @@ const BillView = () => {
                     {error?.response?.data?.message || 'خطا در افزودن اسناد'}
                 </Notification>
             )
+        } finally {
+            setProcessing(false)
         }
     }
 
-
+    // ... (rest of component render)
 
     const totalCalculated = documents.reduce((sum, doc) => sum + parseFloat(doc.amount), 0)
 
@@ -322,8 +362,6 @@ const BillView = () => {
                 </Button>
             </div>
 
-
-
             {/* Bill Details */}
             <Card className="p-6">
                 <div className="flex justify-between items-start mb-6">
@@ -345,7 +383,7 @@ const BillView = () => {
                         <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                             مبلغ کل
                         </label>
-                        <p className="text-2xl font-bold text-primary">{formatCurrency(bill.total_amount)}</p>
+                        <p className="text-2xl font-bold text-primary">{formatCurrency(bill.total_amount, bill.currency)}</p>
                     </div>
 
                     <div>
@@ -432,15 +470,17 @@ const BillView = () => {
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                             اسناد مالی این صورتحساب
                         </h3>
-                        <Button
-                            variant="solid"
-                            size="sm"
-                            icon={<HiOutlinePlus />}
-                            onClick={() => setAddDocDialog(true)}
-                            className="bg-emerald-600 hover:bg-emerald-700"
-                        >
-                            افزودن سند جدید
-                        </Button>
+                        {bill.status === 'pending' && (
+                            <Button
+                                variant="solid"
+                                size="sm"
+                                icon={<HiOutlinePlus />}
+                                onClick={handleAddDocuments}
+                                className="bg-emerald-600 hover:bg-emerald-700"
+                            >
+                                افزودن سند جدید
+                            </Button>
+                        )}
                     </div>
 
                     <div className="rounded-lg">
@@ -462,7 +502,7 @@ const BillView = () => {
                                         </Td>
                                         <Td>{doc.title}</Td>
                                         <Td>{formatDate(doc.created_date)}</Td>
-                                        <Td className="font-semibold">{formatCurrency(doc.amount)}</Td>
+                                        <Td className="font-semibold">{formatCurrency(doc.amount, doc.currency)}</Td>
                                         <Td>
                                             <div className="flex justify-center">
                                                 {bill.status === 'pending' && (
@@ -491,7 +531,7 @@ const BillView = () => {
                                                             variant="solid"
                                                             size="sm"
                                                             icon={<HiOutlinePlus />}
-                                                            onClick={() => setAddDocDialog(true)}
+                                                            onClick={handleAddDocuments}
                                                         >
                                                             افزودن اولین سند
                                                         </Button>
@@ -510,41 +550,45 @@ const BillView = () => {
             </Card>
 
             {/* Add Document Dialog */}
-            <Dialog isOpen={addDocDialog} onClose={() => setAddDocDialog(false)} width={800}>
-                <div className="mb-4">
-                    <h5 className="text-lg font-semibold">افزودن سند به صورتحساب</h5>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        اسناد مورد نظر را انتخاب کنید
-                    </p>
+            <Dialog
+                isOpen={addDocDialog}
+                onClose={() => setAddDocDialog(false)}
+                width={800}
+            // Prevent closing when clicking outside if needed, but default is fine
+            >
+                <div className="flex justify-between items-center mb-4">
+                    <div>
+                        <h5 className="text-lg font-semibold">افزودن سند به صورتحساب</h5>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            فقط اسناد تأیید نشده که در صورتحساب دیگری نیستند نمایش داده می‌شوند.
+                        </p>
+                    </div>
                 </div>
 
-                <div className="max-h-96 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
-                    {availableDocs.length > 0 ? (
+                <div className="min-h-[200px] max-h-[500px] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg mb-4 relative">
+                    {isLoadingDocs ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-10">
+                            <div className="flex flex-col items-center">
+                                <Skeleton variant="circle" width={40} height={40} className="mb-2" />
+                                <span className="text-sm text-gray-500">در حال دریافت اسناد...</span>
+                            </div>
+                        </div>
+                    ) : availableDocs.length > 0 ? (
                         <Table>
                             <THead>
                                 <Tr>
                                     <Th className="w-10">
-                                        {(() => {
-                                            const pendingDocs = availableDocs.filter(d => d.status === 'pending')
-                                            const allPendingSelected = pendingDocs.length > 0 && pendingDocs.every(d => selectedDocIds.includes(d.id))
-
-                                            return (
-                                                <IndeterminateCheckbox
-                                                    checked={pendingDocs.length > 0 && allPendingSelected}
-                                                    indeterminate={selectedDocIds.length > 0 && !allPendingSelected}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            const pendingIds = availableDocs
-                                                                .filter(d => d.status === 'pending')
-                                                                .map(d => d.id)
-                                                            setSelectedDocIds(pendingIds)
-                                                        } else {
-                                                            setSelectedDocIds([])
-                                                        }
-                                                    }}
-                                                />
-                                            )
-                                        })()}
+                                        <IndeterminateCheckbox
+                                            checked={availableDocs.length > 0 && selectedDocIds.length === availableDocs.length}
+                                            indeterminate={selectedDocIds.length > 0 && selectedDocIds.length < availableDocs.length}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSelectedDocIds(availableDocs.map(d => d.id))
+                                                } else {
+                                                    setSelectedDocIds([])
+                                                }
+                                            }}
+                                        />
                                     </Th>
                                     <Th>شناسه</Th>
                                     <Th>عنوان</Th>
@@ -556,14 +600,13 @@ const BillView = () => {
                             <TBody>
                                 {availableDocs.map((doc) => (
                                     <Tr key={doc.id}
-                                        className={`hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer ${doc.status !== 'pending' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        onClick={() => doc.status === 'pending' && toggleDocumentSelection(doc.id)}
+                                        className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                                        onClick={() => toggleDocumentSelection(doc.id)}
                                     >
                                         <Td>
                                             <Checkbox
                                                 checked={selectedDocIds.includes(doc.id)}
-                                                disabled={doc.status !== 'pending'}
-                                                onChange={() => { }} // Handle by Row Click
+                                                onChange={() => { }} // Handled by row click
                                             />
                                         </Td>
                                         <Td>
@@ -571,33 +614,48 @@ const BillView = () => {
                                         </Td>
                                         <Td>{doc.title}</Td>
                                         <Td>{formatDate(doc.created_date)}</Td>
-                                        <Td>{formatCurrency(doc.amount)}</Td>
+                                        <Td className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                            {formatCurrency(doc.amount, doc.currency)}
+                                        </Td>
                                         <Td>{getStatusTag(doc.status)}</Td>
                                     </Tr>
                                 ))}
                             </TBody>
                         </Table>
                     ) : (
-                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                        <div className="flex flex-col items-center justify-center h-[200px] text-gray-500 dark:text-gray-400">
+                            <HiOutlineDocumentText className="text-4xl mb-3 opacity-20" />
                             <p>هیچ سند قابل افزودنی یافت نشد</p>
+                            <p className="text-xs mt-1 opacity-70">
+                                (شرایط: وضعیت در انتظار + عدم وجود در صورتحساب دیگر)
+                            </p>
                         </div>
                     )}
                 </div>
 
-                <div className="flex justify-between items-center mt-4">
-                    <div className="text-sm text-gray-500">
-                        {selectedDocIds.length} سند انتخاب شده
+                <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {selectedDocIds.length > 0 ? (
+                            <span>{selectedDocIds.length} سند برای افزودن انتخاب شده است</span>
+                        ) : (
+                            <span className="text-gray-400">هیچ سندی انتخاب نشده است</span>
+                        )}
                     </div>
-                    <div className="flex gap-2">
-                        <Button variant="plain" onClick={() => setAddDocDialog(false)}>
+                    <div className="flex gap-3">
+                        <Button
+                            variant="plain"
+                            onClick={() => setAddDocDialog(false)}
+                            disabled={processing}
+                        >
                             انصراف
                         </Button>
                         <Button
                             variant="solid"
-                            disabled={selectedDocIds.length === 0}
+                            disabled={selectedDocIds.length === 0 || processing}
+                            loading={processing}
                             onClick={confirmAddDocuments}
                         >
-                            افزودن به لیست
+                            افزودن به صورتحساب
                         </Button>
                     </div>
                 </div>
