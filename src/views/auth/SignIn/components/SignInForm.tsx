@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
@@ -73,6 +74,7 @@ const phonePasswordValidationSchema: ZodType<PhonePasswordFormSchema> = z.object
 })
 
 const SignInForm = (props: SignInFormProps) => {
+    const navigate = useNavigate()
     const [isSubmitting, setSubmitting] = useState<boolean>(false)
     const [step, setStep] = useState<'phone' | 'otp' | 'register' | 'phonePassword'>('phone')
     const [phoneNumber, setPhoneNumber] = useState<string>('')
@@ -215,7 +217,7 @@ const SignInForm = (props: SignInFormProps) => {
                         console.log('✅ Login successful, redirecting...')
 
                         // Redirect به dashboard
-                        window.location.href = appConfig.authenticatedEntryPath
+                        navigate(appConfig.authenticatedEntryPath)
                     }
                 } else {
                     // کاربر ثبت‌نام نکرده - انتقال به فرم ثبت‌نام
@@ -286,7 +288,7 @@ const SignInForm = (props: SignInFormProps) => {
                     console.log('✅ Register successful, redirecting...')
 
                     // Redirect به dashboard
-                    window.location.href = appConfig.authenticatedEntryPath
+                    navigate(appConfig.authenticatedEntryPath)
                 }
             } catch (error: any) {
                 console.error('❌ Register Error:', error)
@@ -334,7 +336,7 @@ const SignInForm = (props: SignInFormProps) => {
                     console.log('✅ Login successful, redirecting...')
 
                     // Redirect به dashboard
-                    window.location.href = appConfig.authenticatedEntryPath
+                    navigate(appConfig.authenticatedEntryPath)
                 }
             } catch (error: any) {
                 console.error('❌ Login Error:', error)

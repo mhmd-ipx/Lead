@@ -8,7 +8,7 @@ export type AppConfig = {
 }
 
 const appConfig: AppConfig = {
-    apiPrefix: 'http://api.leadmapro.com/api',
+    apiPrefix: 'https://api.leadmapro.com/api',
     authenticatedEntryPath: '/dashboard',
     unAuthenticatedEntryPath: '/login',
     locale: 'fa',
