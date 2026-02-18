@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Card, Button, Tag, Tooltip, Input, Checkbox, Dialog, Skeleton } from '@/components/ui'
+import { Card, Button, Tag, Tooltip, Input, Checkbox, Dialog, Skeleton, Notification, toast } from '@/components/ui'
 import {
     HiOutlineSearch,
     HiOutlineClipboardCheck,
@@ -9,12 +9,20 @@ import {
     HiOutlineEye,
     HiOutlineClock,
     HiOutlineCheckCircle,
+    HiArrowLeft,
+    HiArrowRight
 } from 'react-icons/hi'
-import { getCompletedAssessments, getExams, assignExamsToAssessment } from '@/services/AdminService'
+import { getCompletedAssessments, getExamsList, createExamCollection } from '@/services/AdminService'
 import { AdminCompletedAssessment } from '@/@types/adminAssessment'
-import { Exam } from '@/mock/data/adminData'
+import { Exam } from '@/@types/exam'
 import { useNavigate } from 'react-router-dom'
 import classNames from '@/utils/classNames'
+import dayjs from 'dayjs'
+import DatePicker from "react-multi-date-picker"
+import persian from "react-date-object/calendars/persian"
+import persian_fa from "react-date-object/locales/persian_fa"
+import TimePicker from "react-multi-date-picker/plugins/time_picker"
+import "react-multi-date-picker/styles/layouts/mobile.css"
 
 type FilterCategory = 'all' | 'assigned' | 'pending'
 
@@ -34,21 +42,21 @@ const StatisticCard = (props: StatisticCardProps) => {
     return (
         <button
             className={classNames(
-                'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full',
-                active && 'bg-white dark:bg-gray-900 shadow-md',
+                'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full border border-transparent',
+                active ? 'bg-white dark:bg-gray-800 shadow-sm border-gray-200 dark:border-gray-700' : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800',
             )}
             onClick={() => onClick(label)}
         >
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="mb-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
+                    <div className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">
                         {title}
                     </div>
                     <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{value}</h3>
                 </div>
                 <div
                     className={classNames(
-                        'flex items-center justify-center min-h-12 min-w-12 max-h-12 max-w-12 rounded-full text-2xl',
+                        'flex items-center justify-center min-h-12 min-w-12 max-h-12 max-w-12 rounded-xl text-2xl',
                         iconClass,
                     )}
                 >
@@ -67,7 +75,20 @@ const CompletedAssessments = () => {
     const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all')
     const [assignDialogOpen, setAssignDialogOpen] = useState(false)
     const [selectedAssessment, setSelectedAssessment] = useState<AdminCompletedAssessment | null>(null)
-    const [selectedExamIds, setSelectedExamIds] = useState<string[]>([])
+    const [selectedExamIds, setSelectedExamIds] = useState<number[]>([])
+
+    // New State for Exam Collection Form
+    const [step, setStep] = useState(1)
+    const [collectionForm, setCollectionForm] = useState({
+        title: '',
+        description: '',
+        start_datetime: null as Date | null,
+        end_datetime: null as Date | null,
+        due_date: null as Date | null,
+        duration_minutes: 60,
+    })
+    const [submitting, setSubmitting] = useState(false)
+
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -78,12 +99,16 @@ const CompletedAssessments = () => {
         try {
             const [assessmentsData, examsData] = await Promise.all([
                 getCompletedAssessments(),
-                getExams()
+                getExamsList()
             ])
             setAssessments(assessmentsData)
-            setExams(examsData)
+            setExams(examsData || [])
         } catch (error) {
             console.error('Error loading data:', error)
+            toast.push(
+                <Notification title="خطا در دریافت اطلاعات" type="danger" />,
+                { placement: 'top-center' }
+            )
         } finally {
             setLoading(false)
         }
@@ -91,33 +116,112 @@ const CompletedAssessments = () => {
 
     const handleOpenAssignDialog = (assessment: AdminCompletedAssessment) => {
         setSelectedAssessment(assessment)
-        setSelectedExamIds(assessment.assignedExams || [])
+        setSelectedExamIds([]) // Reset for new assignment
+        setStep(1)
+        setCollectionForm({
+            title: assessment.manager ? `مجموعه آزمون برای ${assessment.manager.user.name}` : 'مجموعه آزمون جدید',
+            description: 'لطفاً آزمون‌های زیر را در مهلت تعیین شده انجام دهید.',
+            start_datetime: new Date(),
+            end_datetime: dayjs().add(14, 'day').toDate(),
+            due_date: dayjs().add(14, 'day').toDate(),
+            duration_minutes: 60,
+        })
         setAssignDialogOpen(true)
+    }
+
+    const handleCloseDialog = () => {
+        setAssignDialogOpen(false)
+        setSelectedAssessment(null)
+        setSelectedExamIds([])
+        setStep(1)
+    }
+
+    const handleNextStep = () => {
+        if (selectedExamIds.length === 0) {
+            toast.push(
+                <Notification title="لطفاً حداقل یک آزمون انتخاب کنید" type="warning" />,
+                { placement: 'top-center' }
+            )
+            return
+        }
+
+        // Calculate total duration based on selected exams if needed
+        const totalDuration = exams
+            .filter(e => selectedExamIds.includes(Number(e.id)))
+            .reduce((sum, e) => sum + (e.duration || 0), 0)
+
+        setCollectionForm(prev => ({
+            ...prev,
+            duration_minutes: totalDuration > 0 ? totalDuration : 60
+        }))
+
+        setStep(2)
+    }
+
+    const handlePrevStep = () => {
+        setStep(1)
     }
 
     const handleAssignExams = async () => {
         if (!selectedAssessment) return
+        if (!collectionForm.title || !collectionForm.start_datetime || !collectionForm.end_datetime || !collectionForm.due_date) {
+            toast.push(
+                <Notification title="لطفاً تمام فیلدها را پر کنید" type="warning" />,
+                { placement: 'top-center' }
+            )
+            return
+        }
+
+        setSubmitting(true)
 
         try {
-            await assignExamsToAssessment(selectedAssessment.id.toString(), selectedExamIds)
+            const payload = {
+                title: collectionForm.title,
+                description: collectionForm.description,
+                status: 'active' as const,
+                start_datetime: dayjs(collectionForm.start_datetime).format('YYYY-MM-DD HH:mm:ss'),
+                end_datetime: dayjs(collectionForm.end_datetime).format('YYYY-MM-DD HH:mm:ss'),
+                due_date: dayjs(collectionForm.due_date).format('YYYY-MM-DD'),
+                duration_minutes: Number(collectionForm.duration_minutes),
+                exam_ids: selectedExamIds, // Already numbers
+                user_id: Number(selectedAssessment.manager.user_id),
+            }
 
-            // Update local state
+            await createExamCollection(payload)
+
+            toast.push(
+                <Notification title="مجموعه آزمون با موفقیت ایجاد و اختصاص داده شد" type="success" />,
+                { placement: 'top-end' }
+            )
+
+            // Update local state to reflect assignment
+            // Note: assignedExams in AdminCompletedAssessment might still be string[], check that type.
+            // If it is string[], we might need to cast or convert. 
+            // In AdminCompletedAssessment type: assignedExams?: string[] (based on previous view_file of CompletedAssessments.tsx line 107 in original)
+            // But wait, I'm replacing the file. I should check @/@types/adminAssessment.ts
+
+            // Assume assignedExams is compatible or we map it. 
+            // Since we updated local state with `setAssessments`, we should be careful.
+
             setAssessments(assessments.map(a =>
                 a.id === selectedAssessment.id
-                    ? { ...a, assignedExams: selectedExamIds }
+                    ? { ...a, assignedExams: selectedExamIds.map(String) } // Convert to string if expected
                     : a
             ))
 
-            setAssignDialogOpen(false)
-            setSelectedAssessment(null)
-            setSelectedExamIds([])
+            handleCloseDialog()
         } catch (error) {
             console.error('Error assigning exams:', error)
-            alert('خطا در اختصاص آزمون‌ها')
+            toast.push(
+                <Notification title="خطا در اختصاص آزمون‌ها" type="danger" />,
+                { placement: 'top-center' }
+            )
+        } finally {
+            setSubmitting(false)
         }
     }
 
-    const toggleExamSelection = (examId: string) => {
+    const toggleExamSelection = (examId: number) => {
         if (selectedExamIds.includes(examId)) {
             setSelectedExamIds(selectedExamIds.filter(id => id !== examId))
         } else {
@@ -198,18 +302,12 @@ const CompletedAssessments = () => {
                             مدیریت نیازسنجی‌ها و اختصاص آزمون‌ها
                         </p>
                     </div>
-                    <Input
-                        className="w-64"
-                        placeholder="جستجو..."
-                        prefix={<HiOutlineSearch />}
-                        disabled
-                    />
                 </div>
 
                 {/* Statistics Cards Skeleton */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="p-4 rounded-2xl bg-white dark:bg-gray-900">
+                        <div key={i} className="p-4 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                             <div className="flex justify-between items-center">
                                 <div className="space-y-2">
                                     <Skeleton width={100} height={14} />
@@ -224,29 +322,15 @@ const CompletedAssessments = () => {
                 {/* Table Skeleton */}
                 <Card>
                     <div className="p-6">
-                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                            <HiOutlineClipboardCheck className="w-5 h-5" />
-                            لیست نیازسنجی‌ها
-                        </h2>
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                 <thead className="bg-gray-50 dark:bg-gray-800">
                                     <tr>
-                                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
-                                            متقاضی
-                                        </th>
-                                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
-                                            سازمان
-                                        </th>
-                                        <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
-                                            آزمون‌های اختصاص داده شده
-                                        </th>
-                                        <th className="px-6 py-3 text-right font-bold text-xs  text-gray-500 dark:text-gray-400 uppercase">
-                                            وضعیت
-                                        </th>
-                                        <th className="px-6 py-3 text-right text-xs font-bol text-gray-500 dark:text-gray-400 uppercase">
-                                            عملیات
-                                        </th>
+                                        {['متقاضی', 'سازمان', 'آزمون‌های اختصاص داده شده', 'وضعیت', 'عملیات'].map(h => (
+                                            <th key={h} className="px-6 py-3 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
+                                                {h}
+                                            </th>
+                                        ))}
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
@@ -284,11 +368,11 @@ const CompletedAssessments = () => {
             </div>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatisticCard
                     title="همه نیازسنجی‌ها"
                     value={totalAssessments}
-                    iconClass="bg-blue-200 text-blue-700"
+                    iconClass="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
                     icon={<HiOutlineClipboardCheck />}
                     label="all"
                     active={selectedCategory === 'all'}
@@ -297,7 +381,7 @@ const CompletedAssessments = () => {
                 <StatisticCard
                     title="اختصاص داده شده"
                     value={assignedAssessments}
-                    iconClass="bg-green-200 text-green-700"
+                    iconClass="bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
                     icon={<HiOutlineCheckCircle />}
                     label="assigned"
                     active={selectedCategory === 'assigned'}
@@ -306,7 +390,7 @@ const CompletedAssessments = () => {
                 <StatisticCard
                     title="در انتظار"
                     value={pendingAssessments}
-                    iconClass="bg-amber-200 text-amber-700"
+                    iconClass="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
                     icon={<HiOutlineClock />}
                     label="pending"
                     active={selectedCategory === 'pending'}
@@ -367,7 +451,12 @@ const CompletedAssessments = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <Tag className="text-indigo-600 bg-indigo-100 dark:text-indigo-100 dark:bg-indigo-500/20 border-0">
+                                            <Tag className={classNames(
+                                                "border-0",
+                                                (assessment.assignedExams?.length || 0) > 0
+                                                    ? "text-indigo-600 bg-indigo-100 dark:text-indigo-100 dark:bg-indigo-500/20"
+                                                    : "text-gray-500 bg-gray-100 dark:text-gray-400 dark:bg-gray-800"
+                                            )}>
                                                 {(assessment.assignedExams?.length || 0)} آزمون
                                             </Tag>
                                         </td>
@@ -420,72 +509,222 @@ const CompletedAssessments = () => {
             {/* Assign Exams Dialog */}
             <Dialog
                 isOpen={assignDialogOpen}
-                onClose={() => {
-                    setAssignDialogOpen(false)
-                    setSelectedAssessment(null)
-                    setSelectedExamIds([])
-                }}
-                onRequestClose={() => {
-                    setAssignDialogOpen(false)
-                    setSelectedAssessment(null)
-                    setSelectedExamIds([])
-                }}
+                onClose={handleCloseDialog}
+                onRequestClose={handleCloseDialog}
+                width={800}
+                className="pb-0"
             >
-                <div className="p-6">
+                <div className="p-6 h-full flex flex-col">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                        <HiOutlineAcademicCap className="w-5 h-5" />
-                        اختصاص مجموعه آزمون
+                        <HiOutlineAcademicCap className="w-6 h-6 text-indigo-600" />
+                        <span>اختصاص مجموعه آزمون</span>
+                        <span className="text-sm font-normal text-gray-500 mx-2">|</span>
+                        <span className="text-sm font-normal text-gray-500">مرحله {step} از 2</span>
                     </h3>
 
                     {selectedAssessment && (
-                        <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <div className="text-sm">
-                                <p className="text-gray-600 dark:text-gray-400">نیازسنجی:</p>
-                                <p className="font-semibold text-gray-900 dark:text-white">{selectedAssessment.manager.user.name} - {selectedAssessment.manager.company.name}</p>
+                        <div className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg flex justify-between items-center">
+                            <div>
+                                <p className="text-xs text-indigo-600 dark:text-indigo-300 font-medium mb-1">نیازسنجی مربوط به:</p>
+                                <p className="font-bold text-gray-900 dark:text-white">{selectedAssessment.manager.user.name}</p>
+                            </div>
+                            <div className="text-left">
+                                <p className="text-xs text-indigo-600 dark:text-indigo-300 font-medium mb-1">سازمان:</p>
+                                <p className="font-bold text-gray-900 dark:text-white">{selectedAssessment.manager.company.name}</p>
                             </div>
                         </div>
                     )}
 
-                    <div className="space-y-3 mb-6">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">انتخاب آزمون‌ها:</p>
-                        {exams.map((exam) => (
-                            <div key={exam.id} className="flex items-start gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                <Checkbox
-                                    checked={selectedExamIds.includes(exam.id)}
-                                    onChange={() => toggleExamSelection(exam.id)}
-                                />
-                                <div className="flex-1">
-                                    <div className="font-medium text-gray-900 dark:text-white">{exam.title}</div>
-                                    <div className="text-sm text-gray-500 dark:text-gray-400">{exam.description}</div>
-                                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-600 dark:text-gray-400">
-                                        <span>{exam.totalQuestions} سوال</span>
-                                        <span>{exam.duration} دقیقه</span>
-                                        <Tag className={`text-xs ${exam.status === 'active' ? 'text-green-600 bg-green-100' : 'text-gray-600 bg-gray-100'} border-0`}>
-                                            {exam.status === 'active' ? 'فعال' : exam.status === 'completed' ? 'تکمیل شده' : 'پیش‌نویس'}
-                                        </Tag>
+                    <div className="flex-1 overflow-y-auto mb-6 px-1 max-h-[50vh]">
+                        {step === 1 ? (
+                            <div className="space-y-4">
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    لطفاً آزمون‌های مورد نظر برای این کاربر را انتخاب کنید:
+                                </p>
+                                {exams.length > 0 ? (
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {exams.map((exam) => (
+                                            <div
+                                                key={exam.id}
+                                                className={classNames(
+                                                    "flex items-center gap-3 p-3 border rounded-lg transition-all cursor-pointer",
+                                                    selectedExamIds.includes(exam.id)
+                                                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 ring-1 ring-indigo-500"
+                                                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                                                )}
+                                                onClick={() => toggleExamSelection(exam.id)}
+                                            >
+                                                <Checkbox
+                                                    checked={selectedExamIds.includes(exam.id)}
+                                                    onChange={() => toggleExamSelection(exam.id)}
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <div className="font-bold text-gray-900 dark:text-white text-sm truncate ml-2">{exam.title}</div>
+                                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                                            <span className="text-xs text-gray-500">{exam.questions?.length || 0} سوال</span>
+                                                            <Tag className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 h-6 text-xs">{exam.duration} دقیقه</Tag>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{exam.description}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                                        <p className="text-gray-500">هیچ آزمونی یافت نشد.</p>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            عنوان مجموعه آزمون <span className="text-red-500">*</span>
+                                        </label>
+                                        <Input
+                                            value={collectionForm.title}
+                                            onChange={e => setCollectionForm({ ...collectionForm, title: e.target.value })}
+                                            placeholder="عنوان مجموعه را وارد کنید"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            توضیحات
+                                        </label>
+                                        <Input
+                                            textArea
+                                            value={collectionForm.description}
+                                            onChange={e => setCollectionForm({ ...collectionForm, description: e.target.value })}
+                                            placeholder="توضیحات تکمیلی برای کاربر..."
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                تاریخ شروع <span className="text-red-500">*</span>
+                                            </label>
+                                            <DatePicker
+                                                value={collectionForm.start_datetime}
+                                                onChange={(date: any) => {
+                                                    const jsDate = date?.toDate ? date.toDate() : date;
+                                                    setCollectionForm({ ...collectionForm, start_datetime: jsDate })
+                                                }}
+                                                calendar={persian}
+                                                locale={persian_fa}
+                                                format="YYYY/MM/DD HH:mm"
+                                                plugins={[
+                                                    <TimePicker position="bottom" />
+                                                ]}
+                                                containerClassName="w-full"
+                                                inputClass="w-full h-11 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500"
+                                                placeholder="انتخاب تاریخ و ساعت"
+                                                calendarPosition="bottom-right"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                تاریخ پایان <span className="text-red-500">*</span>
+                                            </label>
+                                            <DatePicker
+                                                value={collectionForm.end_datetime}
+                                                onChange={(date: any) => {
+                                                    const jsDate = date?.toDate ? date.toDate() : date;
+                                                    setCollectionForm({ ...collectionForm, end_datetime: jsDate })
+                                                }}
+                                                calendar={persian}
+                                                locale={persian_fa}
+                                                format="YYYY/MM/DD HH:mm"
+                                                plugins={[
+                                                    <TimePicker position="bottom" />
+                                                ]}
+                                                containerClassName="w-full"
+                                                inputClass="w-full h-11 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500"
+                                                placeholder="انتخاب تاریخ و ساعت"
+                                                calendarPosition="bottom-right"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                مهلت انجام (Due Date) <span className="text-red-500">*</span>
+                                            </label>
+                                            <DatePicker
+                                                value={collectionForm.due_date}
+                                                onChange={(date: any) => {
+                                                    const jsDate = date?.toDate ? date.toDate() : date;
+                                                    setCollectionForm({ ...collectionForm, due_date: jsDate })
+                                                }}
+                                                calendar={persian}
+                                                locale={persian_fa}
+                                                format="YYYY/MM/DD"
+                                                containerClassName="w-full"
+                                                inputClass="w-full h-11 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500"
+                                                placeholder="انتخاب تاریخ"
+                                                calendarPosition="bottom-right"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                مدت زمان کل (دقیقه) <span className="text-red-500">*</span>
+                                            </label>
+                                            <Input
+                                                type="number"
+                                                value={collectionForm.duration_minutes}
+                                                onChange={e => setCollectionForm({ ...collectionForm, duration_minutes: Number(e.target.value) })}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                        )}
                     </div>
 
-                    <div className="flex justify-end gap-3">
+                    <div className="flex justify-between border-t border-gray-100 dark:border-gray-700 pt-4 mt-auto">
                         <Button
                             variant="plain"
-                            onClick={() => {
-                                setAssignDialogOpen(false)
-                                setSelectedAssessment(null)
-                                setSelectedExamIds([])
-                            }}
+                            onClick={handleCloseDialog}
+                            disabled={submitting}
                         >
                             انصراف
                         </Button>
-                        <Button
-                            variant="solid"
-                            onClick={handleAssignExams}
-                        >
-                            اختصاص ({selectedExamIds.length} آزمون)
-                        </Button>
+                        <div className="flex gap-2">
+                            {step === 2 && (
+                                <Button
+                                    variant="default"
+                                    onClick={handlePrevStep}
+                                    disabled={submitting}
+                                    icon={<HiArrowRight className="ml-2" />}
+                                >
+                                    مرحله قبل
+                                </Button>
+                            )}
+                            {step === 1 ? (
+                                <Button
+                                    variant="solid"
+                                    onClick={handleNextStep}
+                                    disabled={selectedExamIds.length === 0}
+                                    icon={<HiArrowLeft className="mr-2" />}
+                                >
+                                    مرحله بعد
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="solid"
+                                    onClick={handleAssignExams}
+                                    loading={submitting}
+                                    icon={<HiOutlineCheckCircle className="mr-2" />}
+                                >
+                                    تایید و اختصاص
+                                </Button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </Dialog>

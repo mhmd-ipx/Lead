@@ -358,8 +358,68 @@ export async function getExams(): Promise<Exam[]> {
 import { ApplicantExamSet, mockApplicantExamSets, ExamItem, mockExamItems } from '@/mock/data/adminData'
 
 export async function getApplicantExamSets(): Promise<ApplicantExamSet[]> {
-    await delay(500)
-    return mockApplicantExamSets
+    try {
+        const response = await apiClient.get<any>('/exam-collections') // using any to bypass strict type checking for the complex response structure temporarily
+        if (response.data && response.data.data && Array.isArray(response.data.data)) {
+            const collections = response.data.data
+            const applicantExamSets: ApplicantExamSet[] = []
+
+            collections.forEach((collection: any) => {
+                if (collection.assignments && Array.isArray(collection.assignments)) {
+                    collection.assignments.forEach((assignment: any) => {
+                        // Calculate progress
+                        const total = collection.total_exams || 0
+                        const completed = assignment.completed_exams || 0
+                        const progress = total > 0 ? Math.round((completed / total) * 100) : 0
+
+                        // Map status
+                        let status: ApplicantExamSet['status'] = 'pending'
+                        if (assignment.status === 'completed') {
+                            status = 'completed'
+                        } else if (assignment.status === 'assigned') {
+                            status = progress > 0 ? 'in_progress' : 'pending'
+                        } else if (assignment.status === 'in_progress') {
+                            status = 'in_progress'
+                        }
+
+                        applicantExamSets.push({
+                            id: assignment.id.toString(),
+                            title: collection.title,
+                            description: collection.description,
+                            assignedDate: assignment.assigned_date,
+                            examDate: collection.start_datetime,
+                            status: status,
+                            progress: progress,
+                            totalExams: total,
+                            completedExams: completed,
+                            duration: collection.duration_minutes,
+                            applicantId: assignment.user?.id?.toString() || '',
+                            applicantName: assignment.user?.name || 'ناشناس',
+                            companyId: '0', // Not provided in API
+                            companyName: '-', // Not provided in API
+                            username: undefined, // Not provided
+                            password: undefined, // Not provided
+                            exams: collection.exams ? collection.exams.map((exam: any) => ({
+                                id: exam.id.toString(),
+                                title: exam.title,
+                                description: exam.description,
+                                duration: exam.duration,
+                                questionCount: 0 // Not provided in API list
+                            })) : [],
+                            // Store collectionId if needed for further fetching
+                            collectionId: collection.id
+                        })
+                    })
+                }
+            })
+
+            return applicantExamSets
+        }
+        return []
+    } catch (error) {
+        console.error('Error fetching applicant exam sets:', error)
+        return []
+    }
 }
 
 export async function getExamItems(): Promise<ExamItem[]> {
@@ -757,6 +817,49 @@ export async function updateExamQuestion(questionId: string, data: any): Promise
         return response
     } catch (error) {
         console.error('Error updating exam question:', error)
+        throw error
+    }
+}
+
+// Exam Collections
+export interface CreateExamCollectionRequest {
+    title: string
+    description: string
+    status: 'active' | 'inactive' | 'archived'
+    start_datetime: string
+    end_datetime: string
+    duration_minutes: number
+    exam_ids: number[]
+    user_id: number
+    due_date: string
+}
+
+export async function createExamCollection(data: CreateExamCollectionRequest): Promise<any> {
+    try {
+        const response = await apiClient.post<any>('/exam-collections', data)
+        return response
+    } catch (error) {
+        console.error('Error creating exam collection:', error)
+        throw error
+    }
+}
+
+export async function getExamCollectionById(id: number | string): Promise<any> {
+    try {
+        const response = await apiClient.get<any>(`/exam-collections/${id}`)
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching exam collection by id:', error)
+        throw error
+    }
+}
+
+export async function updateExamCollection(id: number | string, data: any): Promise<any> {
+    try {
+        const response = await apiClient.put<any>(`/exam-collections/${id}`, data)
+        return response
+    } catch (error) {
+        console.error('Error updating exam collection:', error)
         throw error
     }
 }
