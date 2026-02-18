@@ -65,15 +65,6 @@ const MultipleChoiceEditor = ({ options, allowMultiple, onChange }: MultipleChoi
                     >
                         <span className="text-sm">چند گزینه‌ای</span>
                     </Checkbox>
-                    <Button
-                        type="button"
-                        size="sm"
-                        variant="solid"
-                        icon={<HiOutlinePlus />}
-                        onClick={addOption}
-                    >
-                        افزودن گزینه
-                    </Button>
                 </div>
             </div>
 
@@ -93,99 +84,103 @@ const MultipleChoiceEditor = ({ options, allowMultiple, onChange }: MultipleChoi
                     </Button>
                 </div>
             ) : (
-                <DragDropContext onDragEnd={handleDragEnd}>
-                    <Droppable droppableId="options-list">
-                        {(provided) => (
-                            <div
-                                ref={provided.innerRef}
-                                {...provided.droppableProps}
-                                className="space-y-3"
-                            >
-                                {options.map((option, index) => (
-                                    <Draggable key={option.id} draggableId={option.id} index={index}>
-                                        {(provided, snapshot) => (
-                                            <div
-                                                ref={provided.innerRef}
-                                                {...provided.draggableProps}
-                                                className={`p-4 border rounded-lg ${snapshot.isDragging
+                <>
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                        <Droppable droppableId="options-list">
+                            {(provided) => (
+                                <div
+                                    ref={provided.innerRef}
+                                    {...provided.droppableProps}
+                                    className="space-y-3"
+                                >
+                                    {options.map((option, index) => (
+                                        <Draggable key={option.id} draggableId={option.id} index={index}>
+                                            {(provided, snapshot) => (
+                                                <div
+                                                    ref={provided.innerRef}
+                                                    {...provided.draggableProps}
+                                                    className={`p-4 border rounded-lg ${snapshot.isDragging
                                                         ? 'bg-gray-50 dark:bg-gray-800 border-primary-500'
                                                         : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
-                                                    }`}
-                                            >
-                                                <div className="space-y-3">
-                                                    <div className="flex items-start gap-3">
-                                                        <div
-                                                            {...provided.dragHandleProps}
-                                                            className="cursor-move text-gray-400 hover:text-gray-600 mt-2"
-                                                        >
-                                                            <MdDragIndicator className="w-5 h-5" />
-                                                        </div>
+                                                        }`}
+                                                >
+                                                    <div className="space-y-3">
+                                                        <div className="flex items-start gap-3">
+                                                            <div
+                                                                {...provided.dragHandleProps}
+                                                                className="cursor-move text-gray-400 hover:text-gray-600 mt-2"
+                                                            >
+                                                                <MdDragIndicator className="w-5 h-5" />
+                                                            </div>
 
-                                                        <Checkbox
-                                                            checked={option.isCorrect}
-                                                            onChange={(checked) => updateOption(option.id, { isCorrect: checked })}
-                                                            className="mt-2"
-                                                        >
-                                                            <span className="text-xs text-gray-500">پاسخ صحیح</span>
-                                                        </Checkbox>
+                                                            <div className="flex-1">
+                                                                <RichTextEditor
+                                                                    content={option.text}
+                                                                    onChange={({ html }) => updateOption(option.id, { text: html || '' })}
+                                                                />
+                                                            </div>
 
-                                                        <div className="flex-1">
-                                                            <RichTextEditor
-                                                                content={option.text}
-                                                                onChange={({ html }) => updateOption(option.id, { text: html || '' })}
+                                                            <Button
+                                                                type="button"
+                                                                variant="plain"
+                                                                size="xs"
+                                                                icon={<HiOutlineTrash />}
+                                                                onClick={() => deleteOption(option.id)}
+                                                                className="text-red-600 hover:text-red-700"
                                                             />
                                                         </div>
 
-                                                        <Button
-                                                            type="button"
-                                                            variant="plain"
-                                                            size="xs"
-                                                            icon={<HiOutlineTrash />}
-                                                            onClick={() => deleteOption(option.id)}
-                                                            className="text-red-600 hover:text-red-700"
-                                                        />
-                                                    </div>
-
-                                                    {/* Image Upload */}
-                                                    <div className="mr-8">
-                                                        <Upload onChange={(files) => handleImageUpload(option.id, files)}>
-                                                            <Button
-                                                                type="button"
-                                                                size="xs"
-                                                                variant="plain"
-                                                                icon={<HiOutlinePhotograph />}
-                                                            >
-                                                                {option.image ? 'تغییر تصویر' : 'افزودن تصویر'}
-                                                            </Button>
-                                                        </Upload>
-                                                        {option.image && (
-                                                            <div className="mt-2 relative inline-block">
-                                                                <img
-                                                                    src={option.image}
-                                                                    alt="Option"
-                                                                    className="h-20 w-auto rounded border border-gray-200 dark:border-gray-700"
-                                                                />
+                                                        {/* Image Upload */}
+                                                        <div className="mr-8">
+                                                            <Upload onChange={(files) => handleImageUpload(option.id, files)}>
                                                                 <Button
                                                                     type="button"
                                                                     size="xs"
                                                                     variant="plain"
-                                                                    icon={<HiOutlineTrash />}
-                                                                    onClick={() => updateOption(option.id, { image: undefined })}
-                                                                    className="absolute -top-2 -right-2 bg-white dark:bg-gray-800 rounded-full text-red-600"
-                                                                />
-                                                            </div>
-                                                        )}
+                                                                    icon={<HiOutlinePhotograph />}
+                                                                >
+                                                                    {option.image ? 'تغییر تصویر' : 'افزودن تصویر'}
+                                                                </Button>
+                                                            </Upload>
+                                                            {option.image && (
+                                                                <div className="mt-2 relative inline-block">
+                                                                    <img
+                                                                        src={option.image}
+                                                                        alt="Option"
+                                                                        className="h-20 w-auto rounded border border-gray-200 dark:border-gray-700"
+                                                                    />
+                                                                    <Button
+                                                                        type="button"
+                                                                        size="xs"
+                                                                        variant="plain"
+                                                                        icon={<HiOutlineTrash />}
+                                                                        onClick={() => updateOption(option.id, { image: undefined })}
+                                                                        className="absolute -top-2 -right-2 bg-white dark:bg-gray-800 rounded-full text-red-600"
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )}
-                                    </Draggable>
-                                ))}
-                                {provided.placeholder}
-                            </div>
-                        )}
-                    </Droppable>
-                </DragDropContext>
+                                            )}
+                                        </Draggable>
+                                    ))}
+                                    {provided.placeholder}
+                                </div>
+                            )}
+                        </Droppable>
+                    </DragDropContext>
+
+                    <Button
+                        type="button"
+                        variant="plain"
+                        className="w-full border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-500 hover:border-primary-500 hover:text-primary-600"
+                        icon={<HiOutlinePlus />}
+                        onClick={addOption}
+                    >
+                        افزودن گزینه جدید
+                    </Button>
+                </>
             )}
         </div>
     )

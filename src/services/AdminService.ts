@@ -650,3 +650,113 @@ export async function removeDocumentFromBill(billId: number, documentId: number)
         throw error
     }
 }
+
+// Exams - REAL API
+import { Exam as ApiExam, ExamListResponse } from '@/@types/exam'
+
+export async function getExamsList(): Promise<ApiExam[]> {
+    try {
+        const response = await apiClient.get<ExamListResponse>('/exams')
+        if (response.success && Array.isArray(response.data)) {
+            return response.data
+        }
+        return []
+    } catch (error) {
+        console.error('Error fetching exams list:', error)
+        throw error
+    }
+}
+
+import { CreateExamRequest } from '@/@types/exam'
+
+export async function createExam(data: CreateExamRequest): Promise<any> {
+    try {
+        const response = await apiClient.post('/exams', data)
+        return response
+    } catch (error) {
+        console.error('Error creating exam:', error)
+        throw error
+    }
+}
+
+export async function getExam(id: string): Promise<any> {
+    try {
+        const response = await apiClient.get<any>(`/exams/${id}`)
+        return response
+    } catch (error) {
+        console.error('Error fetching exam:', error)
+        throw error
+    }
+}
+
+export async function updateExam(id: string, data: any): Promise<any> {
+    try {
+        const response = await apiClient.put<any>(`/exams/${id}`, data)
+        return response
+    } catch (error) {
+        console.error('Error updating exam:', error)
+        throw error
+    }
+}
+
+export async function addExamSection(examId: string, data: any): Promise<any> {
+    try {
+        const response = await apiClient.post<any>(`/exams/${examId}/sections`, data)
+        return response
+    } catch (error) {
+        console.error('Error adding exam section:', error)
+        throw error
+    }
+}
+
+export async function deleteExamSection(sectionId: string): Promise<any> {
+    try {
+        const response = await apiClient.delete<any>(`/exam-sections/${sectionId}`)
+        return response
+    } catch (error) {
+        console.error('Error deleting exam section:', error)
+        throw error
+    }
+}
+
+export async function updateExamSection(sectionId: string, data: any): Promise<any> {
+    try {
+        const response = await apiClient.put<any>(`/exam-sections/${sectionId}`, data)
+        return response
+    } catch (error) {
+        console.error('Error updating exam section:', error)
+        throw error
+    }
+}
+
+// Add Question is currently under development as per user request
+export async function addExamQuestion(sectionId: string, data: any): Promise<any> {
+    // This might be updated later
+    try {
+        const response = await apiClient.post<any>(`/exam-sections/${sectionId}/questions`, data)
+        return response
+    } catch (error) {
+        console.error('Error adding exam question:', error)
+        throw error
+    }
+}
+
+export async function deleteExamQuestion(questionId: string): Promise<any> {
+    try {
+        const response = await apiClient.delete<any>(`/questions/${questionId}`)
+        return response
+    } catch (error) {
+        console.error('Error deleting exam question:', error)
+        throw error
+    }
+}
+
+export async function updateExamQuestion(questionId: string, data: any): Promise<any> {
+    try {
+        const response = await apiClient.put<any>(`/questions/${questionId}`, data)
+        return response
+    } catch (error) {
+        console.error('Error updating exam question:', error)
+        throw error
+    }
+}

@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
-import { Card, Button, Dialog, Input } from '@/components/ui'
+import { Card, Button } from '@/components/ui'
 import Table from '@/components/ui/Table'
 import {
     flexRender,
@@ -9,39 +9,75 @@ import {
 import { DragDropContext, Draggable } from '@hello-pangea/dnd'
 import { MdDragIndicator } from 'react-icons/md'
 import { StrictModeDroppable } from '@/components/shared'
-import { getExamItems } from '@/services/AdminService'
-import { ExamItem } from '@/mock/data/adminData'
-import { HiOutlinePlus, HiOutlineTrash, HiOutlinePencilAlt, HiOutlineEye } from 'react-icons/hi'
+import { getExamsList } from '@/services/AdminService'
+import { Exam } from '@/@types/exam'
+import { HiOutlinePlus, HiOutlineTrash, HiOutlineEye } from 'react-icons/hi'
 import { useNavigate } from 'react-router-dom'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { DropResult } from '@hello-pangea/dnd'
+
+type ExamWithPriority = Exam & {
+    priority: number
+}
 
 const { Tr, Th, Td, THead, TBody } = Table
 
 const Exams = () => {
     const navigate = useNavigate()
     const [loading, setLoading] = useState(true)
-    const [data, setData] = useState<ExamItem[]>([])
-    const [editDialogOpen, setEditDialogOpen] = useState(false)
-    const [viewDialogOpen, setViewDialogOpen] = useState(false)
-    const [selectedExam, setSelectedExam] = useState<ExamItem | null>(null)
-
-    useEffect(() => {
-        loadExams()
-    }, [])
+    const [data, setData] = useState<ExamWithPriority[]>([])
 
     const loadExams = async () => {
         try {
-            const exams = await getExamItems()
-            // Sort by priority
-            const sortedExams = exams.sort((a, b) => a.priority - b.priority)
-            setData(sortedExams)
+            const exams = await getExamsList()
+            // Add priority (index + 1) since API doesn't return it yet
+            const examsWithPriority = exams.map((exam, index) => ({
+                ...exam,
+                priority: index + 1
+            }))
+            setData(examsWithPriority)
+
+            // Cache specific fields for initial render
+            const simpleExams = examsWithPriority.map(e => ({
+                id: e.id,
+                title: e.title,
+                description: e.description,
+                priority: e.priority,
+                questionCount: e.questions.length,
+                duration: e.duration
+            }))
+            localStorage.setItem('admin_exams_list_cache', JSON.stringify(simpleExams))
+
         } catch (error) {
             console.error('Error loading exams:', error)
         } finally {
             setLoading(false)
         }
     }
+
+    // Load from cache initially
+    useEffect(() => {
+        const cached = localStorage.getItem('admin_exams_list_cache')
+        if (cached) {
+            try {
+                const parsed = JSON.parse(cached)
+                const hydrated = parsed.map((p: any) => ({
+                    ...p,
+                    questions: Array(p.questionCount || 0).fill({}),
+                    status: 'draft',
+                    created_by: 0,
+                    created_at: '',
+                    updated_at: '',
+                    creator: {}
+                }))
+                setData(hydrated)
+                setLoading(false)
+            } catch (e) {
+                console.error('Cache parse error', e)
+            }
+        }
+        loadExams()
+    }, [])
 
     const reorderData = (startIndex: number, endIndex: number) => {
         const newData = [...data]
@@ -55,7 +91,7 @@ const Exams = () => {
         }))
 
         setData(updatedData)
-        alert('ترتیب آزمون‌ها ذخیره شد')
+        // In real app, call API to save order here
     }
 
     const handleDragEnd = (result: DropResult) => {
@@ -64,35 +100,19 @@ const Exams = () => {
         reorderData(source.index, destination.index)
     }
 
-    const handleDelete = (exam: ExamItem) => {
+    const handleDelete = (exam: ExamWithPriority) => {
         if (confirm(`آیا از حذف آزمون "${exam.title}" اطمینان دارید؟`)) {
+            // In real app, call API to delete
             setData(data.filter(e => e.id !== exam.id))
-            alert('آزمون حذف شد')
+            alert('آزمون حذف شد (فعلا فقط از لیست لوکال)')
         }
     }
 
-    const handleEdit = (exam: ExamItem) => {
-        setSelectedExam(exam)
-        setEditDialogOpen(true)
+    const handleView = (exam: ExamWithPriority) => {
+        navigate(`/admin/exams/${exam.id}`)
     }
 
-    const handleView = (exam: ExamItem) => {
-        setSelectedExam(exam)
-        setViewDialogOpen(true)
-    }
-
-    const handleSaveEdit = () => {
-        if (selectedExam) {
-            const updatedData = data.map(e =>
-                e.id === selectedExam.id ? selectedExam : e
-            )
-            setData(updatedData)
-            setEditDialogOpen(false)
-            alert('تغییرات ذخیره شد')
-        }
-    }
-
-    const columns: ColumnDef<ExamItem>[] = useMemo(
+    const columns: ColumnDef<ExamWithPriority>[] = useMemo(
         () => [
             {
                 id: 'dragger',
@@ -139,7 +159,8 @@ const Exams = () => {
             },
             {
                 header: 'تعداد سوالات',
-                accessorKey: 'questionCount',
+                accessorFn: (row) => row.questions.length,
+                id: 'questionCount',
                 cell: (info) => (
                     <div className="font-medium text-gray-900 dark:text-white">
                         {info.getValue() as number} سوال
@@ -169,12 +190,7 @@ const Exams = () => {
                                 variant="plain"
                                 icon={<HiOutlineEye />}
                                 onClick={() => handleView(exam)}
-                            />
-                            <Button
-                                size="sm"
-                                variant="plain"
-                                icon={<HiOutlinePencilAlt />}
-                                onClick={() => handleEdit(exam)}
+                                title="مشاهده و ویرایش"
                             />
                             <Button
                                 size="sm"
@@ -182,6 +198,7 @@ const Exams = () => {
                                 icon={<HiOutlineTrash />}
                                 onClick={() => handleDelete(exam)}
                                 className="text-red-600 hover:text-red-700"
+                                title="حذف"
                             />
                         </div>
                     )
@@ -198,10 +215,34 @@ const Exams = () => {
         getCoreRowModel: getCoreRowModel(),
     })
 
-    if (loading) {
+    if (loading && data.length === 0) {
         return (
-            <div className="flex justify-center items-center h-96">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+            <div className="space-y-6">
+                {/* Skeleton loading same as before */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
+                        <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    </div>
+                    <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                </div>
+                <Card>
+                    <div className="p-6">
+                        <div className="h-6 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4"></div>
+                        <div className="space-y-4">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                                <div key={i} className="flex items-center gap-4">
+                                    <div className="h-12 w-12 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                                    <div className="flex-1 space-y-2">
+                                        <div className="h-4 w-1/3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                                        <div className="h-3 w-1/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                                    </div>
+                                    <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </Card>
             </div>
         )
     }
@@ -309,94 +350,6 @@ const Exams = () => {
                     </div>
                 </div>
             </Card>
-
-            {/* Edit Dialog */}
-            <Dialog
-                isOpen={editDialogOpen}
-                onClose={() => setEditDialogOpen(false)}
-                onRequestClose={() => setEditDialogOpen(false)}
-                width={700}
-            >
-                <h5 className="mb-4">ویرایش آزمون</h5>
-                {selectedExam && (
-                    <div className="space-y-4">
-                        <Input
-                            placeholder="عنوان آزمون"
-                            value={selectedExam.title}
-                            onChange={(e) => setSelectedExam({ ...selectedExam, title: e.target.value })}
-                        />
-                        <textarea
-                            className="w-full min-h-[120px] p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                            placeholder="توضیحات"
-                            value={selectedExam.description}
-                            onChange={(e) => setSelectedExam({ ...selectedExam, description: e.target.value })}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                type="number"
-                                placeholder="تعداد سوالات"
-                                value={selectedExam.questionCount}
-                                onChange={(e) => setSelectedExam({ ...selectedExam, questionCount: parseInt(e.target.value) })}
-                            />
-                            <Input
-                                type="number"
-                                placeholder="مدت زمان (دقیقه)"
-                                value={selectedExam.duration}
-                                onChange={(e) => setSelectedExam({ ...selectedExam, duration: parseInt(e.target.value) })}
-                            />
-                        </div>
-                        <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
-                            <Button variant="plain" onClick={() => setEditDialogOpen(false)}>
-                                انصراف
-                            </Button>
-                            <Button variant="solid" onClick={handleSaveEdit}>
-                                ذخیره تغییرات
-                            </Button>
-                        </div>
-                    </div>
-                )}
-            </Dialog>
-
-            {/* View Dialog */}
-            <Dialog
-                isOpen={viewDialogOpen}
-                onClose={() => setViewDialogOpen(false)}
-                onRequestClose={() => setViewDialogOpen(false)}
-                width={600}
-            >
-                <h5 className="mb-4">مشاهده جزئیات آزمون</h5>
-                {selectedExam && (
-                    <div className="space-y-4">
-                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <h6 className="font-semibold text-gray-900 dark:text-white mb-2">عنوان آزمون</h6>
-                            <p className="text-gray-700 dark:text-gray-300">{selectedExam.title}</p>
-                        </div>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <h6 className="font-semibold text-gray-900 dark:text-white mb-2">توضیحات</h6>
-                            <p className="text-gray-700 dark:text-gray-300">{selectedExam.description}</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                <h6 className="font-semibold text-gray-900 dark:text-white mb-2">تعداد سوالات</h6>
-                                <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                                    {selectedExam.questionCount}
-                                </p>
-                            </div>
-                            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                <h6 className="font-semibold text-gray-900 dark:text-white mb-2">مدت زمان</h6>
-                                <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                                    {selectedExam.duration} دقیقه
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex justify-end pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
-                            <Button variant="solid" onClick={() => setViewDialogOpen(false)}>
-                                بستن
-                            </Button>
-                        </div>
-                    </div>
-                )}
-            </Dialog>
         </div>
     )
 }
