@@ -192,6 +192,13 @@ const SignInForm = (props: SignInFormProps) => {
                     console.log('🔐 Verify Response in Form:', response)
 
                     if (response.success) {
+                        // بررسی نقش کاربر - مدیر نمی‌تواند از این فرم وارد شود
+                        const userRole = response.data.user.role
+                        if (userRole === 'manager') {
+                            setMessage?.('شما باید از ورود آزمون‌دهنده وارد شوید')
+                            return
+                        }
+
                         // لاگین موفق - مستقیماً از response استفاده می‌کنیم
                         const { setToken } = useToken()
                         const { setUser, setSessionSignedIn } = useSessionUser.getState()
@@ -310,6 +317,13 @@ const SignInForm = (props: SignInFormProps) => {
                 console.log('🔐 Login Response:', response)
 
                 if (response.success) {
+                    // بررسی نقش کاربر - مدیر نمی‌تواند از این فرم وارد شود
+                    const userRole = response.data.user.role
+                    if (userRole === 'manager') {
+                        setMessage?.('شما باید از ورود آزمون‌دهنده وارد شوید')
+                        return
+                    }
+
                     // لاگین موفق
                     const { setToken } = useToken()
                     const { setUser, setSessionSignedIn } = useSessionUser.getState()

@@ -31,6 +31,10 @@ export const API_ENDPOINTS = {
         GET_TICKET_DETAIL: (id: string) => `/support-tickets/${id}`,
         REPLY_TICKET: (id: string) => `/support-tickets/${id}/messages`,
     },
+    // Exam Collections
+    EXAM_COLLECTIONS: {
+        VERIFY_ACCESS: '/exam-collections/verify-access',
+    },
 } as const
 
 export default API_ENDPOINTS

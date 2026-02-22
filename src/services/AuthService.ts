@@ -15,6 +15,8 @@ import type {
     VerifyOtpResponse,
     LoginRequest,
     LoginResponse,
+    VerifyExamAccessRequest,
+    VerifyExamAccessResponse,
 } from '@/@types/auth'
 
 /**
@@ -40,6 +42,16 @@ export async function apiVerifyOtp(data: VerifyOtpRequest) {
 export async function apiLogin(data: LoginRequest) {
     return apiClient.post<LoginResponse>(
         API_ENDPOINTS.AUTH.LOGIN,
+        data,
+    )
+}
+
+/**
+ * Verify exam access with phone and exam code
+ */
+export async function apiVerifyExamAccess(data: VerifyExamAccessRequest) {
+    return apiClient.post<VerifyExamAccessResponse>(
+        API_ENDPOINTS.EXAM_COLLECTIONS.VERIFY_ACCESS,
         data,
     )
 }

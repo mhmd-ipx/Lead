@@ -5,13 +5,18 @@ import MobileNav from '@/components/template/MobileNav'
 import UserProfileDropdown from '@/components//template/UserProfileDropdown'
 import Notification from '@/components/template/Notification'
 import TourButton from '@/components/template/TourButton'
+import ExamInfoBar from '@/components/template/ExamInfoBar'
 import LayoutBase from '@/components//template/LayoutBase'
 import useResponsive from '@/utils/hooks/useResponsive'
 import { LAYOUT_COLLAPSIBLE_SIDE } from '@/constants/theme.constant'
+import { useSessionUser } from '@/store/authStore'
+import { MANAGER } from '@/constants/roles.constant'
 import type { CommonProps } from '@/@types/common'
 
 const CollapsibleSide = ({ children }: CommonProps) => {
     const { larger, smaller } = useResponsive()
+    const userAuthority = useSessionUser((state) => state.user.authority)
+    const isManager = userAuthority?.includes(MANAGER)
 
     return (
         <LayoutBase
@@ -29,10 +34,11 @@ const CollapsibleSide = ({ children }: CommonProps) => {
                                 {larger.lg && <SideNavToggle />}
                             </>
                         }
+                        headerMiddle={isManager ? <ExamInfoBar /> : undefined}
                         headerEnd={
                             <>
-                                <TourButton />
-                                <Notification />
+                                {!isManager && <TourButton />}
+                                {!isManager && <Notification />}
                                 <UserProfileDropdown hoverable={false} />
                             </>
                         }
