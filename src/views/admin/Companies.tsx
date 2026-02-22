@@ -13,12 +13,15 @@ import {
 import { getCompanies, deleteCompany } from '@/services/AdminService'
 import { Company } from '@/mock/data/adminData'
 import { useNavigate, useLocation } from 'react-router-dom'
+import Cookies from 'js-cookie'
 
 const Companies = () => {
     const [companies, setCompanies] = useState<Company[]>([])
     const [loading, setLoading] = useState(true)
     const [initialLoad, setInitialLoad] = useState(true)
-    const [searchQuery, setSearchQuery] = useState('')
+    const [searchQuery, setSearchQuery] = useState(
+        Cookies.get('companies_search') || ''
+    )
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null)
     const navigate = useNavigate()
@@ -32,6 +35,12 @@ const Companies = () => {
             loadCompanies()
         }
     }, [initialLoad, location.state])
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        setSearchQuery(value)
+        Cookies.set('companies_search', value)
+    }
 
     const loadCompanies = async () => {
         try {
@@ -167,7 +176,7 @@ const Companies = () => {
                         placeholder="جستجو..."
                         prefix={<HiOutlineSearch />}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={handleSearchChange}
                     />
                     <Button
                         variant="solid"

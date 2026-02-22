@@ -19,6 +19,7 @@ import { Company } from '@/mock/data/adminData'
 import { useNavigate, useParams } from 'react-router-dom'
 import classNames from '@/utils/classNames'
 import { useEffect, useState } from 'react'
+import Cookies from 'js-cookie'
 
 type FilterCategory = 'all' | 'active' | 'inactive' | 'assessmentDone' | 'examDone'
 
@@ -90,12 +91,30 @@ const TableRowSkeleton = () => (
 
 const CompanyManagers = () => {
     const { companyId } = useParams<{ companyId: string }>()
-    const [searchQuery, setSearchQuery] = useState('')
-    const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all')
+
+    // Initialize state from cookies or default
+    const [searchQuery, setSearchQuery] = useState(
+        Cookies.get('companyManagers_search') || ''
+    )
+    const [selectedCategory, setSelectedCategory] = useState<FilterCategory>(
+        (Cookies.get('companyManagers_category') as FilterCategory) || 'all'
+    )
+
     const [company, setCompany] = useState<Company | null>(null)
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [selectedManager, setSelectedManager] = useState<Manager | null>(null)
     const navigate = useNavigate()
+
+    const handleCategoryChange = (category: FilterCategory) => {
+        setSelectedCategory(category)
+        Cookies.set('companyManagers_category', category)
+    }
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        setSearchQuery(value)
+        Cookies.set('companyManagers_search', value)
+    }
 
     // Use SWR for data fetching with caching
     const { data: managers, error, isLoading, mutate } = useSWR(
@@ -312,35 +331,35 @@ const CompanyManagers = () => {
                         <Button
                             size="sm"
                             variant={selectedCategory === 'all' ? 'solid' : 'default'}
-                            onClick={() => setSelectedCategory('all')}
+                            onClick={() => handleCategoryChange('all')}
                         >
                             همه ({stats.total})
                         </Button>
                         <Button
                             size="sm"
                             variant={selectedCategory === 'active' ? 'solid' : 'default'}
-                            onClick={() => setSelectedCategory('active')}
+                            onClick={() => handleCategoryChange('active')}
                         >
                             فعال ({stats.active})
                         </Button>
                         <Button
                             size="sm"
                             variant={selectedCategory === 'inactive' ? 'solid' : 'default'}
-                            onClick={() => setSelectedCategory('inactive')}
+                            onClick={() => handleCategoryChange('inactive')}
                         >
                             غیرفعال ({stats.total - stats.active})
                         </Button>
                         <Button
                             size="sm"
                             variant={selectedCategory === 'assessmentDone' ? 'solid' : 'default'}
-                            onClick={() => setSelectedCategory('assessmentDone')}
+                            onClick={() => handleCategoryChange('assessmentDone')}
                         >
                             نیازسنجی شده ({stats.assessmentDone})
                         </Button>
                         <Button
                             size="sm"
                             variant={selectedCategory === 'examDone' ? 'solid' : 'default'}
-                            onClick={() => setSelectedCategory('examDone')}
+                            onClick={() => handleCategoryChange('examDone')}
                         >
                             آزمون داده‌اند ({stats.examDone})
                         </Button>
@@ -350,7 +369,7 @@ const CompanyManagers = () => {
                         placeholder="جستجو..."
                         prefix={<HiOutlineSearch />}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={handleSearchChange}
                     />
                 </div>
             </Card>

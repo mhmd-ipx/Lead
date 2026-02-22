@@ -400,6 +400,7 @@ export interface ApplicantExamSet {
         duration: number
         questionCount: number
     }[]
+    collectionId?: number
 }
 
 export const mockApplicantExamSets: ApplicantExamSet[] = [

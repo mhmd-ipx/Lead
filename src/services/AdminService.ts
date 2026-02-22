@@ -293,22 +293,22 @@ export async function getAssessmentById(id: string): Promise<CompletedAssessment
             return {
                 id: item.id.toString(),
                 managerId: item.manager_id.toString(),
-                managerName: `User ${item.manager.user_id}`, // In real app, fetch user name
+                managerName: item.manager.user.name,
                 companyId: item.manager.company_id.toString(),
-                companyName: `Company ${item.manager.company_id}`, // In real app, fetch company name
-                ownerId: '0',
-                ownerName: 'Unknown', // Need extra data
+                companyName: item.manager.company.name,
+                ownerId: item.manager.company.owner_id.toString(),
+                ownerName: `Owner ${item.manager.company.owner_id}`, // Owner name isn't directly in this nesting
                 templateId: item.template_id.toString(),
                 templateName: item.template.name,
                 steps: uiSteps,
                 currentStep: item.current_step,
                 answers: mappedAnswers,
                 status: item.status as 'draft' | 'submitted',
-                score: 0, // Removed score
+                score: 0,
                 createdAt: item.created_at,
                 updatedAt: item.updated_at,
                 submittedAt: item.submitted_at || undefined,
-                assignedExams: [] // Placeholder
+                assignedExams: []
             }
         }
 
@@ -861,5 +861,72 @@ export async function updateExamCollection(id: number | string, data: any): Prom
     } catch (error) {
         console.error('Error updating exam collection:', error)
         throw error
+    }
+}
+
+// Dashboard Stats
+export interface AdminDashboardStats {
+    tickets: {
+        total: number
+        active: number
+    }
+    companies: {
+        total: number
+    }
+    users: {
+        total: number
+    }
+    assessments: {
+        unfilled: number
+    }
+    exams: {
+        total: number
+    }
+    bills: {
+        unpaid: number
+    }
+}
+
+export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
+    try {
+        // apiClient.get returns response.data from axios (the raw HTTP body)
+        // API body shape: { success: true, data: AdminDashboardStats }
+        const body = await apiClient.get<any>('/admin/dashboard/stats')
+
+        // Handle both { data: {...} } and flat { tickets: {...}, ... } shapes
+        const stats: AdminDashboardStats = body?.data ?? body
+
+        return {
+            tickets: {
+                total: stats?.tickets?.total ?? 0,
+                active: stats?.tickets?.active ?? 0,
+            },
+            companies: {
+                total: stats?.companies?.total ?? 0,
+            },
+            users: {
+                total: stats?.users?.total ?? 0,
+            },
+            assessments: {
+                unfilled: stats?.assessments?.unfilled ?? 0,
+            },
+            exams: {
+                total: stats?.exams?.total ?? 0,
+            },
+            bills: {
+                unpaid: stats?.bills?.unpaid ?? 0,
+            },
+        }
+    } catch (error) {
+        console.error('Error fetching admin dashboard stats:', error)
+        // Return zeros instead of throwing so the dashboard still renders
+        return {
+            tickets: { total: 0, active: 0 },
+            companies: { total: 0 },
+            users: { total: 0 },
+            assessments: { unfilled: 0 },
+            exams: { total: 0 },
+            bills: { unpaid: 0 },
+        }
     }
 }

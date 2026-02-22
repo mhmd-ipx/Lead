@@ -16,7 +16,11 @@ import {
     HiOutlineViewList,
     HiOutlinePencil,
     HiArrowLeft,
-    HiArrowRight
+    HiArrowRight,
+    HiOutlinePhone,
+    HiOutlineLockClosed,
+    HiOutlineClipboard,
+    HiOutlineShare,
 } from 'react-icons/hi'
 import { getApplicantExamSets, getExamCollectionById, updateExamCollection, getExamsList } from '@/services/AdminService'
 import { ApplicantExamSet } from '@/mock/data/adminData'
@@ -122,7 +126,14 @@ interface CollectionDetails {
         email: string | null
         created_at: string
     }
-    assignments: any[]
+    assignments: {
+        user?: {
+            id: number
+            name: string
+            phone: string
+        }
+        [key: string]: any
+    }[]
 }
 
 const ApplicantExamSets = () => {
@@ -161,6 +172,45 @@ const ApplicantExamSets = () => {
         duration_minutes: 0,
         exam_ids: [] as number[]
     })
+
+    // Copy / Share state
+    const [copied, setCopied] = useState(false)
+
+    const buildShareText = (details: CollectionDetails) => {
+        const userName = details.assignments?.[0]?.user?.name || 'کاربر'
+        const phone = details.assignments?.[0]?.user?.phone || '-'
+        const code = details.code || '-'
+        const start = formatDate(details.start_datetime)
+        const end = formatDate(details.end_datetime)
+        return (
+            `📌 اطلاعیه آزمون - ${details.title}\n\n` +
+            `👤 کاربر: ${userName}\n` +
+            `📅 زمان برگزاری: از ${start} تا ${end}\n` +
+            `⏱ مدت آزمون: ${details.duration_minutes} دقیقه\n\n` +
+            `🔑 اطلاعات ورود به آزمون:\n` +
+            `📱 شماره تماس: ${phone}\n` +
+            `📌 کد ورود: ${code}`
+        )
+    }
+
+    const handleCopy = () => {
+        if (!collectionDetails) return
+        navigator.clipboard.writeText(buildShareText(collectionDetails)).then(() => {
+            setCopied(true)
+            toast.push(<Notification title="متن کپی شد" type="success" />, { placement: 'top-center' })
+            setTimeout(() => setCopied(false), 2000)
+        })
+    }
+
+    const handleShare = async () => {
+        if (!collectionDetails) return
+        const text = buildShareText(collectionDetails)
+        if (navigator.share) {
+            await navigator.share({ text }).catch(() => { })
+        } else {
+            handleCopy()
+        }
+    }
 
     useEffect(() => {
         loadExamSets()
@@ -491,7 +541,7 @@ const ApplicantExamSets = () => {
                                                     </div>
                                                     <div>
                                                         <div className="font-bold text-gray-900 dark:text-gray-100">{examSet.applicantName}</div>
-                                                        <div className="text-xs text-gray-500">{examSet.applicantId}</div>
+
                                                     </div>
                                                 </div>
                                             </Td>
@@ -516,7 +566,7 @@ const ApplicantExamSets = () => {
                                             <Td>{getStatusTag(examSet.status)}</Td>
                                             <Td>
                                                 <div className="flex items-center gap-2">
-                                                    {(examSet.status === 'pending' || examSet.status === 'draft') && (
+                                                    {((examSet.status as any) === 'pending' || (examSet.status as any) === 'draft') && (
                                                         <Tooltip title="ویرایش آزمون">
                                                             <Button
                                                                 variant="plain"
@@ -574,7 +624,7 @@ const ApplicantExamSets = () => {
                 onRequestClose={() => setInfoDialogOpen(false)}
                 width={700}
             >
-                <div className="flex flex-col h-[580px] max-h-[90vh]">
+                <div className="flex flex-col h-[650px] max-h-[90vh]">
                     <h5 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white border-b pb-4 flex-shrink-0">
                         <HiOutlineInformationCircle className="w-6 h-6 text-indigo-600" />
                         اطلاعات مجموعه آزمون
@@ -654,9 +704,49 @@ const ApplicantExamSets = () => {
                                         <span className="font-semibold text-gray-900 dark:text-white" dir="ltr">{formatDate(collectionDetails.end_datetime)}</span>
                                     </div>
 
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-600 dark:text-gray-400">کد مجموعه</span>
-                                        <Tag className="">{collectionDetails.code || '-'}</Tag>
+                                    {/* ── اطلاعات ورود به آزمون ── */}
+                                    <div className=" mt-1">
+                                        <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-2 flex items-center gap-1">
+                                            <HiOutlineLockClosed className="w-3.5 h-3.5" />
+                                            اطلاعات ورود به آزمون
+                                        </div>
+
+                                        <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2 mb-2">
+                                            <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                                <HiOutlinePhone className="w-4 h-4" />
+                                                شماره تماس کاربر
+                                            </span>
+                                            <span className="font-semibold text-gray-900 dark:text-white font-mono" dir="ltr">
+                                                {collectionDetails.assignments?.[0]?.user?.phone || '-'}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-600 dark:text-gray-400">کد ورود</span>
+                                            <Tag>{collectionDetails.code || '-'}</Tag>
+                                        </div>
+
+                                        {/* Copy / Share buttons */}
+                                        <div className="flex gap-2 mt-3">
+                                            <Button
+                                                size="sm"
+                                                variant="default"
+                                                icon={<HiOutlineClipboard />}
+                                                className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-blue-600 dark:text-blue-400 border-0 justify-center"
+                                                onClick={handleCopy}
+                                            >
+                                                {copied ? 'کپی شد ✓' : 'کپی متن'}
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="default"
+                                                icon={<HiOutlineShare />}
+                                                className="flex-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 border-0 justify-center"
+                                                onClick={handleShare}
+                                            >
+                                                اشتراک گذاری
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
