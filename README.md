@@ -20,5 +20,5 @@ Check out the [Live Demo](https://ecme-react.themenate.net/) to explore the temp
 
 
 ### Guide
-Please visit our [Online documentation](https://ecme-react.themenate.net/guide/documentation/introduction) for detailed guides, setup instructions, and customization options.
+Please visit our [Online documentation](https://ecme-react.themenate.net/guide/documentation/introduction) for detailed guides, setup instructions, and customization options..
 
