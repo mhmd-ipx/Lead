@@ -250,7 +250,7 @@ const Exams = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div id="admin-exams-header" className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                         مدیریت آزمون‌ها
@@ -259,20 +259,20 @@ const Exams = () => {
                         مدیریت آزمون‌ها و تعیین اولویت آن‌ها
                     </p>
                 </div>
-                <Button variant="solid" icon={<HiOutlinePlus />} onClick={() => navigate('/admin/exams/create')}>
+                <Button id="admin-exams-add-btn" variant="solid" icon={<HiOutlinePlus />} onClick={() => navigate('/admin/exams/create')}>
                     افزودن آزمون
                 </Button>
             </div>
 
             {/* Info Card */}
-            <Card className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+            <Card id="admin-exams-info" className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                 <p className="text-sm text-blue-800 dark:text-blue-200">
                     💡 برای تغییر اولویت آزمون‌ها، آن‌ها را بکشید و در جای مورد نظر رها کنید.
                 </p>
             </Card>
 
             {/* Table Card */}
-            <Card>
+            <Card id="admin-exams-table-container">
                 <div className="p-6">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         لیست آزمون‌ها ({data.length} آزمون)

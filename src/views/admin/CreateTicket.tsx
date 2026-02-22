@@ -76,7 +76,7 @@ const CreateTicket = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div id="admin-support-create-header" className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Button
                         variant="plain"
@@ -98,7 +98,7 @@ const CreateTicket = () => {
             </div>
 
             {/* Form */}
-            <Card className="p-6">
+            <Card id="admin-support-create-form" className="p-6">
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                     <FormItem
                         label="موضوع تیکت"

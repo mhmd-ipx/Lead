@@ -19,7 +19,7 @@ import type { ReactNode } from 'react'
 interface SignInFormProps extends CommonProps {
     disableSubmit?: boolean
     passwordHint?: string | ReactNode
-    setMessage?: (message: string) => void
+    setMessage?: (message: string, type?: 'success' | 'danger') => void
 }
 
 type PhoneFormSchema = {
@@ -32,7 +32,6 @@ type OTPFormSchema = {
 
 type RegisterFormSchema = {
     name: string
-    email?: string
     password?: string
 }
 
@@ -58,7 +57,6 @@ const registerValidationSchema: ZodType<RegisterFormSchema> = z.object({
     name: z
         .string({ required_error: 'لطفاً نام خود را وارد کنید' })
         .min(2, { message: 'نام باید حداقل 2 کاراکتر باشد' }),
-    email: z.string().optional().or(z.literal('')),
     password: z.string().optional().or(z.literal('')),
 })
 
@@ -127,7 +125,6 @@ const SignInForm = (props: SignInFormProps) => {
     const registerForm = useForm<RegisterFormSchema>({
         defaultValues: {
             name: '',
-            email: '',
             password: '',
         },
         resolver: zodResolver(registerValidationSchema),
@@ -166,7 +163,7 @@ const SignInForm = (props: SignInFormProps) => {
                     setStep('otp')
                     setTimer(120) // Reset timer to 2 minutes
                     setCanResend(false)
-                    setMessage?.(response.message || 'کد OTP به شماره موبایل شما ارسال شد')
+                    setMessage?.(response.message || 'کد OTP به شماره موبایل شما ارسال شد', 'success')
                 }
             } catch (error: any) {
                 // هندل کردن خطاها
@@ -222,7 +219,7 @@ const SignInForm = (props: SignInFormProps) => {
                 } else {
                     // کاربر ثبت‌نام نکرده - انتقال به فرم ثبت‌نام
                     setStep('register')
-                    setMessage?.('لطفاً برای تکمیل ثبت‌نام، نام و ایمیل خود را وارد کنید')
+                    setMessage?.('لطفاً برای تکمیل ثبت‌نام، نام خود را وارد کنید', 'success')
                 }
             } catch (error: any) {
                 console.error('❌ Verify Error:', error)
@@ -246,7 +243,7 @@ const SignInForm = (props: SignInFormProps) => {
     }
 
     const onRegisterSubmit = async (values: RegisterFormSchema) => {
-        const { name, email, password } = values
+        const { name, password } = values
 
         if (!disableSubmit) {
             setSubmitting(true)
@@ -258,7 +255,6 @@ const SignInForm = (props: SignInFormProps) => {
                     code: otpForm.getValues('otp'),
                     data: {
                         name,
-                        email,
                         password,
                     },
                 })
@@ -363,7 +359,7 @@ const SignInForm = (props: SignInFormProps) => {
 
                     setTimer(120) // Reset timer to 2 minutes
                     setCanResend(false)
-                    setMessage?.(response.message || 'کد OTP مجدداً به شماره موبایل شما ارسال شد')
+                    setMessage?.(response.message || 'کد OTP مجدداً به شماره موبایل شما ارسال شد', 'success')
                 }
             } catch (error: any) {
                 const errorMessage = error?.message || 'خطا در ارسال مجدد کد تایید'
@@ -402,6 +398,7 @@ const SignInForm = (props: SignInFormProps) => {
                             loading={isSubmitting}
                             variant="solid"
                             type="submit"
+                            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95"
                         >
                             {isSubmitting ? 'در حال ارسال...' : 'ارسال کد تایید'}
                         </Button>
@@ -412,6 +409,7 @@ const SignInForm = (props: SignInFormProps) => {
                             variant="plain"
                             type="button"
                             onClick={handleSwitchToPhonePassword}
+                            className="text-gray-500 hover:text-indigo-600 font-medium"
                         >
                             ورود با رمز ثابت
                         </Button>
@@ -455,6 +453,7 @@ const SignInForm = (props: SignInFormProps) => {
                                     <OTPInput
                                         length={4}
                                         placeholder="0"
+                                        fullWidth
                                         {...field}
                                     />
                                 )}
@@ -466,6 +465,7 @@ const SignInForm = (props: SignInFormProps) => {
                                 variant="plain"
                                 type="button"
                                 onClick={handleBack}
+                                className="font-medium"
                             >
                                 بازگشت
                             </Button>
@@ -474,6 +474,7 @@ const SignInForm = (props: SignInFormProps) => {
                                 loading={isSubmitting}
                                 variant="solid"
                                 type="submit"
+                                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95"
                             >
                                 {isSubmitting ? 'ورود...' : 'ورود'}
                             </Button>
@@ -484,7 +485,7 @@ const SignInForm = (props: SignInFormProps) => {
                 <div>
                     <div className="text-center mb-4">
                         <p className="text-sm text-gray-600">
-                            شما هنوز ثبت‌نام نکرده‌اید. لطفاً اطلاعات خود را وارد کنید
+                            شما هنوز ثبت‌نام نکرده‌اید. لطفاً نام خود را وارد کنید
                         </p>
                     </div>
                     <Form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
@@ -509,24 +510,7 @@ const SignInForm = (props: SignInFormProps) => {
                                 )}
                             />
                         </FormItem>
-                        <FormItem
-                            label="ایمیل"
-                            invalid={Boolean(registerForm.formState.errors.email)}
-                            errorMessage={registerForm.formState.errors.email?.message}
-                        >
-                            <Controller
-                                name="email"
-                                control={registerForm.control}
-                                render={({ field }) => (
-                                    <Input
-                                        type="email"
-                                        placeholder="example@email.com"
-                                        autoComplete="email"
-                                        {...field}
-                                    />
-                                )}
-                            />
-                        </FormItem>
+
                         <FormItem
                             label="رمز عبور"
                             invalid={Boolean(registerForm.formState.errors.password)}
@@ -551,6 +535,7 @@ const SignInForm = (props: SignInFormProps) => {
                                 variant="plain"
                                 type="button"
                                 onClick={handleBack}
+                                className="font-medium"
                             >
                                 بازگشت
                             </Button>
@@ -559,6 +544,7 @@ const SignInForm = (props: SignInFormProps) => {
                                 loading={isSubmitting}
                                 variant="solid"
                                 type="submit"
+                                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95"
                             >
                                 {isSubmitting ? 'در حال ثبت‌نام...' : 'ثبت‌نام و ورود'}
                             </Button>
@@ -615,6 +601,7 @@ const SignInForm = (props: SignInFormProps) => {
                                 variant="plain"
                                 type="button"
                                 onClick={handleBack}
+                                className="font-medium"
                             >
                                 بازگشت
                             </Button>
@@ -623,6 +610,7 @@ const SignInForm = (props: SignInFormProps) => {
                                 loading={isSubmitting}
                                 variant="solid"
                                 type="submit"
+                                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95"
                             >
                                 {isSubmitting ? 'ورود...' : 'ورود'}
                             </Button>

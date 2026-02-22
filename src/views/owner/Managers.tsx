@@ -262,7 +262,7 @@ const Managers = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center gap-4">
-        <div>
+        <div id="managers-header">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             متقاضیان
           </h1>
@@ -270,7 +270,7 @@ const Managers = () => {
             مدیریت متقاضیان و نیازسنجی‌ها
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div id="managers-search-filter" className="flex items-center gap-3">
           <Select
             className="min-w-[200px]"
             placeholder="همه سازمان‌ها"
@@ -298,6 +298,7 @@ const Managers = () => {
             disabled={isLoading}
           />
           <Button
+            id="managers-add-button"
             variant="solid"
             icon={<HiOutlinePlus />}
             onClick={() => navigate('/owner/managers/add')}
@@ -309,7 +310,7 @@ const Managers = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
+      <div id="managers-stats-cards" className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
         <StatisticCard
           title="همه متقاضیان"
           value={totalManagers}
@@ -353,7 +354,7 @@ const Managers = () => {
       </div>
 
       {/* Managers Table */}
-      <Card>
+      <Card id="managers-table">
         <div className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             لیست متقاضیان
@@ -450,7 +451,7 @@ const Managers = () => {
                                 size="sm"
                                 icon={<HiOutlineClipboardCheck />}
                                 onClick={() => navigate(`/owner/managers/${manager.id}/assessment`)}
-                                className="text-blue-600 hover:text-blue-700"
+                                className="text-blue-600 hover:text-blue-700 managers-action-assessment"
                               />
                             </Tooltip>
 

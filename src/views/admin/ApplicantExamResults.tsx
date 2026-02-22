@@ -160,13 +160,13 @@ const ApplicantExamResults = () => {
         setTempChartData({ ...tempChartData, series: newSeries })
     }
 
-    const handleFileUpload = (fileList: FileList | null) => {
-        if (fileList && fileList[0]) {
+    const handleFileUpload = (uploadedFiles: File[]) => {
+        if (uploadedFiles && uploadedFiles[0]) {
             const newFile: FileItem = {
                 id: Date.now().toString(),
-                name: fileList[0].name,
-                size: fileList[0].size,
-                fileType: fileList[0].name.split('.').pop() || 'file',
+                name: uploadedFiles[0].name,
+                size: uploadedFiles[0].size,
+                fileType: uploadedFiles[0].name.split('.').pop() || 'file',
                 uploadDate: new Date().toLocaleDateString('fa-IR'),
             }
             setFiles([...files, newFile])
@@ -305,7 +305,7 @@ const ApplicantExamResults = () => {
                 >
                     بازگشت
                 </Button>
-                <div>
+                <div id="admin-exam-results-header">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                         نتایج {examSetInfo.title}
                     </h1>
@@ -316,9 +316,9 @@ const ApplicantExamResults = () => {
             </div>
 
             {/* Tabs */}
-            <Card>
+            <Card id="admin-exam-results-tabs-container">
                 <Tabs value={activeTab} onChange={(val) => setActiveTab(val)}>
-                    <TabList className="px-6 pt-4">
+                    <TabList id="admin-exam-results-tabs" className="px-6 pt-4">
                         <TabNav value="results">
                             <div className="flex items-center gap-2">
                                 <HiOutlineChartBar />
@@ -354,7 +354,7 @@ const ApplicantExamResults = () => {
                     <div className="p-6">
                         {/* Results Tab */}
                         <TabContent value="results">
-                            <Card>
+                            <Card id="admin-exam-results-chart">
                                 <div className="flex items-center justify-between mb-6">
                                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
                                         امتیاز عملکرد متقاضی
@@ -388,19 +388,23 @@ const ApplicantExamResults = () => {
                                         <h5 className="font-semibold text-gray-900 dark:text-white">ویرایش داده‌های نمودار</h5>
                                         {tempChartData.categories.map((category, index) => (
                                             <div key={index} className="grid grid-cols-2 gap-4">
-                                                <Input
-                                                    label={`عنوان ${index + 1}`}
-                                                    value={category}
-                                                    onChange={(e) => handleCategoryChange(index, e.target.value)}
-                                                />
-                                                <Input
-                                                    label={`درصد ${index + 1}`}
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    value={tempChartData.series[index]}
-                                                    onChange={(e) => handleSeriesChange(index, parseInt(e.target.value) || 0)}
-                                                />
+                                                <div>
+                                                    <label className="block text-sm font-semibold mb-2">عنوان {index + 1}</label>
+                                                    <Input
+                                                        value={category}
+                                                        onChange={(e) => handleCategoryChange(index, e.target.value)}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-semibold mb-2">درصد {index + 1}</label>
+                                                    <Input
+                                                        type="number"
+                                                        min="0"
+                                                        max="100"
+                                                        value={tempChartData.series[index]}
+                                                        onChange={(e) => handleSeriesChange(index, parseInt(e.target.value) || 0)}
+                                                    />
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -456,7 +460,7 @@ const ApplicantExamResults = () => {
 
                         {/* Analysis Tab */}
                         <TabContent value="analysis">
-                            <Card>
+                            <Card id="admin-exam-results-analysis">
                                 <div className="flex items-center justify-between mb-4">
                                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
                                         تحلیل نتایج آزمون
@@ -597,7 +601,7 @@ const ApplicantExamResults = () => {
 
                         {/* Files Tab */}
                         <TabContent value="files">
-                            <div>
+                            <div id="admin-exam-results-files">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
                                         فایل‌های نتایج آزمون
@@ -636,7 +640,7 @@ const ApplicantExamResults = () => {
 
                         {/* Info Tab */}
                         <TabContent value="info">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div id="admin-exam-results-info" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 <Card>
                                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                                         اطلاعات متقاضی

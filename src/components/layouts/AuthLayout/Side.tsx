@@ -10,16 +10,17 @@ const Side = ({ children, ...rest }: SideProps) => {
                 <div className="w-full xl:max-w-[450px] px-8 max-w-[380px]">
                     {children
                         ? cloneElement(children as React.ReactElement, {
-                              ...rest,
-                          })
+                            ...rest,
+                        })
                         : null}
                 </div>
             </div>
-            <div className="py-6 px-10 lg:flex flex-col flex-1 justify-between hidden rounded-3xl items-end relative xl:max-w-[520px] 2xl:max-w-[720px]">
+            <div className="py-6 px-10 lg:flex flex-col flex-1 justify-between hidden rounded-3xl items-end relative xl:max-w-[520px] 2xl:max-w-[720px] overflow-hidden group">
                 <img
                     src="/img/others/auth-side-bg.png"
-                    className="absolute h-full w-full top-0 left-0 rounded-3xl"
+                    className="absolute h-full w-full top-0 left-0 rounded-3xl object-cover transition-transform duration-700 group-hover:scale-105"
                 />
+                <div className="absolute inset-0  from-black/20 to-transparent pointer-events-none rounded-3xl" />
             </div>
         </div>
     )

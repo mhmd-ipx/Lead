@@ -33,13 +33,15 @@ type StatisticCardProps = {
     label: FilterCategory
     active: boolean
     onClick: (label: FilterCategory) => void
+    id?: string
 }
 
 const StatisticCard = (props: StatisticCardProps) => {
-    const { title, value, label, icon, iconClass, active, onClick } = props
+    const { title, value, label, icon, iconClass, active, onClick, id } = props
 
     return (
         <button
+            id={id}
             className={classNames(
                 'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full',
                 active && 'bg-white dark:bg-gray-900 shadow-md',
@@ -251,7 +253,7 @@ const Bills = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div id="admin-bills-header" className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                         صورتحساب‌ها
@@ -260,9 +262,10 @@ const Bills = () => {
                         مدیریت و مشاهده صورتحساب‌های سیستم
                     </p>
                 </div>
-                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                <div id="admin-bills-filters" className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
                     <div className="w-full md:w-64">
                         <Input
+                            id="admin-bills-search"
                             placeholder="جستجو..."
                             prefix={<HiOutlineSearch className="text-gray-400" />}
                             value={searchQuery}
@@ -282,8 +285,9 @@ const Bills = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
+            <div id="admin-bills-stats" className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
                 <StatisticCard
+                    id="admin-bills-stats-all"
                     title="همه صورتحساب‌ها"
                     value={totalBills}
                     iconClass="bg-blue-200 text-blue-700"
@@ -293,6 +297,7 @@ const Bills = () => {
                     onClick={setSelectedCategory}
                 />
                 <StatisticCard
+                    id="admin-bills-stats-paid"
                     title="پرداخت شده"
                     value={paidBills}
                     iconClass="bg-emerald-200 text-emerald-700"
@@ -302,6 +307,7 @@ const Bills = () => {
                     onClick={setSelectedCategory}
                 />
                 <StatisticCard
+                    id="admin-bills-stats-unpaid"
                     title="در انتظار پرداخت"
                     value={unpaidBills}
                     iconClass="bg-amber-200 text-amber-700"
@@ -313,7 +319,7 @@ const Bills = () => {
             </div>
 
             {/* Table */}
-            <Card>
+            <Card id="admin-bills-table">
                 <div className="p-6">
                     <div className="overflow-x-auto">
                         <Table>

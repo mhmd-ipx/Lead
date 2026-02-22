@@ -21,7 +21,7 @@ const UserProfile = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div id="user-profile-header" className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                         تنظیمات کاربری
@@ -31,7 +31,7 @@ const UserProfile = () => {
                     </p>
                 </div>
                 {!isEditing ? (
-                    <Button variant="solid" onClick={() => setIsEditing(true)}>
+                    <Button id="user-profile-edit-button" variant="solid" onClick={() => setIsEditing(true)}>
                         ویرایش اطلاعات
                     </Button>
                 ) : (
@@ -47,8 +47,8 @@ const UserProfile = () => {
             </div>
 
             {/* Profile Card */}
-            <Card className="p-6">
-                <div className="flex flex-col items-center mb-8">
+            <Card id="user-profile-form-section" className="p-6">
+                <div id="user-profile-avatar-section" className="flex flex-col items-center mb-8">
                     <Avatar
                         size={100}
                         className="mb-4"
@@ -140,7 +140,7 @@ const UserProfile = () => {
             </Card>
 
             {/* Additional Info */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div id="user-profile-stats-section" className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="p-4">
                     <div className="text-center">
                         <p className="text-sm text-gray-600 dark:text-gray-400">تاریخ عضویت</p>

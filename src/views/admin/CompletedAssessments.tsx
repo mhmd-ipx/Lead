@@ -34,13 +34,15 @@ type StatisticCardProps = {
     label: FilterCategory
     active: boolean
     onClick: (label: FilterCategory) => void
+    id?: string
 }
 
 const StatisticCard = (props: StatisticCardProps) => {
-    const { title, value, label, icon, iconClass, active, onClick } = props
+    const { title, value, label, icon, iconClass, active, onClick, id } = props
 
     return (
         <button
+            id={id}
             className={classNames(
                 'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full border border-transparent',
                 active ? 'bg-white dark:bg-gray-800 shadow-sm border-gray-200 dark:border-gray-700' : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800',
@@ -350,7 +352,7 @@ const CompletedAssessments = () => {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex justify-between items-center gap-4">
-                <div>
+                <div id="admin-assessments-completed-header">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                         نیازسنجی‌های تکمیل شده
                     </h1>
@@ -359,6 +361,7 @@ const CompletedAssessments = () => {
                     </p>
                 </div>
                 <Input
+                    id="admin-assessments-completed-search"
                     className="w-64"
                     placeholder="جستجو..."
                     prefix={<HiOutlineSearch />}
@@ -370,6 +373,7 @@ const CompletedAssessments = () => {
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatisticCard
+                    id="admin-assessments-completed-stats-all"
                     title="همه نیازسنجی‌ها"
                     value={totalAssessments}
                     iconClass="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
@@ -379,6 +383,7 @@ const CompletedAssessments = () => {
                     onClick={setSelectedCategory}
                 />
                 <StatisticCard
+                    id="admin-assessments-completed-stats-assigned"
                     title="اختصاص داده شده"
                     value={assignedAssessments}
                     iconClass="bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
@@ -388,6 +393,7 @@ const CompletedAssessments = () => {
                     onClick={setSelectedCategory}
                 />
                 <StatisticCard
+                    id="admin-assessments-completed-stats-pending"
                     title="در انتظار"
                     value={pendingAssessments}
                     iconClass="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
@@ -399,7 +405,7 @@ const CompletedAssessments = () => {
             </div>
 
             {/* Assessments Table */}
-            <Card>
+            <Card id="admin-assessments-completed-table">
                 <div className="p-6">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                         <HiOutlineClipboardCheck className="w-5 h-5" />
@@ -475,6 +481,7 @@ const CompletedAssessments = () => {
                                                 </Tooltip>
                                                 <Tooltip title="اختصاص آزمون">
                                                     <Button
+                                                        id="admin-assessments-completed-action-assign"
                                                         variant="plain"
                                                         size="sm"
                                                         icon={<HiOutlineAcademicCap />}

@@ -426,7 +426,7 @@ const ExamDetails = () => {
 
     return (
         <div className="space-y-6">
-            <div className="relative bg-blue-400 from-primary-600 to-primary-800 rounded-2xl shadow-xl overflow-hidden text-gray p-8">
+            <div id="admin-exam-details-header" className="relative bg-blue-400 from-primary-600 to-primary-800 rounded-2xl shadow-xl overflow-hidden text-gray p-8">
                 <div className="absolute top-0 right-0 p-4 opacity-10">
                     <HiOutlineClipboardCheck className="w-64 h-64 transform rotate-12 translate-x-16 -translate-y-16" />
                 </div>
@@ -479,7 +479,7 @@ const ExamDetails = () => {
                 </Card>
             </Form>
 
-            <Card className="border border-gray-200 dark:border-gray-700 my-6">
+            <Card id="admin-exam-details-sections" className="border border-gray-200 dark:border-gray-700 my-6">
                 <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">

@@ -400,7 +400,7 @@ const CreateExam = () => {
         <div className="space-y-6">
             {/* Header */}
             {/* Header Section */}
-            <div className="relative bg-blue-400 from-primary-600 to-primary-800 rounded-2xl shadow-xl overflow-hidden text-gray p-8">
+            <div id="admin-create-exam-header" className="relative bg-blue-400 from-primary-600 to-primary-800 rounded-2xl shadow-xl overflow-hidden text-gray p-8">
                 <div className="absolute top-0 right-0 p-4 opacity-10">
                     <HiOutlineClipboardCheck className="w-64 h-64 transform rotate-12 translate-x-16 -translate-y-16" />
                 </div>
@@ -427,7 +427,7 @@ const CreateExam = () => {
 
             <Form onSubmit={handleSubmit(onSubmit)}>
                 {/* Basic Info Card */}
-                <Card>
+                <Card id="admin-create-exam-basic-info">
                     <div className="p-6">
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                             اطلاعات پایه آزمون
@@ -491,7 +491,7 @@ const CreateExam = () => {
 
                 {/* Sections */}
                 {/* Sections */}
-                <Card className="border border-gray-200 dark:border-gray-700 my-6">
+                <Card id="admin-create-exam-sections" className="border border-gray-200 dark:border-gray-700 my-6">
                     <div className="p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -698,7 +698,7 @@ const CreateExam = () => {
                                 ))}
 
                                 {/* Add Section Button */}
-                                <div className="flex justify-center md:mr-12 py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl hover:border-primary-400 transition-colors cursor-pointer group" onClick={addSection}>
+                                <div id="admin-create-exam-add-section" className="flex justify-center md:mr-12 py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl hover:border-primary-400 transition-colors cursor-pointer group" onClick={addSection}>
                                     <div className="text-center text-gray-500 group-hover:text-primary-600 transition-colors">
                                         <HiOutlinePlus className="mx-auto text-2xl mb-1 text-blue-600" />
                                         <span className="font-medium text-blue-600">افزودن بخش جدید</span>
@@ -710,7 +710,7 @@ const CreateExam = () => {
                 </Card>
 
                 {/* Actions */}
-                <div className="flex justify-end gap-3">
+                <div id="admin-create-exam-actions" className="flex justify-end gap-3">
                     <Button
                         type="button"
                         variant="plain"

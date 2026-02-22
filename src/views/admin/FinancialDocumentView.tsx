@@ -115,7 +115,7 @@ const FinancialDocumentView = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center gap-4">
+            <div id="admin-financial-doc-view-header" className="flex items-center gap-4">
                 <Button
                     variant="plain"
                     icon={<HiOutlineArrowLeft />}
@@ -126,7 +126,7 @@ const FinancialDocumentView = () => {
             </div>
 
             {/* Document Details */}
-            <Card className="p-6">
+            <Card id="admin-financial-doc-view-details" className="p-6">
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -192,7 +192,7 @@ const FinancialDocumentView = () => {
 
                 {/* Associated Bills Section */}
                 {document.bills && document.bills.length > 0 && (
-                    <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <div id="admin-financial-doc-view-bills" className="border-t border-gray-200 dark:border-gray-700 pt-6">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                             صورتحساب‌های مرتبط
                         </h3>

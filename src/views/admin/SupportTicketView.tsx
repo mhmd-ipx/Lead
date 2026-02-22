@@ -185,7 +185,7 @@ const SupportTicketView = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div id="admin-support-ticket-header" className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <Button
                         variant="plain"
@@ -201,7 +201,7 @@ const SupportTicketView = () => {
                         <span className="font-mono text-sm text-gray-500">#{ticket.ticket_number}</span>
                     </div>
                 </div>
-                <div className="flex flex-wrap gap-2 items-center">
+                <div id="admin-support-ticket-controls" className="flex flex-wrap gap-2 items-center">
                     <div className="w-40">
                         <Select
                             size="sm"
@@ -228,7 +228,7 @@ const SupportTicketView = () => {
             </div>
 
             {/* Ticket Info */}
-            <Card className="p-4">
+            <Card id="admin-support-ticket-info" className="p-4">
                 <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400 items-center">
                     <span>کاربر: <span className="font-semibold text-gray-900 dark:text-gray-200">{ticket.user?.name || 'ناشناس'}</span></span>
                     <span className="w-px h-4 bg-gray-300 dark:bg-gray-600 hidden sm:block"></span>
@@ -241,7 +241,7 @@ const SupportTicketView = () => {
             </Card>
 
             {/* Messages */}
-            <Card className="p-6 bg-gray-50 dark:bg-gray-900 border-none shadow-none">
+            <Card id="admin-support-ticket-messages" className="p-6 bg-gray-50 dark:bg-gray-900 border-none shadow-none">
                 <div className="space-y-8">
                     {ticket.messages?.map((msg) => {
                         const isSelf = msg.type === 'admin' // ادمین (من)
@@ -327,7 +327,7 @@ const SupportTicketView = () => {
 
             {/* Reply Box */}
             {ticket.status !== 'closed' && (
-                <Card className="p-6">
+                <Card id="admin-support-ticket-reply" className="p-6">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">ارسال پاسخ</h2>
                     <div className="space-y-4">
                         <Input

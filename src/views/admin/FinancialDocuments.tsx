@@ -107,6 +107,7 @@ const FinancialDocuments = () => {
             // Add type as invoice and current date
             const payload = {
                 ...values,
+                currency: 'IRR',
                 type: 'invoice',
                 created_date: new Date().toISOString().split('T')[0],
             }
@@ -397,7 +398,7 @@ const FinancialDocuments = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center gap-4">
+            <div id="admin-financial-docs-header" className="flex justify-between items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                         اسناد مالی
@@ -406,7 +407,7 @@ const FinancialDocuments = () => {
                         مدیریت و مشاهده اسناد مالی سیستم
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div id="admin-financial-docs-filters" className="flex items-center gap-3">
                     <div className="w-48">
                         <Select
                             size="sm"
@@ -417,6 +418,7 @@ const FinancialDocuments = () => {
                         />
                     </div>
                     <Input
+                        id="admin-financial-docs-search"
                         placeholder="جستجو..."
                         prefix={<HiOutlineSearch className="text-gray-400" />}
                         value={searchQuery}
@@ -424,6 +426,7 @@ const FinancialDocuments = () => {
                         className="w-64"
                     />
                     <Button
+                        id="admin-financial-docs-add-btn"
                         variant="solid"
                         icon={<HiOutlinePlus />}
                         onClick={() => setCreateDialogOpen(true)}
@@ -434,7 +437,7 @@ const FinancialDocuments = () => {
             </div>
 
             {/* Stats / Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div id="admin-financial-docs-stats" className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card
                     className={classNames(
                         'p-4 cursor-pointer transition-all',
@@ -509,7 +512,7 @@ const FinancialDocuments = () => {
             </div>
 
             {/* Table */}
-            <Card>
+            <Card id="admin-financial-docs-table">
                 <div className="p-6">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                         <HiOutlineDocumentText className="w-5 h-5" />
@@ -728,27 +731,6 @@ const FinancialDocuments = () => {
                                         <Field name="amount" type="number" as={Input} placeholder="مبلغ" />
                                     </FormItem>
 
-                                    <FormItem
-                                        label="واحد پول"
-                                        invalid={Boolean(errors.currency && touched.currency)}
-                                        errorMessage={errors.currency}
-                                    >
-                                        <Field name="currency">
-                                            {({ field }: any) => (
-                                                <Select
-                                                    {...field}
-                                                    placeholder="انتخاب واحد پول"
-                                                    options={[
-                                                        { value: 'IRR', label: 'ریال' },
-                                                        { value: 'USD', label: 'دلار' },
-                                                        { value: 'EUR', label: 'یورو' },
-                                                    ]}
-                                                    value={{ value: values.currency, label: values.currency === 'IRR' ? 'ریال' : values.currency }}
-                                                    onChange={(option: any) => setFieldValue('currency', option?.value || 'IRR')}
-                                                />
-                                            )}
-                                        </Field>
-                                    </FormItem>
 
                                     <FormItem
                                         label="وضعیت"

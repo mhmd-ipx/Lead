@@ -28,6 +28,15 @@ interface FileItem {
     uploadDate: string
 }
 
+interface WordFile {
+    id: string
+    examId: string
+    examTitle: string
+    fileName: string
+    size: number
+    uploadDate: string
+}
+
 interface Exam {
     id: string
     title: string
@@ -126,8 +135,12 @@ const ExamResults = () => {
     const files: FileItem[] = [
         { id: '1', name: 'گزارش کامل آزمون.pdf', size: 2457600, fileType: 'pdf', uploadDate: '1403/09/21' },
         { id: '2', name: 'نتایج تفصیلی.xlsx', size: 876544, fileType: 'xlsx', uploadDate: '1403/09/21' },
-        { id: '3', name: 'تحلیل عملکرد.docx', size: 1258291, fileType: 'docx', uploadDate: '1403/09/20' },
-        { id: '4', name: 'نمودار عملکرد.png', size: 524288, fileType: 'png', uploadDate: '1403/09/20' },
+    ]
+
+    // Mock word files for answer sheets
+    const wordFiles: WordFile[] = [
+        { id: 'w1', examId: '1', examTitle: 'آزمون مبانی مدیریت', fileName: 'پاسخنامه_مبانی_مدیریت.docx', size: 524288, uploadDate: '1403/09/21' },
+        { id: 'w2', examId: '2', examTitle: 'آزمون برنامه‌ریزی پروژه', fileName: 'پاسخنامه_برنامه_ریزی.docx', size: 456789, uploadDate: '1403/09/21' },
     ]
 
     const handleDownload = (fileName: string) => {
@@ -303,6 +316,12 @@ const ExamResults = () => {
                                 <span>تحلیل نتایج</span>
                             </div>
                         </TabNav>
+                        <TabNav value="answer-sheets">
+                            <div className="flex items-center gap-2">
+                                <HiOutlineDocumentText />
+                                <span>پاسخنامه‌ها</span>
+                            </div>
+                        </TabNav>
                         <TabNav value="files">
                             <div className="flex items-center gap-2">
                                 <HiOutlineFolder />
@@ -398,7 +417,7 @@ const ExamResults = () => {
 
                         {/* Analysis Tab */}
                         <TabContent value="analysis">
-                            <Card>
+                            <Card id="exam-results-analysis-card">
                                 <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                                     تحلیل نتایج آزمون
                                 </h4>
@@ -408,18 +427,120 @@ const ExamResults = () => {
                                         value={analysis}
                                         onChange={(e) => setAnalysis(e.target.value)}
                                         placeholder="تحلیل نتایج را وارد کنید..."
+                                        disabled={true}
                                     />
-                                    <div className="mt-4 flex justify-end gap-3">
-                                        <Button variant="default">انصراف</Button>
-                                        <Button variant="solid">ذخیره تحلیل</Button>
-                                    </div>
                                 </div>
                             </Card>
                         </TabContent>
 
+                        {/* Answer Sheets Tab */}
+                        <TabContent value="answer-sheets">
+                            <div id="exam-results-answer-sheets">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        پاسخنامه‌های آزمون‌ها
+                                    </h4>
+                                    <Segment value={layout} onChange={(val) => setLayout(val as Layout)}>
+                                        <Segment.Item value="grid" className="text-xl px-3">
+                                            <TbLayoutGrid />
+                                        </Segment.Item>
+                                        <Segment.Item value="list" className="text-xl px-3">
+                                            <TbList />
+                                        </Segment.Item>
+                                    </Segment>
+                                </div>
+
+                                {wordFiles.length > 0 ? (
+                                    <>
+                                        {layout === 'grid' && (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                {wordFiles.map((file) => (
+                                                    <Card key={file.id} className="p-4">
+                                                        <div className="flex flex-col items-center text-center">
+                                                            <FileIcon type="docx" size={60} />
+                                                            <h6 className="font-semibold text-gray-900 dark:text-white mt-3 mb-1">
+                                                                {file.examTitle}
+                                                            </h6>
+                                                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                                                                {file.fileName}
+                                                            </p>
+                                                            <p className="text-xs text-gray-400 mb-3">
+                                                                {formatFileSize(file.size)}
+                                                            </p>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="default"
+                                                                icon={<HiOutlineDownload />}
+                                                                onClick={() => handleDownload(file.fileName)}
+                                                                className="w-full"
+                                                            >
+                                                                دانلود
+                                                            </Button>
+                                                        </div>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {layout === 'list' && (
+                                            <Table>
+                                                <THead>
+                                                    <Tr>
+                                                        <Th>عنوان آزمون</Th>
+                                                        <Th>نام فایل</Th>
+                                                        <Th>حجم</Th>
+                                                        <Th>تاریخ</Th>
+                                                        <Th></Th>
+                                                    </Tr>
+                                                </THead>
+                                                <TBody>
+                                                    {wordFiles.map((file) => (
+                                                        <Tr key={file.id}>
+                                                            <Td>
+                                                                <div className="flex items-center gap-3">
+                                                                    <FileIcon type="docx" size={32} />
+                                                                    <span className="font-semibold text-gray-900 dark:text-white">
+                                                                        {file.examTitle}
+                                                                    </span>
+                                                                </div>
+                                                            </Td>
+                                                            <Td>
+                                                                <span className="text-gray-600 dark:text-gray-400">
+                                                                    {file.fileName}
+                                                                </span>
+                                                            </Td>
+                                                            <Td>{formatFileSize(file.size)}</Td>
+                                                            <Td>{file.uploadDate}</Td>
+                                                            <Td>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="default"
+                                                                    icon={<HiOutlineDownload />}
+                                                                    onClick={() => handleDownload(file.fileName)}
+                                                                >
+                                                                    دانلود
+                                                                </Button>
+                                                            </Td>
+                                                        </Tr>
+                                                    ))}
+                                                </TBody>
+                                            </Table>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                                        <HiOutlineDocumentText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                        <p className="text-gray-500 dark:text-gray-400">
+                                            هنوز پاسخنامه‌ای موجود نیست
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </TabContent>
+
                         {/* Files Tab */}
                         <TabContent value="files">
-                            <div>
+                            <div id="exam-results-files">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
                                         فایل‌های نتایج آزمون
@@ -452,31 +573,21 @@ const ExamResults = () => {
                             </div>
                         </TabContent>
 
-                        {/* Exam Info Tab - آخرین تب */}
+                        {/* Exam Info Tab */}
                         <TabContent value="info">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div id="exam-results-info-cards" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 <Card>
                                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                                        اطلاعات کلی
+                                        اطلاعات متقاضی
                                     </h4>
-                                    <div className="space-y-4">
-                                        <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                            <HiOutlineAcademicCap className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                                            <div className="flex-1">
-                                                <div className="text-sm text-gray-500 dark:text-gray-400">عنوان مجموعه</div>
-                                                <div className="font-semibold text-gray-900 dark:text-white">{examSetInfo.title}</div>
-                                            </div>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                            <span className="text-gray-600 dark:text-gray-400">متقاضی</span>
+                                            <span className="font-semibold text-gray-900 dark:text-white">علی محمدی</span>
                                         </div>
-                                        <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                            <HiOutlineDocumentText className="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5" />
-                                            <div className="flex-1">
-                                                <div className="text-sm text-gray-500 dark:text-gray-400">توضیحات</div>
-                                                <div className="text-gray-900 dark:text-white">{examSetInfo.description}</div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                            <div className="text-sm text-gray-500 dark:text-gray-400">وضعیت</div>
-                                            {getStatusTag(examSetInfo.status)}
+                                        <div className="flex justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                            <span className="text-gray-600 dark:text-gray-400">سازمان</span>
+                                            <span className="font-semibold text-gray-900 dark:text-white">شرکت نمونه</span>
                                         </div>
                                     </div>
                                 </Card>
@@ -550,7 +661,6 @@ const ExamResults = () => {
                                     </Button>
                                 </Card>
 
-                                {/* لیست آزمون‌ها */}
                                 <Card className="lg:col-span-2">
                                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                                         لیست آزمون‌های مجموعه

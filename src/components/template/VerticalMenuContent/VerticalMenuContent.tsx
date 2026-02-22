@@ -2,7 +2,9 @@ import { useState, useEffect, Fragment } from 'react'
 import Menu from '@/components/ui/Menu'
 import VerticalSingleMenuItem from './VerticalSingleMenuItem'
 import VerticalCollapsedMenuItem from './VerticalCollapsedMenuItem'
+import LogoutButton from '../LogoutButton'
 import { themeConfig } from '@/configs/theme.config'
+import { OWNER, ADMIN, MANAGER } from '@/constants/roles.constant'
 import {
     NAV_ITEM_TYPE_TITLE,
     NAV_ITEM_TYPE_COLLAPSE,
@@ -135,6 +137,7 @@ const VerticalMenuContent = (props: VerticalMenuContentProps) => {
             }
         >
             {renderNavigation(navigationTree, 0)}
+            {userAuthority.some(role => [OWNER, ADMIN, MANAGER].includes(role)) && <LogoutButton />}
         </Menu>
     )
 }

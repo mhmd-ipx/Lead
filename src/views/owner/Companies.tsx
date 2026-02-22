@@ -161,7 +161,7 @@ const Companies = () => {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex justify-between items-center gap-4">
-                <div>
+                <div id="companies-header">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                         سازمان های من
                     </h1>
@@ -169,7 +169,7 @@ const Companies = () => {
                         مدیریت سازمان‌ها و شرکت‌های شما
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div id="companies-search-filter" className="flex items-center gap-3">
                     <Input
                         className="w-64"
                         placeholder="جستجو..."
@@ -188,7 +188,7 @@ const Companies = () => {
             </div>
 
             {/* Companies Table */}
-            <Card>
+            <Card id="companies-table">
                 <div className="p-6">
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">

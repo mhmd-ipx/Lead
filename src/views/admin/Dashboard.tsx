@@ -54,6 +54,7 @@ interface StatCardProps {
     alertBadge?: boolean
     onView?: () => void
     loading?: boolean
+    id?: string
 }
 
 const StatCard = ({
@@ -67,10 +68,14 @@ const StatCard = ({
     alertBadge,
     onView,
     loading,
+    id,
 }: StatCardProps) => {
     if (loading) {
         return (
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-4">
+            <div
+                id={id}
+                className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-4"
+            >
                 <div className="flex justify-between items-start">
                     <div className="space-y-2">
                         <Skeleton width={100} height={14} />
@@ -87,7 +92,10 @@ const StatCard = ({
     }
 
     return (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-4 hover:shadow-md transition-shadow duration-200">
+        <div
+            id={id}
+            className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-4 hover:shadow-md transition-shadow duration-200"
+        >
             <div className="flex justify-between items-start">
                 <div>
                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
@@ -358,7 +366,10 @@ const Dashboard = () => {
         <div className="space-y-6">
 
             {/* ── Header ───────────────────────────────────────────────────── */}
-            <div className="bg-gradient-to-l from-blue-600 to-indigo-700 rounded-xl p-5 shadow-sm">
+            <div
+                id="admin-dashboard-welcome"
+                className="bg-gradient-to-l from-blue-600 to-indigo-700 rounded-xl p-5 shadow-sm"
+            >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-white/20 text-white flex items-center justify-center text-2xl flex-shrink-0">
@@ -411,6 +422,7 @@ const Dashboard = () => {
                     iconBg="bg-amber-100 dark:bg-amber-500/20"
                     iconColor="text-amber-600 dark:text-amber-400"
                     onView={() => navigate('/admin/support')}
+                    id="admin-dashboard-stats-tickets"
                 />
                 <StatCard
                     loading={statsLoading}
@@ -420,6 +432,7 @@ const Dashboard = () => {
                     iconBg="bg-indigo-100 dark:bg-indigo-500/20"
                     iconColor="text-indigo-600 dark:text-indigo-400"
                     onView={() => navigate('/admin/companies')}
+                    id="admin-dashboard-stats-companies"
                 />
                 <StatCard
                     loading={statsLoading}
@@ -428,6 +441,7 @@ const Dashboard = () => {
                     icon={<HiOutlineUsers />}
                     iconBg="bg-violet-100 dark:bg-violet-500/20"
                     iconColor="text-violet-600 dark:text-violet-400"
+                    id="admin-dashboard-stats-users"
                 />
                 <StatCard
                     loading={statsLoading}
@@ -440,6 +454,7 @@ const Dashboard = () => {
                     iconBg="bg-orange-100 dark:bg-orange-500/20"
                     iconColor="text-orange-600 dark:text-orange-400"
                     onView={() => navigate('/admin/assessments')}
+                    id="admin-dashboard-stats-assessments"
                 />
                 <StatCard
                     loading={statsLoading}
@@ -449,6 +464,7 @@ const Dashboard = () => {
                     iconBg="bg-teal-100 dark:bg-teal-500/20"
                     iconColor="text-teal-600 dark:text-teal-400"
                     onView={() => navigate('/admin/exams')}
+                    id="admin-dashboard-stats-exams"
                 />
                 <StatCard
                     loading={statsLoading}
@@ -461,13 +477,14 @@ const Dashboard = () => {
                     iconBg="bg-red-100 dark:bg-red-500/20"
                     iconColor="text-red-600 dark:text-red-400"
                     onView={() => navigate('/admin/accounting/bills')}
+                    id="admin-dashboard-stats-bills"
                 />
             </div>
 
             {/* ── Charts Row ───────────────────────────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Donut */}
-                <Card>
+                <Card id="admin-dashboard-chart-donut">
                     <div className="p-6">
                         <div className="flex items-center justify-between mb-4">
                             <div>
@@ -516,7 +533,7 @@ const Dashboard = () => {
                 </Card>
 
                 {/* Bar */}
-                <Card className="lg:col-span-2">
+                <Card id="admin-dashboard-chart-bar" className="lg:col-span-2">
                     <div className="p-6">
                         <div className="flex items-center justify-between mb-4">
                             <div>
@@ -546,7 +563,7 @@ const Dashboard = () => {
             </div>
 
             {/* ── Notifications ────────────────────────────────────────────── */}
-            <Card>
+            <Card id="admin-dashboard-notifications">
                 <div className="p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <div className="flex items-center gap-3">

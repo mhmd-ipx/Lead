@@ -3,6 +3,7 @@ import Header from '@/components/template/Header'
 import MobileNav from '@/components/template/MobileNav'
 import UserProfileDropdown from '@/components//template/UserProfileDropdown'
 import Notification from '@/components/template/Notification'
+import TourButton from '@/components/template/TourButton'
 import LayoutBase from '@/components//template/LayoutBase'
 import useResponsive from '@/utils/hooks/useResponsive'
 import { LAYOUT_STACKED_SIDE } from '@/constants/theme.constant'
@@ -28,6 +29,7 @@ const StackedSide = ({ children }: CommonProps) => {
                         }
                         headerEnd={
                             <>
+                                <TourButton />
                                 <Notification />
                                 <UserProfileDropdown hoverable={false} />
                             </>

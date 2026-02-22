@@ -49,11 +49,12 @@ type StatisticCardProps = {
     onClick: (label: FilterCategory) => void
 }
 
-const StatisticCard = (props: StatisticCardProps) => {
-    const { title, value, label, icon, iconClass, active, onClick } = props
+const StatisticCard = (props: StatisticCardProps & { id?: string }) => {
+    const { title, value, label, icon, iconClass, active, onClick, id } = props
 
     return (
         <button
+            id={id}
             className={classNames(
                 'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full',
                 active && 'bg-white dark:bg-gray-900 shadow-md',
@@ -442,7 +443,7 @@ const ApplicantExamSets = () => {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <div>
+                <div id="admin-applicant-exams-header">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                         آزمون‌های متقاضیان
                     </h1>
@@ -451,6 +452,7 @@ const ApplicantExamSets = () => {
                     </p>
                 </div>
                 <Input
+                    id="admin-applicant-exams-search"
                     className="w-64"
                     placeholder="جستجو..."
                     prefix={<HiOutlineSearch />}
@@ -460,8 +462,9 @@ const ApplicantExamSets = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
+            <div id="admin-applicant-exams-stats" className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
                 <StatisticCard
+                    id="admin-applicant-exams-stats-all"
                     title="همه آزمون‌ها"
                     value={loading ? undefined as any : totalExamSets}
                     iconClass="bg-purple-200 text-purple-700"
@@ -471,6 +474,7 @@ const ApplicantExamSets = () => {
                     onClick={handleCategoryChange}
                 />
                 <StatisticCard
+                    id="admin-applicant-exams-stats-completed"
                     title="تکمیل شده"
                     value={loading ? undefined as any : completedExamSets}
                     iconClass="bg-emerald-200 text-emerald-700"
@@ -480,6 +484,7 @@ const ApplicantExamSets = () => {
                     onClick={handleCategoryChange}
                 />
                 <StatisticCard
+                    id="admin-applicant-exams-stats-progress"
                     title="در حال انجام"
                     value={loading ? undefined as any : inProgressExamSets}
                     iconClass="bg-blue-200 text-blue-700"
@@ -489,6 +494,7 @@ const ApplicantExamSets = () => {
                     onClick={handleCategoryChange}
                 />
                 <StatisticCard
+                    id="admin-applicant-exams-stats-pending"
                     title="در انتظار"
                     value={loading ? undefined as any : pendingExamSets}
                     iconClass="bg-amber-200 text-amber-700"
@@ -500,7 +506,7 @@ const ApplicantExamSets = () => {
             </div>
 
             {/* Table */}
-            <Card>
+            <Card id="admin-applicant-exams-table">
                 <div className="p-6">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         لیست مجموعه آزمون‌ها

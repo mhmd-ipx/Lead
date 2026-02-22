@@ -24,7 +24,8 @@ import {
     PiGearDuotone,
     PiShieldCheckDuotone,
     PiCurrencyDollarSimpleDuotone,
-    PiGraduationCapDuotone
+    PiGraduationCapDuotone,
+    PiSignOutDuotone
 } from 'react-icons/pi'
 
 export type NavigationIcons = Record<string, JSX.Element>
@@ -55,7 +56,8 @@ const navigationIcon: NavigationIcons = {
     cog: <PiGearDuotone />,
     shieldCheck: <PiShieldCheckDuotone />,
     cash: <PiCurrencyDollarSimpleDuotone />,
-    academicCap: <PiGraduationCapDuotone />
+    academicCap: <PiGraduationCapDuotone />,
+    logout: <PiSignOutDuotone />
 }
 
 export default navigationIcon

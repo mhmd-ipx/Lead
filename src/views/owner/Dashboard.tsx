@@ -116,7 +116,7 @@ const Dashboard = () => {
       </div>
 
       {/* Section 1: Financial Overview */}
-      <Card className="p-6">
+      <Card id="dashboard-financial-card" className="p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">امور مالی</h2>
           <Button
@@ -188,7 +188,7 @@ const Dashboard = () => {
       </Card>
 
       {/* Section 2: Applicants Overview */}
-      <Card className="p-6">
+      <Card id="dashboard-applicants-card" className="p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">متقاضیان</h2>
           <div className="flex gap-2">
@@ -285,7 +285,7 @@ const Dashboard = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="p-5 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg">
+          <div id="dashboard-quick-actions" className="p-5 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg">
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-4">دسترسی سریع</p>
             <div className="space-y-2">
               <Button

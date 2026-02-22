@@ -162,7 +162,7 @@ const Companies = () => {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex justify-between items-center gap-4">
-                <div>
+                <div id="admin-companies-header">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                         سازمان‌ها
                     </h1>
@@ -172,6 +172,7 @@ const Companies = () => {
                 </div>
                 <div className="flex items-center gap-3">
                     <Input
+                        id="admin-companies-search"
                         className="w-64"
                         placeholder="جستجو..."
                         prefix={<HiOutlineSearch />}
@@ -179,6 +180,7 @@ const Companies = () => {
                         onChange={handleSearchChange}
                     />
                     <Button
+                        id="admin-companies-add-button"
                         variant="solid"
                         icon={<HiOutlinePlus />}
                         onClick={() => navigate('/admin/companies/add')}
@@ -189,7 +191,7 @@ const Companies = () => {
             </div>
 
             {/* Companies Table */}
-            <Card>
+            <Card id="admin-companies-table">
                 <div className="p-6">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                         <HiOutlineOfficeBuilding className="w-5 h-5" />

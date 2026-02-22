@@ -300,7 +300,7 @@ const BillView = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div id="admin-bill-view-header" className="flex items-center justify-between">
                 <Button
                     variant="plain"
                     icon={<HiOutlineArrowLeft />}
@@ -311,7 +311,7 @@ const BillView = () => {
             </div>
 
             {/* Bill Details */}
-            <Card className="p-6">
+            <Card id="admin-bill-view-details" className="p-6">
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -406,24 +406,27 @@ const BillView = () => {
                     </div>
                 </div>
 
-                {bill.description && (
-                    <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                            توضیحات
-                        </label>
-                        <p className="text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                            {bill.description}
-                        </p>
-                    </div>
-                )}
+                {
+                    bill.description && (
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                                توضیحات
+                            </label>
+                            <p className="text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                                {bill.description}
+                            </p>
+                        </div>
+                    )
+                }
 
                 {/* Financial Documents Table */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                    <div className="flex justify-between items-center mb-4">
+                    <div id="admin-bill-view-items-header" className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                             اسناد مالی این صورتحساب
                         </h3>
                         <Button
+                            id="admin-bill-view-add-item-btn"
                             variant="solid"
                             size="sm"
                             icon={<HiOutlinePlus />}
@@ -434,7 +437,7 @@ const BillView = () => {
                         </Button>
                     </div>
 
-                    <div className="rounded-lg">
+                    <div id="admin-bill-view-items-table" className="rounded-lg">
                         <Table>
                             <THead>
                                 <Tr>
@@ -499,10 +502,10 @@ const BillView = () => {
                         </Table>
                     </div>
                 </div>
-            </Card>
+            </Card >
 
             {/* Add Document Dialog */}
-            <Dialog isOpen={addDocDialog} onClose={() => setAddDocDialog(false)} width={800}>
+            < Dialog isOpen={addDocDialog} onClose={() => setAddDocDialog(false)} width={800} >
                 <div className="mb-4">
                     <h5 className="text-lg font-semibold">افزودن سند به صورتحساب</h5>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -593,10 +596,10 @@ const BillView = () => {
                         </Button>
                     </div>
                 </div>
-            </Dialog>
+            </Dialog >
 
             {/* Delete Document Confirmation Dialog */}
-            <ConfirmDialog
+            < ConfirmDialog
                 isOpen={deleteDocDialog}
                 type="danger"
                 title="حذف سند از صورتحساب"
@@ -620,7 +623,7 @@ const BillView = () => {
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                     این عملیات قابل بازگشت است و می‌توانید مجدداً سند را اضافه کنید.
                 </p>
-            </ConfirmDialog>
+            </ConfirmDialog >
         </div >
     )
 }

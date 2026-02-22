@@ -29,13 +29,14 @@ type StatisticCardProps = {
     value: string | number
     icon: React.ReactNode
     iconClass: string
+    id?: string
 }
 
 const StatisticCard = (props: StatisticCardProps) => {
-    const { title, value, icon, iconClass } = props
+    const { title, value, icon, iconClass, id } = props
 
     return (
-        <div className="p-4 rounded-2xl bg-white dark:bg-gray-900 shadow-md">
+        <div id={id} className="p-4 rounded-2xl bg-white dark:bg-gray-900 shadow-md">
             <div className="flex justify-between items-center">
                 <div>
                     <div className="mb-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
@@ -257,7 +258,7 @@ const CompletedAssessmentView = () => {
                     >
                         بازگشت
                     </Button>
-                    <div>
+                    <div id="admin-assessment-view-header">
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                             جزئیات نیازسنجی
                         </h1>
@@ -267,6 +268,7 @@ const CompletedAssessmentView = () => {
                     </div>
                 </div>
                 <Button
+                    id="admin-assessment-view-action-assign"
                     variant="solid"
                     icon={<HiOutlineAcademicCap />}
                     size="sm"
@@ -277,7 +279,7 @@ const CompletedAssessmentView = () => {
             </div>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="admin-assessment-view-stats" className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <StatisticCard
                     title="متقاضی"
                     value={assessment.managerName}
@@ -293,7 +295,7 @@ const CompletedAssessmentView = () => {
             </div>
 
             {/* Assessment Info */}
-            <Card className="p-6">
+            <Card id="admin-assessment-view-info" className="p-6">
                 <div className="flex items-center gap-3 mb-6">
                     <div className="p-3 bg-primary-100 dark:bg-primary-900/20 rounded-lg">
                         <HiOutlineClipboardCheck className="w-6 h-6 text-primary-600 dark:text-primary-400" />
@@ -345,7 +347,7 @@ const CompletedAssessmentView = () => {
             </Card>
 
             {/* Answers */}
-            <div className="space-y-4">
+            <div id="admin-assessment-view-answers" className="space-y-4">
                 {assessment.steps.map((step, stepIndex) => (
                     <Card key={step.id} className="p-6">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">

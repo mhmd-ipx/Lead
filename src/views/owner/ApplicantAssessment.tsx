@@ -281,7 +281,7 @@ const ApplicantAssessment = () => {
     return (
         <div className="space-y-6 pb-20">
             {/* Header */}
-            <div className="relative bg-blue-600 from-primary-600 to-primary-800 rounded-2xl shadow-xl overflow-hidden text-white p-8">
+            <div id="assessment-header" className="relative bg-blue-600 from-primary-600 to-primary-800 rounded-2xl shadow-xl overflow-hidden text-white p-8">
                 <div className="absolute top-0 left-0 p-4 opacity-5">
                     <HiOutlineCheckCircle className="w-64 h-64 transform rotate-12 translate-x-16 -translate-y-16" />
                 </div>
@@ -314,7 +314,7 @@ const ApplicantAssessment = () => {
             </div>
 
             {/* Form Content */}
-            <div className="relative">
+            <div id="assessment-steps-container" className="relative">
                 {/* Connector Line */}
                 <div className="absolute top-0 bottom-0 right-6 md:right-8 w-0.5 bg-gray-200 dark:bg-gray-700 z-0 h-full"></div>
 
@@ -385,7 +385,7 @@ const ApplicantAssessment = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="sticky bottom-6 mt-6 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex justify-end gap-4">
+                <div id="assessment-actions-bar" className="sticky bottom-6 mt-6 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex justify-end gap-4">
                     {isSubmitted && !isEditing ? (
                         <div className="flex justify-between w-full items-center">
                             <span className="text-gray-500 text-sm">برای تغییر پاسخ‌ها وارد حالت ویرایش شوید</span>

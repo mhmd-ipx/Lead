@@ -4,6 +4,8 @@ import FrameLessGap from '@/components/template/FrameLessGap'
 import SideNavToggle from '@/components/template/SideNavToggle'
 import MobileNav from '@/components/template/MobileNav'
 import UserProfileDropdown from '@/components//template/UserProfileDropdown'
+import Notification from '@/components/template/Notification'
+import TourButton from '@/components/template/TourButton'
 import LayoutBase from '@/components//template/LayoutBase'
 import classNames from '@/utils/classNames'
 import useScrollTop from '@/utils/hooks/useScrollTop'
@@ -40,7 +42,7 @@ const FrameLessSide = ({ children }: CommonProps) => {
                         defaultClass,
                         'rounded-2xl',
                         pageBackgroundType === 'plain' &&
-                            'bg-white dark:bg-gray-900',
+                        'bg-white dark:bg-gray-900',
                     )}
                 >
                     <main className="h-full">
@@ -48,9 +50,9 @@ const FrameLessSide = ({ children }: CommonProps) => {
                             className={classNames(
                                 pageContainerDefaultClass,
                                 pageContainerType !== 'gutterless' &&
-                                    pageContainerGutterClass,
+                                pageContainerGutterClass,
                                 pageContainerType === 'contained' &&
-                                    'container mx-auto',
+                                'container mx-auto',
                                 !footer && 'pb-0 sm:pb-0 md:pb-0',
                             )}
                         >
@@ -98,6 +100,8 @@ const FrameLessSide = ({ children }: CommonProps) => {
                             }
                             headerEnd={
                                 <>
+                                    <TourButton />
+                                    <Notification />
                                     <UserProfileDropdown hoverable={false} />
                                 </>
                             }

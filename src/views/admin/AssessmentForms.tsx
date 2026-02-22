@@ -271,7 +271,7 @@ const AssessmentForms = () => {
     return (
         <div className="w-full space-y-8 pb-10">
             {/* Header Section */}
-            <div className="relative bg-gradient-to-r from-primary-600 to-primary-800 rounded-2xl shadow-xl overflow-hidden text-gray p-8">
+            <div id="admin-assessment-forms-header" className="relative bg-gradient-to-r from-primary-600 to-primary-800 rounded-2xl shadow-xl overflow-hidden text-gray p-8">
                 <div className="absolute top-0 right-0 p-4 opacity-10">
                     <HiOutlineClipboardCheck className="w-64 h-64 transform rotate-12 translate-x-16 -translate-y-16" />
                 </div>
@@ -328,7 +328,7 @@ const AssessmentForms = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-4 mb-6 group">
+                                <div id={`admin-assessment-step-${step.id}`} className="flex items-center gap-4 mb-6 group">
                                     <div className="flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 z-10 relative">
                                         <span className="text-xl md:text-2xl font-bold text-primary-600 dark:text-primary-400">
                                             {stepIndex + 1}
@@ -422,6 +422,7 @@ const AssessmentForms = () => {
                                             </Card>
                                         ) : (
                                             <Card
+                                                id={`admin-assessment-question-${question.id}`}
                                                 className="hover:shadow-md transition-all duration-300 border-l-4 border-l-transparent hover:border-l-primary-500 group"
                                                 bodyClass="p-5"
                                             >
@@ -530,6 +531,7 @@ const AssessmentForms = () => {
                                 ) : (
                                     <div className="flex justify-center mt-2">
                                         <Button
+                                            id={`admin-assessment-add-question-${step.id}`}
                                             variant="plain"
                                             size="sm"
                                             icon={<HiOutlinePlus />}
@@ -575,7 +577,7 @@ const AssessmentForms = () => {
                             </div>
                         </div>
                     ) : (
-                        <div className="flex justify-center md:mr-12 py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl hover:border-primary-400 transition-colors cursor-pointer group" onClick={() => { setNewStepMode(true); setEditingStepId(null); setStepFormData({ description: '' }) }}>
+                        <div id="admin-assessment-add-step" className="flex justify-center md:mr-12 py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl hover:border-primary-400 transition-colors cursor-pointer group" onClick={() => { setNewStepMode(true); setEditingStepId(null); setStepFormData({ description: '' }) }}>
                             <div className="text-center text-gray-500 group-hover:text-primary-600 transition-colors">
                                 <HiOutlinePlus className="mx-auto text-2xl mb-1 text-blue-600" />
                                 <span className="font-medium text-blue-600">افزودن مرحله جدید</span>

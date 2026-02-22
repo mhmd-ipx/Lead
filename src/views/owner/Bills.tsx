@@ -242,7 +242,7 @@ const Bills = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div>
+            <div id="bills-header">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                     صورتحساب‌ها
                 </h1>
@@ -252,7 +252,7 @@ const Bills = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
+            <div id="bills-stats-cards" className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
                 <StatisticCard
                     title="همه صورتحساب‌ها"
                     value={totalBills}
@@ -283,7 +283,7 @@ const Bills = () => {
             </div>
 
             {/* Table */}
-            <Card>
+            <Card id="bills-table">
                 <div className="p-6">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         لیست صورتحساب‌ها
@@ -361,6 +361,7 @@ const Bills = () => {
                                                                 size="sm"
                                                                 icon={<HiOutlineDocumentText />}
                                                                 onClick={() => handleRequestOfficialInvoice(bill.id)}
+                                                                className="bills-action-invoice"
                                                             >
                                                                 درخواست فاکتور
                                                             </Button>
@@ -384,6 +385,7 @@ const Bills = () => {
                                                                     size="sm"
                                                                     icon={<HiOutlineCash />}
                                                                     onClick={() => navigate(`/owner/accounting/bills/${bill.id}/payment`)}
+                                                                    className="bills-action-pay"
                                                                 >
                                                                     پرداخت
                                                                 </Button>

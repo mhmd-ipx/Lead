@@ -13,6 +13,7 @@ interface OTPInputProps {
     autoFocus?: boolean
     placeholder?: string
     invalid?: boolean
+    fullWidth?: boolean
 }
 
 const OTPInput = ({
@@ -25,6 +26,7 @@ const OTPInput = ({
     autoFocus = false,
     placeholder,
     invalid = false,
+    fullWidth = false,
 }: OTPInputProps) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [_, setActiveInput] = useState<number>(0)
@@ -99,7 +101,8 @@ const OTPInput = ({
                         key={index}
                         ref={setRef(index)}
                         className={classNames(
-                            'text-center text-lg h-[58px] w-[58px]',
+                            'text-center text-lg h-[58px]',
+                            fullWidth ? 'flex-1 w-full' : 'w-[58px]',
                             inputClass,
                         )}
                         type="text"

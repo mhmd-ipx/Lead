@@ -85,7 +85,7 @@ const CreateTicket = () => {
                     >
                         بازگشت
                     </Button>
-                    <div>
+                    <div id="create-ticket-header">
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                             <HiOutlineTicket className="text-3xl" />
                             ایجاد تیکت جدید
@@ -98,7 +98,7 @@ const CreateTicket = () => {
             </div>
 
             {/* Form */}
-            <Card className="p-6">
+            <Card id="create-ticket-form" className="p-6">
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                     <FormItem
                         label="موضوع تیکت"
@@ -138,6 +138,7 @@ const CreateTicket = () => {
                         </FormItem>
 
                         <FormItem
+                            id="create-ticket-priority-select"
                             label="اولویت"
                             invalid={Boolean(errors.priority)}
                             errorMessage={errors.priority?.message}
@@ -158,6 +159,7 @@ const CreateTicket = () => {
                     </div>
 
                     <FormItem
+                        id="create-ticket-message-field"
                         label="شرح مسئله"
                         invalid={Boolean(errors.message)}
                         errorMessage={errors.message?.message}
@@ -194,6 +196,7 @@ const CreateTicket = () => {
                             انصراف
                         </Button>
                         <Button
+                            id="create-ticket-submit-button"
                             variant="solid"
                             type="submit"
                             loading={isSubmitting}

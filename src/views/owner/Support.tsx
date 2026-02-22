@@ -91,7 +91,7 @@ const Support = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div id="support-header" className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                         <HiOutlineTicket className="text-3xl" />
@@ -102,6 +102,7 @@ const Support = () => {
                     </p>
                 </div>
                 <Button
+                    id="support-add-button"
                     variant="solid"
                     icon={<HiOutlinePlus />}
                     onClick={() => navigate('/owner/support/create')}
@@ -111,7 +112,7 @@ const Support = () => {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div id="support-stats-cards" className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <Card
                     className={classNames(
                         'p-4 cursor-pointer transition-all',
@@ -224,7 +225,7 @@ const Support = () => {
             </div>
 
             {/* Search */}
-            <Card className="p-4">
+            <Card id="support-search-filter" className="p-4">
                 <Input
                     placeholder="جستجو در تیکت‌ها..."
                     prefix={<HiOutlineSearch />}
@@ -234,7 +235,7 @@ const Support = () => {
             </Card>
 
             {/* Tickets Table */}
-            <Card>
+            <Card id="support-table">
                 <div className="p-6">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         لیست تیکت‌ها

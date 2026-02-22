@@ -24,12 +24,13 @@ import Cookies from 'js-cookie'
 type FilterCategory = 'all' | 'active' | 'inactive' | 'assessmentDone' | 'examDone'
 
 // Statistic Card Component
-const StatisticCard = ({ icon, label, value, color, loading }: {
+const StatisticCard = ({ icon, label, value, color, loading, id }: {
     icon: React.ReactNode
     label: string
     value: number
     color: string
     loading?: boolean
+    id?: string
 }) => {
     const iconClass = classNames(
         'w-12 h-12 rounded-lg flex items-center justify-center',
@@ -37,7 +38,7 @@ const StatisticCard = ({ icon, label, value, color, loading }: {
     )
 
     return (
-        <button className="w-full text-right hover:shadow-md transition-shadow">
+        <button id={id} className="w-full text-right hover:shadow-md transition-shadow">
             <div className="flex items-center gap-4">
                 <div className={iconClass}>
                     {icon}
@@ -265,7 +266,7 @@ const CompanyManagers = () => {
                     >
                         بازگشت به لیست سازمان‌ها
                     </Button>
-                    <div>
+                    <div id="admin-company-managers-header">
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                             <HiOutlineUserGroup className="w-7 h-7" />
                             متقاضیان سازمان {company?.name && `- ${company.name}`}
@@ -276,6 +277,7 @@ const CompanyManagers = () => {
                     </div>
                 </div>
                 <Button
+                    id="admin-company-managers-add-button"
                     variant="solid"
                     icon={<HiOutlinePlus />}
                     onClick={() => navigate(`/admin/companies/${companyId}/managers/add`)}
@@ -285,9 +287,10 @@ const CompanyManagers = () => {
             </div>
 
             {/* Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div id="admin-company-managers-stats" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="p-4">
                     <StatisticCard
+                        id="admin-company-managers-stats-total"
                         icon={<HiOutlineUserGroup className="w-6 h-6 text-white" />}
                         label="کل متقاضیان"
                         value={stats.total}
@@ -297,6 +300,7 @@ const CompanyManagers = () => {
                 </Card>
                 <Card className="p-4">
                     <StatisticCard
+                        id="admin-company-managers-stats-active"
                         icon={<HiOutlineCheckCircle className="w-6 h-6 text-white" />}
                         label="فعال"
                         value={stats.active}
@@ -306,6 +310,7 @@ const CompanyManagers = () => {
                 </Card>
                 <Card className="p-4">
                     <StatisticCard
+                        id="admin-company-managers-stats-assessment"
                         icon={<HiOutlineClipboardCheck className="w-6 h-6 text-white" />}
                         label="نیازسنجی شده"
                         value={stats.assessmentDone}
@@ -315,6 +320,7 @@ const CompanyManagers = () => {
                 </Card>
                 <Card className="p-4">
                     <StatisticCard
+                        id="admin-company-managers-stats-exam"
                         icon={<HiOutlineAcademicCap className="w-6 h-6 text-white" />}
                         label="آزمون داده‌اند"
                         value={stats.examDone}
@@ -327,7 +333,7 @@ const CompanyManagers = () => {
             {/* Filters and Search */}
             <Card className="p-4">
                 <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                    <div className="flex gap-2 flex-wrap">
+                    <div id="admin-company-managers-filters" className="flex gap-2 flex-wrap">
                         <Button
                             size="sm"
                             variant={selectedCategory === 'all' ? 'solid' : 'default'}
@@ -365,6 +371,7 @@ const CompanyManagers = () => {
                         </Button>
                     </div>
                     <Input
+                        id="admin-company-managers-search"
                         className="w-64 bg-white dark:bg-gray-900"
                         placeholder="جستجو..."
                         prefix={<HiOutlineSearch />}
@@ -375,7 +382,7 @@ const CompanyManagers = () => {
             </Card>
 
             {/* Table */}
-            <Card>
+            <Card id="admin-company-managers-table">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-gray-50 dark:bg-gray-800">

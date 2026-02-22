@@ -25,6 +25,7 @@ import {
     HiOutlineLockClosed,
     HiOutlineClipboard,
     HiOutlineShare,
+    HiOutlineOfficeBuilding
 } from 'react-icons/hi'
 import { useNavigate } from 'react-router-dom'
 import Table from '@/components/ui/Table'
@@ -315,7 +316,7 @@ const AllExamsResults = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div id="exams-results-header" className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                         آزمون‌ها و نتایج
@@ -334,7 +335,7 @@ const AllExamsResults = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
+            <div id="exams-results-stats-cards" className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
                 <StatisticCard
                     title="همه آزمون‌ها"
                     value={loading ? undefined as any : totalExamSets}
@@ -374,7 +375,7 @@ const AllExamsResults = () => {
             </div>
 
             {/* Table */}
-            <Card>
+            <Card id="exams-results-table">
                 <div className="p-6">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         لیست مجموعه آزمون‌ها
@@ -389,6 +390,7 @@ const AllExamsResults = () => {
                             <THead>
                                 <Tr>
                                     <Th>متقاضی</Th>
+                                    <Th>سازمان</Th>
                                     <Th>تاریخ آزمون</Th>
                                     <Th>نتایج</Th>
                                     <Th>وضعیت</Th>
@@ -398,7 +400,7 @@ const AllExamsResults = () => {
                             <TBody>
                                 {loading ? (
                                     <Tr>
-                                        <Td colSpan={5} className="text-center py-10">
+                                        <Td colSpan={6} className="text-center py-10">
                                             <div className="flex justify-center">
                                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
                                             </div>
@@ -415,6 +417,12 @@ const AllExamsResults = () => {
                                                     <div className="font-bold text-gray-900 dark:text-gray-100">
                                                         {examSet.applicantName}
                                                     </div>
+                                                </div>
+                                            </Td>
+                                            <Td>
+                                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                                    <HiOutlineOfficeBuilding className="w-4 h-4" />
+                                                    <span>{examSet.companyName}</span>
                                                 </div>
                                             </Td>
                                             <Td>
@@ -438,6 +446,7 @@ const AllExamsResults = () => {
                                                             size="sm"
                                                             icon={<HiOutlineInformationCircle />}
                                                             onClick={() => handleInfoClick(examSet)}
+                                                            className="exams-results-action-info"
                                                         />
                                                     </Tooltip>
                                                     <Tooltip title="مشاهده نتایج">
@@ -445,7 +454,7 @@ const AllExamsResults = () => {
                                                             variant="plain"
                                                             size="sm"
                                                             icon={<HiOutlineEye />}
-                                                            onClick={() => navigate(`/owner/applicant-exams/${examSet.id}/results`)}
+                                                            onClick={() => navigate(`/owner/managers/${examSet.applicantId}/exams/${examSet.id}/results`)}
                                                         />
                                                     </Tooltip>
                                                 </div>
@@ -454,7 +463,7 @@ const AllExamsResults = () => {
                                     ))
                                 ) : (
                                     <Tr>
-                                        <Td colSpan={5}>
+                                        <Td colSpan={6}>
                                             <div className="text-center py-12">
                                                 <p className="text-gray-500 dark:text-gray-400">
                                                     {searchQuery || selectedCategory !== 'all'
