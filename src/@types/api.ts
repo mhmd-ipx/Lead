@@ -10,11 +10,12 @@ export interface ApiResponse<T = any> {
 }
 
 // پاسخ خطا API
-export interface ApiError {
+export interface ApiError<T = any> {
     success: false
     message: string
     errors?: Record<string, string[]>
     statusCode?: number
+    data?: T
 }
 
 // پاسخ لیست داده‌ها با pagination

@@ -16,6 +16,12 @@ const managerRoutes: Routes = [
         authority: [MANAGER],
     },
     {
+        key: 'managerExamStart',
+        path: '/manager/exams/start/:examId',
+        component: lazy(() => import('@/views/manager/MyExamStart')),
+        authority: [MANAGER],
+    },
+    {
         key: 'managerExamsActive',
         path: '/manager/exams/active',
         component: lazy(() => import('@/views/manager/ExamsActive')),

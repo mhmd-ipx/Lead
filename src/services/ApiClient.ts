@@ -198,6 +198,7 @@ class ApiClient {
                 error.response.statusText ||
                 'خطای سرور'
             apiError.errors = responseData?.errors
+            apiError.data = responseData?.data
         } else if (error.request) {
             // درخواست ارسال شده اما پاسخی دریافت نشد
             apiError.message = 'خطا در اتصال به سرور'
