@@ -92,7 +92,7 @@ const FileIcon = ({ type, size = 40 }: { type: string; size?: number }) => {
 const ApplicantExamResults = () => {
     const { examSetId } = useParams<{ examSetId: string }>()
     const navigate = useNavigate()
-    const [activeTab, setActiveTab] = useState('results')
+    const [activeTab, setActiveTab] = useState('answer-sheets')
     const [layout, setLayout] = useState<Layout>('grid')
     const [analysis, setAnalysis] = useState(
         'این متقاضی در حوزه مدیریت پروژه عملکرد خوبی داشته است. نقاط قوت او شامل برنامه‌ریزی و کنترل پروژه می‌باشد.\n\nتوصیه می‌شود در زمینه مدیریت ریسک و مذاکره دوره‌های تکمیلی را بگذراند.\n\nامتیاز کلی: 85/100'
@@ -319,18 +319,6 @@ const ApplicantExamResults = () => {
             <Card id="admin-exam-results-tabs-container">
                 <Tabs value={activeTab} onChange={(val) => setActiveTab(val)}>
                     <TabList id="admin-exam-results-tabs" className="px-6 pt-4">
-                        <TabNav value="results">
-                            <div className="flex items-center gap-2">
-                                <HiOutlineChartBar />
-                                <span>نتایج</span>
-                            </div>
-                        </TabNav>
-                        <TabNav value="analysis">
-                            <div className="flex items-center gap-2">
-                                <HiOutlinePencilAlt />
-                                <span>تحلیل نتایج</span>
-                            </div>
-                        </TabNav>
                         <TabNav value="answer-sheets">
                             <div className="flex items-center gap-2">
                                 <HiOutlineDocumentText />
@@ -341,6 +329,18 @@ const ApplicantExamResults = () => {
                             <div className="flex items-center gap-2">
                                 <HiOutlineFolder />
                                 <span>فایل‌های نتایج</span>
+                            </div>
+                        </TabNav>
+                        <TabNav value="analysis">
+                            <div className="flex items-center gap-2">
+                                <HiOutlinePencilAlt />
+                                <span>تحلیل نتایج</span>
+                            </div>
+                        </TabNav>
+                        <TabNav value="results">
+                            <div className="flex items-center gap-2">
+                                <HiOutlineChartBar />
+                                <span>نتایج</span>
                             </div>
                         </TabNav>
                         <TabNav value="info">

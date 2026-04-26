@@ -78,7 +78,6 @@ const QuestionForm = forwardRef<QuestionFormRef, QuestionFormProps>(({ onSave, o
     }, [existingQuestion])
 
     const isValid = () => {
-        if (!title.trim()) return false
 
         switch (questionType) {
             case 'multiple_choice':
@@ -193,7 +192,7 @@ const QuestionForm = forwardRef<QuestionFormRef, QuestionFormProps>(({ onSave, o
                 </FormItem>
 
                 {/* Title */}
-                <FormItem label="متن سوال" asterisk>
+                <FormItem label="متن سوال">
                     <RichTextEditor
                         content={title}
                         onChange={({ html }) => setTitle(html || '')}
