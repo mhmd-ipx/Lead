@@ -1,4 +1,5 @@
 import { Dialog, Button } from '@/components/ui'
+import QuestionFileImage from '@/components/exam-builder/components/QuestionFileImage'
 import type { Question } from '../types/QuestionTypes'
 
 interface QuestionViewModalProps {
@@ -52,6 +53,15 @@ const QuestionViewModal = ({ isOpen, onClose, question }: QuestionViewModalProps
                             className="prose dark:prose-invert max-w-none"
                             dangerouslySetInnerHTML={{ __html: question.title }}
                         />
+                        {(question.file_id || question.image) && (
+                            <div className="mt-4">
+                                <QuestionFileImage 
+                                    fileId={question.file_id}
+                                    fallbackUrl={question.image}
+                                    className="max-h-64 w-auto rounded border"
+                                />
+                            </div>
+                        )}
                     </div>
 
                     {question.description && (
@@ -88,10 +98,7 @@ const QuestionViewModal = ({ isOpen, onClose, question }: QuestionViewModalProps
                             {(question as any).options?.map((option: any, index: number) => (
                                 <div
                                     key={option.id}
-                                    className={`p-3 rounded-lg border ${option.isCorrect
-                                            ? 'bg-green-50 dark:bg-green-900/20 border-green-500'
-                                            : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
-                                        }`}
+                                    className="p-3 rounded-lg border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
                                 >
                                     <div className="flex items-start gap-3">
                                         <span className="text-sm font-medium text-gray-500">
@@ -102,19 +109,14 @@ const QuestionViewModal = ({ isOpen, onClose, question }: QuestionViewModalProps
                                                 className="prose dark:prose-invert max-w-none text-sm"
                                                 dangerouslySetInnerHTML={{ __html: option.text }}
                                             />
-                                            {option.image && (
-                                                <img
-                                                    src={option.image}
-                                                    alt="Option"
+                                            {(option.file_id || option.image) && (
+                                                <QuestionFileImage 
+                                                    fileId={option.file_id}
+                                                    fallbackUrl={option.image}
                                                     className="mt-2 h-24 w-auto rounded"
                                                 />
                                             )}
                                         </div>
-                                        {option.isCorrect && (
-                                            <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                                                ✓ صحیح
-                                            </span>
-                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -151,10 +153,7 @@ const QuestionViewModal = ({ isOpen, onClose, question }: QuestionViewModalProps
                                 {(question as any).options?.map((option: any, index: number) => (
                                     <div
                                         key={option.id}
-                                        className={`p-3 rounded-lg border ${option.isCorrect
-                                                ? 'bg-green-50 dark:bg-green-900/20 border-green-500'
-                                                : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
-                                            }`}
+                                        className="p-3 rounded-lg border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
                                     >
                                         <div className="flex items-start gap-3">
                                             <span className="text-sm font-medium text-gray-500">
@@ -165,19 +164,14 @@ const QuestionViewModal = ({ isOpen, onClose, question }: QuestionViewModalProps
                                                     className="prose dark:prose-invert max-w-none text-sm"
                                                     dangerouslySetInnerHTML={{ __html: option.text }}
                                                 />
-                                                {option.image && (
-                                                    <img
-                                                        src={option.image}
-                                                        alt="Option"
+                                                {(option.file_id || option.image) && (
+                                                    <QuestionFileImage 
+                                                        fileId={option.file_id}
+                                                        fallbackUrl={option.image}
                                                         className="mt-2 h-24 w-auto rounded"
                                                     />
                                                 )}
                                             </div>
-                                            {option.isCorrect && (
-                                                <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                                                    ✓ صحیح
-                                                </span>
-                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -223,10 +217,10 @@ const QuestionViewModal = ({ isOpen, onClose, question }: QuestionViewModalProps
                                                 className="prose dark:prose-invert max-w-none text-sm"
                                                 dangerouslySetInnerHTML={{ __html: option.text }}
                                             />
-                                            {option.image && (
-                                                <img
-                                                    src={option.image}
-                                                    alt="Option"
+                                            {(option.file_id || option.image) && (
+                                                <QuestionFileImage 
+                                                    fileId={option.file_id}
+                                                    fallbackUrl={option.image}
                                                     className="mt-2 h-24 w-auto rounded"
                                                 />
                                             )}

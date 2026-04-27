@@ -3,7 +3,6 @@ import { Card, Button, Input, Notification, toast, Skeleton } from '@/components
 import { getExam, updateExam, addExamSection, deleteExamSection, updateExamSection, addExamQuestion, updateExamQuestion, deleteExamQuestion } from '@/services/AdminService'
 import { CreateExamRequest } from '@/@types/exam'
 import { Form, FormItem } from '@/components/ui/Form'
-import RichTextEditor from '@/components/shared/RichTextEditor'
 import { useForm } from 'react-hook-form'
 import {
     HiOutlineClipboardCheck,
@@ -18,10 +17,13 @@ import {
     HiOutlineMenuAlt2,
     HiOutlineStar,
     HiOutlineSelector,
-    HiOutlineEye
+    HiOutlineEye,
+    HiOutlinePhotograph
 } from 'react-icons/hi'
+import QuestionFileImage from '@/components/exam-builder/components/QuestionFileImage'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
+import { MdDragIndicator } from 'react-icons/md'
 import type { Question } from '@/components/exam-builder/types/QuestionTypes'
 import QuestionForm, { QuestionFormRef } from '@/components/exam-builder/components/QuestionForm'
 import QuestionViewModal from '@/components/exam-builder/modals/QuestionViewModal'
@@ -63,6 +65,7 @@ const ExamDetails = () => {
 
     // For editing section title locally before save
     const [editingSectionTitle, setEditingSectionTitle] = useState<{ id: string, title: string } | null>(null)
+    const [editingSectionContentId, setEditingSectionContentId] = useState<string | null>(null)
 
     const {
         handleSubmit,
@@ -103,7 +106,30 @@ const ExamDetails = () => {
                             id: q.id.toString(),
                             title: q.question,
                             type: q.type,
-                            options: q.options ? q.options.map((opt: string) => ({ text: opt })) : [],
+                            image: q.file?.address || q.image || '',
+                            file_id: q.file_id || null,
+                            options: q.options ? q.options.map((opt: string, idx: number) => {
+                                let parsedOpt = { text: opt, file_id: null as any };
+                                try {
+                                    // Try to parse if it's a JSON string
+                                    const json = JSON.parse(opt);
+                                    if (json && typeof json === 'object') {
+                                        parsedOpt = {
+                                            text: json.text || '',
+                                            file_id: json.file_id || null
+                                        };
+                                    }
+                                } catch (e) {
+                                    // Not a JSON string, use as plain text
+                                }
+                                
+                                return {
+                                    id: `${q.id}-opt-${idx}`,
+                                    text: parsedOpt.text,
+                                    file_id: parsedOpt.file_id,
+                                    isCorrect: parsedOpt.text === q.correct_answer
+                                };
+                            }) : [],
                             score: q.score,
                             order: q.order
                             // ... other fields
@@ -236,7 +262,7 @@ const ExamDetails = () => {
         }
     }
 
-    const handleSaveQuestion = async (question: Question) => {
+    const handleSaveQuestion = async (question: Question, addAnother: boolean = false) => {
         try {
             let targetSectionId = addingToSection
             if (!targetSectionId && editingQuestion) {
@@ -245,7 +271,7 @@ const ExamDetails = () => {
                 if (section) targetSectionId = section.id
             }
 
-            if (!targetSectionId) return
+            if (!targetSectionId || !examId) return
 
             const section = sections.find(s => s.id === targetSectionId)
             if (!section) return
@@ -253,31 +279,39 @@ const ExamDetails = () => {
             // Prepare payload
             const order = question.priority || (editingQuestion ? editingQuestion.priority : section.questions.length + 1)
 
-            let options: string[] = []
+            let options: any[] = []
             let correctAnswer = '-'
 
-            // Map frontend types to backend supported types (multiple_choice, descriptive)
-            if (question.type === 'multiple_choice' || question.type === 'mixed' || question.type === 'ranking') {
+            // Map frontend types to backend supported types
+            if (question.type === 'multiple_choice' || question.type === 'check_box' || question.type === 'mixed' || question.type === 'order') {
                 const qOptions = (question as any).options || []
-                options = qOptions.map((o: any) => o.text)
+                
+                // NEW STANDARD FORMAT FOR OPTIONS (JSON Stringified Elements)
+                options = qOptions.map((o: any) => JSON.stringify({
+                    text: o.text || '',
+                    file_id: o.file_id || null
+                }))
 
                 const correctOpt = qOptions.find((o: any) => o.isCorrect)
                 if (correctOpt) {
                     correctAnswer = correctOpt.text
-                } else if (options.length > 0) {
-                    correctAnswer = options[0]
+                } else if (qOptions.length > 0) {
+                    correctAnswer = qOptions[0].text
                 }
             }
 
             const payload = {
                 question: question.title,
-                type: question.type === 'descriptive' ? 'descriptive' : 'multiple_choice',
+                type: question.type,
                 options: options.length > 0 ? options : null,
                 correct_answer: correctAnswer,
-                score: question.score,
+                score: question.score || 1,
                 difficulty: 'medium', // Default
                 category: 'general',   // Default
-                order: order
+                order: order,
+                file_id: question.file_id || null,
+                exam_section_id: targetSectionId,
+                exam_id: examId
             }
 
             if (editingQuestion && editingQuestion.id) {
@@ -296,7 +330,7 @@ const ExamDetails = () => {
                 toast.push(<Notification type="success">سوال بروزرسانی شد</Notification>)
             } else {
                 // Add new
-                const response = await addExamQuestion(targetSectionId, payload)
+                const response = await addExamQuestion(payload)
                 if (response && response.data) {
                     const newPriority = response.data.order || order
                     // Explicitly construct new question with type
@@ -315,8 +349,17 @@ const ExamDetails = () => {
                     toast.push(<Notification type="success">سوال جدید اضافه شد</Notification>)
                 }
             }
-            setAddingToSection(null)
-            setEditingQuestion(undefined)
+
+            if (addAnother) {
+                // Keep the addingToSection as is, which will reset the form for the next question
+                // But we need to force QuestionForm to reset. We can toggle addingToSection briefly or add a key
+                const currentSection = addingToSection
+                setAddingToSection(null)
+                setTimeout(() => setAddingToSection(currentSection), 50)
+            } else {
+                setAddingToSection(null)
+                setEditingQuestion(undefined)
+            }
         } catch (error) {
             console.error(error)
             toast.push(<Notification type="danger">خطا در ذخیره سوال</Notification>)
@@ -350,8 +393,62 @@ const ExamDetails = () => {
         setViewingQuestion(question)
         setQuestionViewModalOpen(true)
     }
-    const handleDragEnd = (result: DropResult, sectionId: string) => {
-        // Reorder logic (local only for now)
+    const handleDragEnd = async (result: DropResult, sectionId: string) => {
+        if (!result.destination || result.source.index === result.destination.index) return
+
+        const section = sections.find(s => s.id === sectionId)
+        if (!section) return
+
+        // Reorder locally
+        const newQuestions = [...section.questions]
+        const [moved] = newQuestions.splice(result.source.index, 1)
+        newQuestions.splice(result.destination.index, 0, moved)
+
+        // Assign new order values (1-based)
+        const reordered = newQuestions.map((q, idx) => ({ ...q, order: idx + 1 }))
+
+        // Update local state immediately
+        setSections(sections.map(s =>
+            s.id === sectionId ? { ...s, questions: reordered } : s
+        ))
+
+        // Build full payload for each reordered question and persist to API
+        const updatePromises = reordered.map(q => {
+            // Reconstruct options in API format
+            let options: any[] = []
+            let correctAnswer = '-'
+            const qOptions = (q as any).options || []
+
+            if (q.type === 'multiple_choice' || q.type === 'check_box' || q.type === 'mixed' || q.type === 'order') {
+                options = qOptions.map((o: any) => JSON.stringify({
+                    text: o.text || '',
+                    file_id: o.file_id || null
+                }))
+                const correctOpt = qOptions.find((o: any) => o.isCorrect)
+                if (correctOpt) correctAnswer = correctOpt.text
+                else if (qOptions.length > 0) correctAnswer = qOptions[0].text
+            }
+
+            const payload = {
+                question: q.title,
+                type: q.type,
+                options: options.length > 0 ? options : null,
+                correct_answer: correctAnswer,
+                score: q.score || 1,
+                difficulty: 'medium',
+                category: 'general',
+                order: q.order,
+                file_id: (q as any).file_id || null,
+                exam_section_id: sectionId,
+                exam_id: examId
+            }
+
+            return updateExamQuestion(q.id!, payload)
+                .catch(err => console.error(`Failed to update order for question ${q.id}:`, err))
+        })
+
+        await Promise.all(updatePromises)
+        toast.push(<Notification type="success">ترتیب سوالات بروزرسانی شد</Notification>)
     }
 
 
@@ -501,12 +598,31 @@ const ExamDetails = () => {
                                         </div>
                                         <div className="flex-1 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center hover:shadow-md transition-shadow cursor-pointer" onClick={() => toggleSection(section.id)}>
                                             <div>
-                                                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-                                                    {section.title}
-                                                </h2>
+                                                <div className="flex items-center gap-2">
+                                                    <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                                                        {section.title}
+                                                    </h2>
+                                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-semibold rounded-full border border-blue-100">
+                                                        {section.questions?.length || 0} سوال
+                                                    </span>
+                                                </div>
                                                 <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1" dangerouslySetInnerHTML={{ __html: section.content || 'بدون توضیحات' }} />
                                             </div>
                                             <div className="flex items-center gap-1">
+                                                <Button 
+                                                    variant="plain" 
+                                                    shape="circle" 
+                                                    size="sm" 
+                                                    icon={<HiOutlinePencil />} 
+                                                    onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        setEditingSectionContentId(editingSectionContentId === section.id ? null : section.id) 
+                                                        if (!section.isExpanded) {
+                                                            toggleSection(section.id)
+                                                        }
+                                                    }} 
+                                                    className={editingSectionContentId === section.id ? 'text-primary-600' : 'text-gray-500'}
+                                                />
                                                 <Button variant="plain" shape="circle" size="sm" icon={<HiOutlineTrash />} onClick={(e) => { e.stopPropagation(); deleteSection(section.id) }} className="text-red-500 hover:text-red-600 hover:bg-red-50" />
                                                 {section.isExpanded ? <HiOutlineChevronUp /> : <HiOutlineChevronDown />}
                                             </div>
@@ -517,26 +633,42 @@ const ExamDetails = () => {
                                     {section.isExpanded && (
                                         <div className="mr-8 md:mr-12 space-y-6">
                                             {/* Edit Section Form */}
-                                            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-6">
-                                                <div className="flex justify-between items-center mb-3">
-                                                    <h6 className="text-sm font-semibold text-gray-900 dark:text-white">
-                                                        ویرایش بخش
-                                                    </h6>
-                                                    <Button size="xs" variant="solid" onClick={() => saveSectionChanges(section)}>
-                                                        {section.isNew ? 'ایجاد بخش' : 'ذخیره تغییرات بخش'}
-                                                    </Button>
-                                                </div>
-                                                <div className="space-y-4">
-                                                    <div>
-                                                        <label className="text-sm">عنوان بخش</label>
-                                                        <Input value={section.title} onChange={(e) => updateSectionState(section.id, { title: e.target.value })} />
+                                            {(editingSectionContentId === section.id || section.isNew) && (
+                                                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-6 animate-in slide-in-from-top-2 duration-200">
+                                                    <div className="flex justify-between items-center mb-3">
+                                                        <h6 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                                            ویرایش بخش
+                                                        </h6>
+                                                        <div className="flex gap-2">
+                                                            <Button size="xs" variant="plain" onClick={() => setEditingSectionContentId(null)}>
+                                                                انصراف
+                                                            </Button>
+                                                            <Button size="xs" variant="solid" onClick={() => {
+                                                                saveSectionChanges(section)
+                                                                setEditingSectionContentId(null)
+                                                            }}>
+                                                                {section.isNew ? 'ایجاد بخش' : 'ذخیره تغییرات بخش'}
+                                                            </Button>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <label className="text-sm mb-1 block">محتوا</label>
-                                                        <RichTextEditor content={section.content} onChange={({ html }) => updateSectionState(section.id, { content: html })} />
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <label className="text-sm">عنوان بخش</label>
+                                                            <Input value={section.title} onChange={(e) => updateSectionState(section.id, { title: e.target.value })} />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-sm mb-1 block">محتوا</label>
+                                                            <Input
+                                                                textArea
+                                                                rows={5}
+                                                                placeholder="محتوای بخش را وارد کنید..."
+                                                                value={section.content}
+                                                                onChange={(e) => updateSectionState(section.id, { content: e.target.value })}
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            )}
 
                                             {/* Questions List (Read Only / Mock) */}
                                             <div>
@@ -545,7 +677,7 @@ const ExamDetails = () => {
                                                         {(provided) => (
                                                             <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
                                                                 {section.questions.map((question, qIndex) => (
-                                                                    <Draggable key={question.id || `temp-${qIndex}`} draggableId={question.id || `temp-${qIndex}`} index={qIndex} isDragDisabled={true}>
+                                                                    <Draggable key={question.id || `temp-${qIndex}`} draggableId={question.id || `temp-${qIndex}`} index={qIndex} isDragDisabled={false}>
                                                                         {(provided) => (
                                                                             <div ref={provided.innerRef} {...provided.draggableProps}>
                                                                                 {editingQuestion?.id === question.id && question.id ? (
@@ -560,19 +692,67 @@ const ExamDetails = () => {
                                                                                     </div>
                                                                                 ) : (
                                                                                     <div className="relative group">
-                                                                                        <Card className="hover:shadow-md border-l-4 border-l-transparent hover:border-l-primary-500 group" bodyClass="p-5">
+                                                                                        <Card className="hover:shadow-md border-l-4 border-l-transparent hover:border-l-primary-500 group transition-all duration-200" bodyClass="p-4">
                                                                                             <div className="flex items-start gap-4">
+                                                                                                <div className="w-7 h-7 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 text-xs font-bold shrink-0">
+                                                                                                    {qIndex + 1}
+                                                                                                </div>
                                                                                                 <div className="flex-1">
-                                                                                                    <h3 className="font-semibold text-gray-800 line-clamp-2" dangerouslySetInnerHTML={{ __html: question.title }}></h3>
-                                                                                                    <div className="flex items-center gap-2 mt-2">
-                                                                                                        <span className="px-2 py-1 text-xs bg-gray-100 rounded">
-                                                                                                            {question.type === 'multiple_choice' ? 'تستی' : 'تشریحی'}
-                                                                                                        </span>
-                                                                                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                                    <div className="flex items-start justify-between gap-4">
+                                                                                                        <h3 className="font-semibold text-gray-800 text-[15px] leading-relaxed line-clamp-2" dangerouslySetInnerHTML={{ __html: question.title }}></h3>
+                                                                                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                                                                                            <span className="px-2 py-0.5 text-[10px] bg-gray-100 text-gray-500 rounded font-medium mr-2">
+                                                                                                                {question.type === 'multiple_choice' ? 'تستی' :
+                                                                                                                 question.type === 'descriptive' ? 'تشریحی' :
+                                                                                                                 question.type === 'check_box' ? 'چند گزینه‌ای' :
+                                                                                                                 question.type === 'mixed' ? 'تستی-تشریحی' : 'اولویت‌بندی'}
+                                                                                                            </span>
+                                                                                                            <span
+                                                                                                                {...provided.dragHandleProps}
+                                                                                                                title="تغییر ترتیب"
+                                                                                                                className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-violet-500 p-1 rounded transition-colors"
+                                                                                                            >
+                                                                                                                <MdDragIndicator className="w-4 h-4" />
+                                                                                                            </span>
                                                                                                             <Button size="xs" variant="plain" icon={<HiOutlinePencil />} onClick={() => openQuestionForm(section.id, question)} />
                                                                                                             <Button size="xs" variant="plain" icon={<HiOutlineTrash />} onClick={() => deleteQuestionFromSection(section.id, question.id!)} className="text-red-500" />
                                                                                                         </div>
                                                                                                     </div>
+                                                                                                    
+                                                                                                    {/* Question Image Preview */}
+                                                                                                    {(question.file_id || question.image) && (
+                                                                                                        <div className="mt-3">
+                                                                                                            <QuestionFileImage 
+                                                                                                                fileId={question.file_id} 
+                                                                                                                fallbackUrl={question.image}
+                                                                                                                className="h-24 w-auto rounded border object-cover" 
+                                                                                                            />
+                                                                                                        </div>
+                                                                                                    )}
+                                                                                                    
+                                                                                                    {/* Options Preview */}
+                                                                                                    {(question.type === 'multiple_choice' || question.type === 'mixed' || question.type === 'ranking') && (question as any).options?.length > 0 && (
+                                                                                                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                                                                            {(question as any).options.map((opt: any, optIdx: number) => (
+                                                                                                                <div key={optIdx} className="text-[13px] p-1.5 rounded border border-gray-100 bg-gray-50 text-gray-600 flex items-center gap-2">
+                                                                                                                    <span className="w-4 h-4 rounded-full bg-white border flex items-center justify-center text-[9px] font-bold shrink-0">
+                                                                                                                        {optIdx + 1}
+                                                                                                                    </span>
+                                                                                                                    <div className="flex flex-col gap-1 overflow-hidden">
+                                                                                                                        <span className="truncate">{opt.text}</span>
+                                                                                                                        {(opt.file_id || opt.image) && (
+                                                                                                                            <QuestionFileImage 
+                                                                                                                                fileId={opt.file_id}
+                                                                                                                                fallbackUrl={opt.image}
+                                                                                                                                className="h-8 w-auto rounded border"
+                                                                                                                            />
+                                                                                                                        )}
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                            ))}
+                                                                                                        </div>
+                                                                                                    )}
+
                                                                                                 </div>
                                                                                             </div>
                                                                                         </Card>

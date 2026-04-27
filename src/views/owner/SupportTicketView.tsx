@@ -6,20 +6,90 @@ import {
     HiOutlinePaperClip,
     HiUser,
     HiOutlineSupport,
+    HiOutlineTrash,
 } from 'react-icons/hi'
 import { useNavigate, useParams } from 'react-router-dom'
 import classNames from '@/utils/classNames'
 import useSWR from 'swr'
 import { apiGetTicketDetail, apiReplyTicket } from '@/services/SupportService'
+import { apiUploadFile, apiGetFileInfo } from '@/services/FileService'
 import { TicketPriority, TicketStatus } from '@/@types/support'
-import { FcImageFile } from 'react-icons/fc'
+import { FcImageFile, FcFile, FcVideoFile, FcMusic } from 'react-icons/fc'
+import { motion, AnimatePresence } from 'framer-motion'
+
+const AttachmentItem = ({ attachment, isSelf }: { attachment: any, isSelf: boolean }) => {
+    const [fileInfo, setFileInfo] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(false)
+
+    useEffect(() => {
+        if (typeof attachment === 'string' || typeof attachment === 'number') {
+            fetchFileInfo(attachment)
+        } else {
+            setFileInfo(attachment)
+        }
+    }, [attachment])
+
+    const fetchFileInfo = async (id: string | number) => {
+        setIsLoading(true)
+        try {
+            const res = await apiGetFileInfo(id)
+            if (res && res.id) {
+                setFileInfo(res)
+            }
+        } catch (error) {
+            console.error('Error fetching file info:', error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const getFileIcon = (type: string) => {
+        if (!type) return <FcFile />
+        if (type.includes('image')) return <FcImageFile />
+        if (type.includes('video')) return <FcVideoFile />
+        if (type.includes('audio')) return <FcMusic />
+        return <FcFile />
+    }
+
+    if (isLoading) return <Skeleton width={100} height={24} />
+    if (!fileInfo) return null
+
+    return (
+        <a
+            href={fileInfo.address}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={classNames(
+                "flex items-center gap-2 text-xs px-2 py-1.5 rounded cursor-pointer transition-colors max-w-full overflow-hidden",
+                isSelf
+                    ? "bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-700 dark:text-indigo-200"
+                    : "bg-white/20 hover:bg-white/30 text-white"
+            )}
+            title={fileInfo.name}
+        >
+            <span className="text-lg shrink-0">{getFileIcon(fileInfo.type)}</span>
+            <span className="truncate">{fileInfo.name || 'فایل ضمیمه'}</span>
+        </a>
+    )
+}
 
 const SupportTicketView = () => {
     const { ticketId } = useParams<{ ticketId: string }>()
     const navigate = useNavigate()
     const [replyMessage, setReplyMessage] = useState('')
     const [isSending, setIsSending] = useState(false)
+    const [attachedFiles, setAttachedFiles] = useState<Array<{ 
+        id: string | number, 
+        name: string, 
+        status: 'uploading' | 'success' | 'error',
+        progress: number 
+    }>>([])
+    const attachedFilesRef = useRef(attachedFiles)
     const messagesEndRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        attachedFilesRef.current = attachedFiles
+    }, [attachedFiles])
 
     const { data: response, isLoading, mutate } = useSWR(
         ticketId ? `/api/support-tickets/${ticketId}` : null,
@@ -71,12 +141,14 @@ const SupportTicketView = () => {
 
     const handleSendReply = async () => {
         if (!replyMessage.trim() || !ticketId) return
+        
+        const successFiles = attachedFiles.filter(f => f.status === 'success').map(f => f.id.toString())
 
         setIsSending(true)
         try {
             const result = await apiReplyTicket(ticketId, {
                 message: replyMessage,
-                attachments: [] // فعلا خالی
+                attachments: successFiles.length > 0 ? successFiles : null
             })
 
             if (result.success) {
@@ -86,7 +158,8 @@ const SupportTicketView = () => {
                     </Notification>
                 )
                 setReplyMessage('')
-                mutate() // رفرش کردن اطلاعات تیکت برای دریافت پیام جدید
+                setAttachedFiles([])
+                mutate() 
             }
         } catch (error) {
             console.error('Error sending reply:', error)
@@ -98,6 +171,57 @@ const SupportTicketView = () => {
         } finally {
             setIsSending(false)
         }
+    }
+
+    const handleFileUpload = async (files: File[]) => {
+        if (files.length === 0) return
+
+        const currentFiles = attachedFilesRef.current
+        const newFilesToUpload = files.filter(file => 
+            !currentFiles.some(cf => cf.name === file.name && (cf as any).size === file.size)
+        )
+
+        if (newFilesToUpload.length === 0) return
+
+        const newEntries = newFilesToUpload.map(file => ({
+            id: `temp-${Math.random().toString(36).substring(2, 9)}`,
+            name: file.name,
+            size: file.size,
+            status: 'uploading' as const,
+            progress: 0
+        }))
+
+        setAttachedFiles(prev => [...prev, ...newEntries])
+
+        newFilesToUpload.forEach(async (file, index) => {
+            const tempId = newEntries[index].id
+            try {
+                const res = await apiUploadFile(file, (progress) => {
+                    setAttachedFiles(prev => prev.map(f => 
+                        f.id === tempId ? { ...f, progress } : f
+                    ))
+                })
+
+                if (res && res.id) {
+                    setAttachedFiles(prev => prev.map(f => 
+                        f.id === tempId ? { 
+                            ...f, 
+                            id: res.id.toString(), 
+                            status: 'success', 
+                            progress: 100 
+                        } : f
+                    ))
+                }
+            } catch (error) {
+                setAttachedFiles(prev => prev.map(f => 
+                    f.id === tempId ? { ...f, status: 'error' } : f
+                ))
+            }
+        })
+    }
+
+    const removeAttachment = (id: string | number) => {
+        setAttachedFiles(prev => prev.filter(f => f.id !== id))
     }
 
     const formatDate = (dateString: string) => {
@@ -232,19 +356,12 @@ const SupportTicketView = () => {
                                     {/* Attachments */}
                                     {msg.attachments && msg.attachments.length > 0 && (
                                         <div className="mt-3 flex flex-wrap gap-2 pt-2 border-t border-dashed border-opacity-20 border-gray-400">
-                                            {msg.attachments.map((file: any, i: number) => (
-                                                <div
-                                                    key={i}
-                                                    className={classNames(
-                                                        "flex items-center gap-1 text-xs px-2 py-1.5 rounded cursor-pointer transition-colors max-w-full overflow-hidden",
-                                                        isUser
-                                                            ? "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
-                                                            : "bg-white/20 hover:bg-white/30 text-white"
-                                                    )}
-                                                >
-                                                    <HiOutlinePaperClip className="flex-shrink-0" />
-                                                    <span className="truncate">{typeof file === 'string' ? file : 'فایل ضمیمه'}</span>
-                                                </div>
+                                            {msg.attachments.map((attachment: any, i: number) => (
+                                                <AttachmentItem 
+                                                    key={i} 
+                                                    attachment={attachment} 
+                                                    isSelf={isUser} 
+                                                />
                                             ))}
                                         </div>
                                     )}
@@ -277,18 +394,108 @@ const SupportTicketView = () => {
                             onChange={(e) => setReplyMessage(e.target.value)}
                         />
 
-                        {/* Disabled Upload Section */}
-                        <div className="opacity-50 pointer-events-none">
-                            <Upload draggable>
-                                <div className="py-4 text-center border-2 border-dashed border-gray-300 rounded-lg">
-                                    <div className="text-3xl mb-2 flex justify-center text-gray-400">
-                                        <FcImageFile className="grayscale" />
+                        {/* Full-Width Creative Upload Section */}
+                        <div className="relative group">
+                            <Upload 
+                                draggable 
+                                showList={false}
+                                onChange={(files) => handleFileUpload(Array.from(files))}
+                                multiple
+                                className="border-none p-0"
+                            >
+                                <motion.div 
+                                    whileHover={{ backgroundColor: "rgba(99, 102, 241, 0.03)" }}
+                                    className="relative overflow-hidden py-6 px-4 text-center rounded-2xl transition-all cursor-pointer bg-gray-50/50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-800 hover:border-indigo-500/20 group"
+                                >
+                                    <div className="relative z-10 flex items-center justify-center gap-3">
+                                        <div className="flex items-center justify-center w-10 h-10 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-indigo-50 dark:border-indigo-900/30">
+                                            <HiOutlinePaperClip className="text-xl text-indigo-500" />
+                                        </div>
+                                        <div className="text-right">
+                                            <h3 className="text-xs font-bold text-gray-900 dark:text-white">
+                                                ضمیمه کردن مستندات
+                                            </h3>
+                                            <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                                                کلیک کنید یا فایل را اینجا بکشید
+                                            </p>
+                                        </div>
                                     </div>
-                                    <p className="text-xs text-gray-400">
-                                        بارگذاری فایل فعلاً غیرفعال است
-                                    </p>
-                                </div>
+                                </motion.div>
                             </Upload>
+
+                            {/* Creative Attached Files List */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                                <AnimatePresence mode="popLayout">
+                                    {attachedFiles.map((file) => (
+                                        <motion.div 
+                                            key={file.id}
+                                            layout
+                                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                                            className={classNames(
+                                                "relative p-4 rounded-2xl border shadow-sm transition-all overflow-hidden",
+                                                file.status === 'error' 
+                                                    ? "bg-red-50/50 dark:bg-red-900/10 border-red-100 dark:border-red-900/20" 
+                                                    : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:shadow-md"
+                                            )}
+                                        >
+                                            <div className="flex items-start gap-4">
+                                                <div className="relative shrink-0">
+                                                    <div className="text-3xl">
+                                                        {file.status === 'error' ? <FcFile className="grayscale" /> : <FcFile />}
+                                                    </div>
+                                                    {file.status === 'uploading' && (
+                                                        <div className="absolute -top-1 -right-1">
+                                                            <span className="flex h-3 w-3">
+                                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                                                                <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="min-w-0 flex-1 pt-1">
+                                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                                        <p className="text-xs font-bold text-gray-700 dark:text-gray-200 truncate">
+                                                            {file.name}
+                                                        </p>
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => removeAttachment(file.id)}
+                                                            className="p-1 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                                                        >
+                                                            <HiOutlineTrash className="text-lg" />
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center justify-between text-[10px] mb-2">
+                                                        <span className={classNames(
+                                                            "font-medium",
+                                                            file.status === 'uploading' ? "text-indigo-500" :
+                                                            file.status === 'success' ? "text-emerald-500" : "text-red-500"
+                                                        )}>
+                                                            {file.status === 'uploading' ? `در حال پردازش... ${file.progress}%` : 
+                                                             file.status === 'success' ? 'آماده برای ارسال' : 'خطا در بارگذاری'}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                                                        <motion.div 
+                                                            initial={{ width: 0 }}
+                                                            animate={{ 
+                                                                width: `${file.progress}%`,
+                                                                backgroundColor: file.status === 'error' ? '#ef4444' : (file.status === 'success' ? '#10b981' : '#6366f1')
+                                                            }}
+                                                            className="h-full"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </AnimatePresence>
+                            </div>
                         </div>
 
                         <div className="flex justify-end gap-2">

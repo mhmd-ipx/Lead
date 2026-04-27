@@ -35,6 +35,27 @@ export const API_ENDPOINTS = {
     EXAM_COLLECTIONS: {
         VERIFY_ACCESS: '/exam-collections/verify-access',
     },
+    // Exams
+    EXAMS: {
+        BASE: '/exams',
+        GET_BY_ID: (id: string | number) => `/exams/${id}`,
+        CREATE: '/exams',
+        UPDATE: (id: string | number) => `/exams/${id}`,
+        DELETE: (id: string | number) => `/exams/${id}`,
+        ADD_SECTION: (id: string | number) => `/exams/${id}/sections`,
+    },
+    // Questions
+    QUESTIONS: {
+        BASE: '/questions',
+        CREATE: '/questions',
+        UPDATE: (id: string | number) => `/questions/${id}`,
+        DELETE: (id: string | number) => `/questions/${id}`,
+    },
+    // Exam Sections
+    EXAM_SECTIONS: {
+        UPDATE: (id: string | number) => `/exam-sections/${id}`,
+        DELETE: (id: string | number) => `/exam-sections/${id}`,
+    },
 } as const
 
 export default API_ENDPOINTS

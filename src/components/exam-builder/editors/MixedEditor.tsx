@@ -1,15 +1,14 @@
 import { Checkbox, Input } from '@/components/ui'
 import MultipleChoiceEditor from './MultipleChoiceEditor'
-import type { MultipleChoiceOption } from '../types/QuestionTypes'
+import type { QuestionOption } from '../types/QuestionTypes'
 
 interface MixedEditorProps {
-    options: MultipleChoiceOption[]
-    allowMultiple: boolean
+    options: QuestionOption[]
+    allowMultiple?: boolean // Keep optional for backwards compatibility but unused
     descriptionRequired: boolean
     descriptionPlaceholder?: string
     onChange: (data: {
-        options: MultipleChoiceOption[]
-        allowMultiple: boolean
+        options: QuestionOption[]
         descriptionRequired: boolean
         descriptionPlaceholder?: string
     }) => void
@@ -17,7 +16,6 @@ interface MixedEditorProps {
 
 const MixedEditor = ({
     options,
-    allowMultiple,
     descriptionRequired,
     descriptionPlaceholder,
     onChange
@@ -28,11 +26,9 @@ const MixedEditor = ({
             <div>
                 <MultipleChoiceEditor
                     options={options}
-                    allowMultiple={allowMultiple}
-                    onChange={(newOptions, newAllowMultiple) =>
+                    onChange={(newOptions) =>
                         onChange({
                             options: newOptions,
-                            allowMultiple: newAllowMultiple,
                             descriptionRequired: true, // Always required
                             descriptionPlaceholder
                         })

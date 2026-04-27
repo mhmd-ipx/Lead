@@ -100,6 +100,12 @@ const adminRoutes: Routes = [
         authority: [ADMIN],
     },
     {
+        key: 'adminApplicantAnswerSheet',
+        path: '/admin/applicant-exams/:examSetId/results/:resultId',
+        component: lazy(() => import('@/views/admin/ApplicantAnswerSheet')),
+        authority: [ADMIN],
+    },
+    {
         key: 'adminAssessmentForms',
         path: '/admin/assessment/forms',
         component: lazy(() => import('@/views/admin/AssessmentForms')),

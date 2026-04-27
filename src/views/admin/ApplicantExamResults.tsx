@@ -12,7 +12,15 @@ import {
     HiOutlineSave,
     HiOutlineTrash,
     HiOutlinePlus,
-    HiOutlineCloudUpload
+    HiOutlineCloudUpload,
+    HiOutlineUser,
+    HiOutlineOfficeBuilding,
+    HiOutlineIdentification,
+    HiOutlineEye,
+    HiOutlineCheck,
+    HiOutlineClipboardList,
+    HiOutlineDocumentSearch,
+    HiOutlinePrinter
 } from 'react-icons/hi'
 import { TbLayoutGrid, TbList } from 'react-icons/tb'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -24,6 +32,13 @@ import FileDoc from '@/assets/svg/files/FileDoc'
 import FileXls from '@/assets/svg/files/FileXls'
 import FilePdf from '@/assets/svg/files/FilePdf'
 import FileImage from '@/assets/svg/files/FileImage'
+import { getApplicantExamSetById, getExamAssignmentResults } from '@/services/AdminService'
+import { Loading } from '@/components/shared'
+import { Notification, toast } from '@/components/ui'
+import dayjs from 'dayjs'
+import ExportSettingsModal from './components/ExportSettingsModal'
+import { generateExcelBlob, exportToZip, ExportSettings } from '@/utils/exportUtils'
+import { saveAs } from 'file-saver'
 
 const { TabNav, TabList, TabContent } = Tabs
 const { TBody, THead, Th, Tr, Td } = Table
@@ -64,6 +79,35 @@ interface ExamSetInfo {
     completedExams: number
     averageScore: number
     status: 'completed' | 'in_progress' | 'pending'
+    applicantId: string
+    collectionId: string
+}
+
+interface UserAnswer {
+    id: number
+    exam_id: number
+    user_id: number
+    score: number
+    total_score: number
+    percentage: string
+    status: string
+    started_at: string
+    completed_at: string
+    answers: {
+        exam_id: number
+        exam_title: string
+        sections: {
+            section_id: number
+            section_title: string
+            questions: any[]
+        }[]
+    }
+    exam: {
+        id: number
+        title: string
+        description: string
+        duration: number
+    }
 }
 
 type Layout = 'grid' | 'list'
@@ -107,22 +151,52 @@ const ApplicantExamResults = () => {
     })
     const [tempChartData, setTempChartData] = useState(chartData)
 
-    // Mock exam set info
-    const examSetInfo: ExamSetInfo = {
-        id: examSetId || '',
-        title: 'مجموعه آزمون مدیریت پروژه',
-        description: 'این مجموعه شامل آزمون‌های جامع در حوزه مدیریت پروژه است.',
-        applicantName: 'علی محمدی',
-        companyName: 'شرکت نمونه',
-        assignedDate: '2024-11-20T10:00:00Z',
-        examDate: '2024-11-25T10:00:00Z',
-        completedDate: '2024-11-25T14:30:00Z',
-        duration: 120,
-        totalExams: 5,
-        completedExams: 5,
-        averageScore: 85,
-        status: 'completed',
-    }
+    const [loading, setLoading] = useState(true)
+    const [examSetInfo, setExamSetInfo] = useState<ExamSetInfo | null>(null)
+    const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([])
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!examSetId) return
+            setLoading(true)
+            try {
+                const data = await getApplicantExamSetById(examSetId)
+                if (data) {
+                    setExamSetInfo({
+                        id: data.id,
+                        title: data.title,
+                        description: data.description || '',
+                        applicantName: data.applicantName,
+                        companyName: data.companyName,
+                        assignedDate: data.assignedDate || '',
+                        examDate: data.examDate || '',
+                        completedDate: '', // Should be fetched from results
+                        duration: data.duration,
+                        totalExams: data.totalExams,
+                        completedExams: data.completedExams,
+                        averageScore: data.progress || 0,
+                        status: data.status as any,
+                        applicantId: data.applicantId || '',
+                        collectionId: data.collectionId?.toString() || '',
+                    })
+
+                    // Fetch results
+                    if (data.collectionId && data.applicantId) {
+                        const resultsResponse = await getExamAssignmentResults(data.collectionId, data.applicantId)
+                        if (resultsResponse && resultsResponse.user_answers) {
+                            setUserAnswers(resultsResponse.user_answers)
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching exam set info:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchData()
+    }, [examSetId])
 
     // Mock files data
     const [files, setFiles] = useState<FileItem[]>([
@@ -294,10 +368,45 @@ const ApplicantExamResults = () => {
         </Table>
     )
 
+    const handleExport = async (settings: ExportSettings) => {
+        if (!userAnswers.length || !examSetInfo) return
+
+        const exportData = userAnswers.map(ans => ({
+            applicantName: examSetInfo.applicantName,
+            companyName: examSetInfo.companyName,
+            examTitle: ans.exam.title,
+            completedAt: dayjs(ans.completed_at).format('YYYY/MM/DD HH:mm'),
+            sections: ans.answers.sections
+        }))
+
+        const filename = `Results-${examSetInfo.applicantName}-${dayjs().format('YYYY-MM-DD')}`
+
+        // Always use ZIP for bulk export to provide separate files
+        await exportToZip(exportData, settings, filename)
+    }
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px]">
+                <Loading loading={true} />
+                <p className="mt-4 text-gray-500">در حال دریافت اطلاعات...</p>
+            </div>
+        )
+    }
+
+    if (!examSetInfo) {
+        return (
+            <div className="text-center py-20">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">اطلاعاتی یافت نشد</h3>
+                <Button className="mt-4" onClick={() => navigate('/admin/applicant-exams')}>بازگشت به لیست</Button>
+            </div>
+        )
+    }
+
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center gap4">
+            <div className="flex items-center gap-4">
                 <Button
                     variant="plain"
                     icon={<HiOutlineArrowLeft />}
@@ -305,13 +414,39 @@ const ApplicantExamResults = () => {
                 >
                     بازگشت
                 </Button>
-                <div id="admin-exam-results-header">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                        نتایج {examSetInfo.title}
-                    </h1>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        {examSetInfo.applicantName} - {examSetInfo.companyName}
-                    </p>
+                <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-2xl shadow-sm border border-indigo-200 dark:border-indigo-800">
+                        {examSetInfo.applicantName.charAt(0)}
+                    </div>
+                    <div id="admin-exam-results-header">
+                        <div className="flex items-center gap-2 mb-1">
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                نتایج {examSetInfo.title}
+                            </h1>
+                            <Tag className={classNames(
+                                "border-0 text-white",
+                                examSetInfo.status === 'completed' ? "bg-emerald-500" : "bg-amber-500"
+                            )}>
+                                {examSetInfo.status === 'completed' ? 'تکمیل شده' : 'در حال انجام'}
+                            </Tag>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
+                            <span className="flex items-center gap-1.5 font-medium text-gray-900 dark:text-white">
+                                <HiOutlineUser className="text-lg text-indigo-500" />
+                                {examSetInfo.applicantName}
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <HiOutlineOfficeBuilding className="text-lg text-indigo-500" />
+                                {examSetInfo.companyName}
+                            </span>
+                            {examSetInfo.id && (
+                                <span className="flex items-center gap-1.5">
+                                    <HiOutlineIdentification className="text-lg text-indigo-500" />
+                                    کد اختصاصی: <span className="font-mono">{examSetInfo.id}</span>
+                                </span>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -494,100 +629,80 @@ const ApplicantExamResults = () => {
                             </Card>
                         </TabContent>
 
-                        {/* Answer Sheets Tab - NEW */}
+                        {/* Answer Sheets Tab */}
                         <TabContent value="answer-sheets">
-                            <div>
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                            <div className="space-y-4">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
                                         پاسخنامه‌های آزمون‌ها
                                     </h4>
-                                    <Segment value={layout} onChange={(val) => setLayout(val as Layout)}>
-                                        <Segment.Item value="grid" className="text-xl px-3">
-                                            <TbLayoutGrid />
-                                        </Segment.Item>
-                                        <Segment.Item value="list" className="text-xl px-3">
-                                            <TbList />
-                                        </Segment.Item>
-                                    </Segment>
+                                    <div className="flex items-center gap-2">
+                                        <Button 
+                                            variant="solid" 
+                                            color="indigo-600"
+                                            icon={<HiOutlineDownload />}
+                                            onClick={() => setIsExportModalOpen(true)}
+                                            disabled={userAnswers.length === 0}
+                                        >
+                                            خروجی نتایج
+                                        </Button>
+                                    </div>
                                 </div>
 
-                                {wordFiles.length > 0 ? (
-                                    <>
-                                        {layout === 'grid' && (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                {wordFiles.map((file) => (
-                                                    <Card key={file.id} className="p-4">
-                                                        <div className="flex flex-col items-center text-center">
-                                                            <FileIcon type="docx" size={60} />
-                                                            <h6 className="font-semibold text-gray-900 dark:text-white mt-3 mb-1">
-                                                                {file.examTitle}
-                                                            </h6>
-                                                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                                                                {file.fileName}
-                                                            </p>
-                                                            <p className="text-xs text-gray-400 mb-3">
-                                                                {formatFileSize(file.size)}
-                                                            </p>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="default"
-                                                                icon={<HiOutlineDownload />}
-                                                                onClick={() => handleDownload(file.fileName)}
-                                                                className="w-full"
-                                                            >
-                                                                دانلود
-                                                            </Button>
-                                                        </div>
-                                                    </Card>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        {layout === 'list' && (
-                                            <Table>
-                                                <THead>
-                                                    <Tr>
-                                                        <Th>عنوان آزمون</Th>
-                                                        <Th>نام فایل</Th>
-                                                        <Th>حجم</Th>
-                                                        <Th>تاریخ</Th>
-                                                        <Th></Th>
-                                                    </Tr>
-                                                </THead>
-                                                <TBody>
-                                                    {wordFiles.map((file) => (
-                                                        <Tr key={file.id}>
-                                                            <Td>
-                                                                <div className="flex items-center gap-3">
-                                                                    <FileIcon type="docx" size={32} />
-                                                                    <span className="font-semibold text-gray-900 dark:text-white">
-                                                                        {file.examTitle}
-                                                                    </span>
+                                {userAnswers.length > 0 ? (
+                                    <Table>
+                                        <THead>
+                                            <Tr>
+                                                <Th>عنوان آزمون</Th>
+                                                <Th>تاریخ تکمیل</Th>
+                                                <Th className="text-center">عملیات</Th>
+                                            </Tr>
+                                        </THead>
+                                        <TBody>
+                                            {userAnswers.map((answer) => (
+                                                <Tr key={answer.id}>
+                                                    <Td>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500">
+                                                                <HiOutlineClipboardList className="text-lg" />
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-semibold text-gray-900 dark:text-white">
+                                                                    {answer.exam.title}
                                                                 </div>
-                                                            </Td>
-                                                            <Td>
-                                                                <span className="text-gray-600 dark:text-gray-400">
-                                                                    {file.fileName}
-                                                                </span>
-                                                            </Td>
-                                                            <Td>{formatFileSize(file.size)}</Td>
-                                                            <Td>{file.uploadDate}</Td>
-                                                            <Td>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="default"
-                                                                    icon={<HiOutlineDownload />}
-                                                                    onClick={() => handleDownload(file.fileName)}
-                                                                >
-                                                                    دانلود
-                                                                </Button>
-                                                            </Td>
-                                                        </Tr>
-                                                    ))}
-                                                </TBody>
-                                            </Table>
-                                        )}
-                                    </>
+                                                                <div className="text-xs text-gray-500">
+                                                                    مدت آزمون: {answer.exam.duration} دقیقه
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </Td>
+                                                    <Td>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                                {dayjs(answer.completed_at).format('YYYY/MM/DD')}
+                                                            </span>
+                                                            <span className="text-[10px] text-gray-400">
+                                                                ساعت {dayjs(answer.completed_at).format('HH:mm')}
+                                                            </span>
+                                                        </div>
+                                                    </Td>
+                                                    <Td className="text-center">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="solid"
+                                                            color="indigo-600"
+                                                            icon={<HiOutlineDocumentSearch />}
+                                                            onClick={() => {
+                                                                navigate(`/admin/applicant-exams/${examSetId}/results/${answer.id}`)
+                                                            }}
+                                                        >
+                                                            مشاهده پاسخنامه
+                                                        </Button>
+                                                    </Td>
+                                                </Tr>
+                                            ))}
+                                        </TBody>
+                                    </Table>
                                 ) : (
                                     <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
                                         <HiOutlineDocumentText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
@@ -710,6 +825,14 @@ const ApplicantExamResults = () => {
                     </div>
                 </Tabs>
             </Card>
+
+            <ExportSettingsModal 
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+                onConfirm={handleExport}
+                isBulk={true}
+                title="خروجی یکجای نتایج"
+            />
         </div>
     )
 }

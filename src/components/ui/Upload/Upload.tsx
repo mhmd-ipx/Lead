@@ -173,6 +173,7 @@ const Upload = forwardRef<HTMLDivElement, UploadProps>((props, ref) => {
         onDragLeave: handleDragLeave,
         onDragOver: handleDragOver,
         onDrop: handleDrop,
+        onClick: triggerUpload,
     }
 
     const draggableEventFeedbackClass = `border-primary`
@@ -209,6 +210,7 @@ const Upload = forwardRef<HTMLDivElement, UploadProps>((props, ref) => {
                     title=""
                     value=""
                     onChange={onNewFileUpload}
+                    onClick={(e) => e.stopPropagation()}
                     {...rest}
                 ></input>
                 {renderChildren()}

@@ -1,16 +1,16 @@
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
-import { Card, Button, Input, Checkbox, Radio } from '@/components/ui'
+import { Card, Button, Input, Checkbox, Upload, Progress, Notification, toast, Select } from '@/components/ui'
 import { FormItem } from '@/components/ui/Form'
-import RichTextEditor from '@/components/shared/RichTextEditor'
-import { HiOutlineX } from 'react-icons/hi'
+import { HiOutlineX, HiOutlinePhotograph, HiOutlineTrash, HiOutlineRefresh } from 'react-icons/hi'
+import { apiUploadFile } from '@/services/FileService'
 import MultipleChoiceEditor from '../editors/MultipleChoiceEditor'
 import DescriptiveEditor from '../editors/DescriptiveEditor'
 import MixedEditor from '../editors/MixedEditor'
 import RankingEditor from '../editors/RankingEditor'
-import type { Question, QuestionType, MultipleChoiceQuestion, DescriptiveQuestion, MixedQuestion, RankingQuestion } from '../types/QuestionTypes'
+import type { Question, QuestionType, MultipleChoiceQuestion, DescriptiveQuestion, MixedQuestion, OrderQuestion, CheckBoxQuestion } from '../types/QuestionTypes'
 
 interface QuestionFormProps {
-    onSave: (question: Question) => void
+    onSave: (question: Question, addAnother?: boolean) => void
     onCancel: () => void
     existingQuestion?: Question
     questionNumber: number
@@ -21,20 +21,23 @@ export interface QuestionFormRef {
 }
 
 const questionTypeOptions = [
-    { value: 'multiple_choice', label: 'تستی (چند گزینه‌ای)' },
+    { value: 'multiple_choice', label: 'تستی' },
     { value: 'descriptive', label: 'تشریحی' },
-    { value: 'mixed', label: 'تستی-تشریحی' },
-    { value: 'ranking', label: 'اولویت‌بندی' },
+    { value: 'check_box', label: 'تستی (چند گزینه‌ای)' },
+    { value: 'mixed', label: 'تشریحی-تستی' },
+    { value: 'order', label: 'اولویت‌بندی' },
 ]
 
 const QuestionForm = forwardRef<QuestionFormRef, QuestionFormProps>(({ onSave, onCancel, existingQuestion, questionNumber }, ref) => {
-    const [questionType, setQuestionType] = useState<QuestionType>('multiple_choice')
-    const [title, setTitle] = useState('')
+    const [questionType, setQuestionType] = useState<QuestionType>(existingQuestion?.type || 'multiple_choice')
+    const [title, setTitle] = useState(existingQuestion?.title || '')
+    const [image, setImage] = useState(existingQuestion?.image || '')
+    const [fileId, setFileId] = useState<number | string | undefined>(existingQuestion?.file_id)
+    const [isUploading, setIsUploading] = useState(false)
+    const [uploadProgress, setUploadProgress] = useState(0)
 
-
-    // Multiple Choice / Mixed states
+    // Multiple Choice / Checkbox / Mixed states
     const [mcOptions, setMcOptions] = useState<any[]>([])
-    const [allowMultiple, setAllowMultiple] = useState(false)
 
     // Descriptive states
     const [maxLength, setMaxLength] = useState<number>()
@@ -52,12 +55,13 @@ const QuestionForm = forwardRef<QuestionFormRef, QuestionFormProps>(({ onSave, o
         if (existingQuestion) {
             setQuestionType(existingQuestion.type)
             setTitle(existingQuestion.title)
-
+            setImage(existingQuestion.image || '')
+            setFileId(existingQuestion.file_id)
 
             switch (existingQuestion.type) {
                 case 'multiple_choice':
-                    setMcOptions((existingQuestion as MultipleChoiceQuestion).options)
-                    setAllowMultiple((existingQuestion as MultipleChoiceQuestion).allowMultiple)
+                case 'check_box':
+                    setMcOptions((existingQuestion as any).options || [])
                     break
                 case 'descriptive':
                     setMaxLength((existingQuestion as DescriptiveQuestion).maxLength)
@@ -65,25 +69,26 @@ const QuestionForm = forwardRef<QuestionFormRef, QuestionFormProps>(({ onSave, o
                     setPlaceholder((existingQuestion as DescriptiveQuestion).placeholder)
                     break
                 case 'mixed':
-                    setMcOptions((existingQuestion as MixedQuestion).options)
-                    setAllowMultiple((existingQuestion as MixedQuestion).allowMultiple)
+                    setMcOptions((existingQuestion as MixedQuestion).options || [])
                     setDescriptionRequired((existingQuestion as MixedQuestion).descriptionRequired)
                     setDescriptionPlaceholder((existingQuestion as MixedQuestion).descriptionPlaceholder)
                     break
-                case 'ranking':
-                    setRankingOptions((existingQuestion as RankingQuestion).options)
+                case 'order':
+                    setRankingOptions((existingQuestion as OrderQuestion).options || [])
                     break
             }
         }
     }, [existingQuestion])
 
     const isValid = () => {
+        if (!title.trim()) return false
 
         switch (questionType) {
             case 'multiple_choice':
+            case 'check_box':
             case 'mixed':
                 return mcOptions.length >= 2 && mcOptions.some(opt => opt.text.trim())
-            case 'ranking':
+            case 'order':
                 return rankingOptions.length >= 2 && rankingOptions.some(opt => opt.text.trim())
             case 'descriptive':
                 return true
@@ -99,6 +104,8 @@ const QuestionForm = forwardRef<QuestionFormRef, QuestionFormProps>(({ onSave, o
             id: existingQuestion?.id || Date.now().toString(),
             priority: existingQuestion?.priority || questionNumber,
             title,
+            image,
+            file_id: fileId,
             description: undefined,
             required: true,
             score: 1,
@@ -112,8 +119,15 @@ const QuestionForm = forwardRef<QuestionFormRef, QuestionFormProps>(({ onSave, o
                     ...baseData,
                     type: 'multiple_choice',
                     options: mcOptions,
-                    allowMultiple,
                 } as MultipleChoiceQuestion
+                break
+
+            case 'check_box':
+                questionData = {
+                    ...baseData,
+                    type: 'check_box',
+                    options: mcOptions,
+                } as CheckBoxQuestion
                 break
 
             case 'descriptive':
@@ -131,18 +145,17 @@ const QuestionForm = forwardRef<QuestionFormRef, QuestionFormProps>(({ onSave, o
                     ...baseData,
                     type: 'mixed',
                     options: mcOptions,
-                    allowMultiple,
                     descriptionRequired,
                     descriptionPlaceholder,
                 } as MixedQuestion
                 break
 
-            case 'ranking':
+            case 'order':
                 questionData = {
                     ...baseData,
-                    type: 'ranking',
+                    type: 'order',
                     options: rankingOptions,
-                } as RankingQuestion
+                } as OrderQuestion
                 break
 
             default:
@@ -179,37 +192,86 @@ const QuestionForm = forwardRef<QuestionFormRef, QuestionFormProps>(({ onSave, o
 
                 {/* Question Type */}
                 <FormItem label="نوع سوال">
-                    <Radio.Group
-                        value={questionType}
-                        onChange={(val) => setQuestionType(val as QuestionType)}
-                    >
-                        {questionTypeOptions.map((option) => (
-                            <Radio key={option.value} value={option.value}>
-                                {option.label}
-                            </Radio>
-                        ))}
-                    </Radio.Group>
+                    <Select
+                        options={questionTypeOptions}
+                        value={questionTypeOptions.find((o) => o.value === questionType)}
+                        onChange={(val: any) => setQuestionType(val?.value as QuestionType)}
+                        placeholder="نوع سوال را انتخاب کنید"
+                    />
                 </FormItem>
 
                 {/* Title */}
                 <FormItem label="متن سوال">
-                    <RichTextEditor
-                        content={title}
-                        onChange={({ html }) => setTitle(html || '')}
+                    <Input
+                        textArea
+                        rows={3}
+                        placeholder="متن سوال را وارد کنید..."
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
                     />
+                    <div className="mt-3 flex flex-wrap items-center gap-4">
+                        <Upload 
+                            showList={false}
+                            onChange={async (files) => {
+                                if (files[0]) {
+                                    const localUrl = URL.createObjectURL(files[0])
+                                    setImage(localUrl)
+                                    setIsUploading(true)
+                                    setUploadProgress(0)
+                                    try {
+                                        const res = await apiUploadFile(files[0], (p) => setUploadProgress(p))
+                                        if (res && res.id) {
+                                            setFileId(res.id)
+                                            setImage(res.address || localUrl)
+                                        }
+                                    } catch (err) {
+                                        toast.push(<Notification type="danger">خطا در آپلود تصویر</Notification>)
+                                    } finally {
+                                        setIsUploading(false)
+                                    }
+                                }
+                            }}
+                        >
+                            <Button 
+                                type="button" 
+                                size="sm" 
+                                variant="plain" 
+                                icon={isUploading ? <HiOutlineRefresh className="animate-spin" /> : <HiOutlinePhotograph />}
+                                disabled={isUploading}
+                            >
+                                {isUploading ? `در حال آپلود ${uploadProgress}%` : (image ? 'تغییر تصویر سوال' : 'افزودن تصویر به سوال')}
+                            </Button>
+                        </Upload>
+                        {image && (
+                            <div className="relative group">
+                                <img src={image} alt="Question" className="h-20 w-auto rounded border shadow-sm" />
+                                <Button
+                                    type="button"
+                                    size="xs"
+                                    variant="solid"
+                                    shape="circle"
+                                    icon={<HiOutlineTrash />}
+                                    onClick={() => {
+                                        setImage('')
+                                        setFileId(undefined)
+                                    }}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                />
+                            </div>
+                        )}
+                    </div>
                 </FormItem>
 
 
 
                 {/* Type-specific editors */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                    {questionType === 'multiple_choice' && (
+                    {(questionType === 'multiple_choice' || questionType === 'check_box') && (
                         <MultipleChoiceEditor
                             options={mcOptions}
-                            allowMultiple={allowMultiple}
-                            onChange={(options, multiple) => {
+                            allowMultiple={questionType === 'check_box'} // Keep this prop if Editor still expects it, or pass false if we update Editor
+                            onChange={(options) => {
                                 setMcOptions(options)
-                                setAllowMultiple(multiple)
                             }}
                         />
                     )}
@@ -230,24 +292,60 @@ const QuestionForm = forwardRef<QuestionFormRef, QuestionFormProps>(({ onSave, o
                     {questionType === 'mixed' && (
                         <MixedEditor
                             options={mcOptions}
-                            allowMultiple={allowMultiple}
+                            allowMultiple={false}
                             descriptionRequired={descriptionRequired}
                             descriptionPlaceholder={descriptionPlaceholder}
                             onChange={(data) => {
                                 setMcOptions(data.options)
-                                setAllowMultiple(data.allowMultiple)
                                 setDescriptionRequired(data.descriptionRequired)
                                 setDescriptionPlaceholder(data.descriptionPlaceholder)
                             }}
                         />
                     )}
 
-                    {questionType === 'ranking' && (
+                    {questionType === 'order' && (
                         <RankingEditor
                             options={rankingOptions}
                             onChange={setRankingOptions}
                         />
                     )}
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex items-center justify-end gap-2 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <Button 
+                        type="button" 
+                        size="sm" 
+                        variant="plain" 
+                        onClick={onCancel}
+                        disabled={isUploading}
+                    >
+                        انصراف
+                    </Button>
+                    <Button 
+                        type="button" 
+                        size="sm" 
+                        variant="solid" 
+                        onClick={() => {
+                            const data = getQuestionData()
+                            if (data) onSave(data, true)
+                        }}
+                        disabled={!isValid() || isUploading}
+                    >
+                        ذخیره و افزودن بعدی
+                    </Button>
+                    <Button 
+                        type="button" 
+                        size="sm" 
+                        variant="solid" 
+                        onClick={() => {
+                            const data = getQuestionData()
+                            if (data) onSave(data, false)
+                        }}
+                        disabled={!isValid() || isUploading}
+                    >
+                        ذخیره سوال
+                    </Button>
                 </div>
             </div>
         </Card>

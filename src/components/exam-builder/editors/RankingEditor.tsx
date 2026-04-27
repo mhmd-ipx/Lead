@@ -1,27 +1,30 @@
 import { useState } from 'react'
 import { Button, Input, Upload } from '@/components/ui'
-import { HiOutlinePlus, HiOutlineTrash, HiOutlinePhotograph } from 'react-icons/hi'
+import { HiOutlinePlus, HiOutlineTrash, HiOutlinePhotograph, HiOutlineRefresh } from 'react-icons/hi'
+import { apiUploadFile } from '@/services/FileService'
+import { Notification, toast } from '@/components/ui'
 import { MdDragIndicator } from 'react-icons/md'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
-import RichTextEditor from '@/components/shared/RichTextEditor'
-import type { RankingOption } from '../types/QuestionTypes'
+import QuestionFileImage from '../components/QuestionFileImage'
+import type { QuestionOption } from '../types/QuestionTypes'
 
 interface RankingEditorProps {
-    options: RankingOption[]
-    onChange: (options: RankingOption[]) => void
+    options: QuestionOption[]
+    onChange: (options: QuestionOption[]) => void
 }
 
 const RankingEditor = ({ options, onChange }: RankingEditorProps) => {
     const addOption = () => {
-        const newOption: RankingOption = {
+        const newOption: QuestionOption = {
             id: Date.now().toString(),
             text: '',
             correctOrder: options.length + 1,
+            file_id: undefined
         }
         onChange([...options, newOption])
     }
 
-    const updateOption = (id: string, updates: Partial<RankingOption>) => {
+    const updateOption = (id: string, updates: Partial<QuestionOption>) => {
         onChange(options.map(opt => opt.id === id ? { ...opt, ...updates } : opt))
     }
 
@@ -47,10 +50,23 @@ const RankingEditor = ({ options, onChange }: RankingEditorProps) => {
         onChange(updatedOptions)
     }
 
-    const handleImageUpload = (optionId: string, fileList: File[]) => {
-        if (fileList && fileList[0]) {
-            const imageUrl = URL.createObjectURL(fileList[0])
-            updateOption(optionId, { image: imageUrl })
+    const handleImageUpload = async (optionId: string, files: File[]) => {
+        if (files && files[0]) {
+            const localUrl = URL.createObjectURL(files[0])
+            updateOption(optionId, { image: localUrl, file_id: 'uploading' })
+            
+            try {
+                const res = await apiUploadFile(files[0])
+                if (res && res.id) {
+                    updateOption(optionId, { 
+                        image: res.address || localUrl, 
+                        file_id: res.id 
+                    })
+                }
+            } catch (err) {
+                toast.push(<Notification type="danger">خطا در آپلود تصویر</Notification>)
+                updateOption(optionId, { image: undefined, file_id: undefined })
+            }
         }
     }
 
@@ -130,40 +146,45 @@ const RankingEditor = ({ options, onChange }: RankingEditorProps) => {
                                                             {option.correctOrder}
                                                         </div>
 
-                                                        <div className="flex-1">
-                                                            <RichTextEditor
-                                                                content={option.text}
-                                                                onChange={({ html }) => updateOption(option.id, { text: html || '' })}
+                                                        <div className="flex-1 flex items-start gap-2">
+                                                            <Input
+                                                                placeholder={`گزینه ${index + 1}`}
+                                                                value={option.text}
+                                                                onChange={(e) => updateOption(option.id, { text: e.target.value })}
                                                             />
-                                                        </div>
+                                                            
+                                                            <div className="flex items-center gap-1 shrink-0">
+                                                                <Upload 
+                                                                    showList={false}
+                                                                    onChange={(files) => handleImageUpload(option.id, files)}
+                                                                >
+                                                                    <Button
+                                                                        type="button"
+                                                                        size="sm"
+                                                                        variant="plain"
+                                                                        icon={option.file_id === 'uploading' ? <HiOutlineRefresh className="animate-spin" /> : <HiOutlinePhotograph />}
+                                                                        className={option.image ? 'text-primary-600' : 'text-gray-400'}
+                                                                        disabled={option.file_id === 'uploading'}
+                                                                    />
+                                                                </Upload>
 
-                                                        <Button
-                                                            type="button"
-                                                            variant="plain"
-                                                            size="xs"
-                                                            icon={<HiOutlineTrash />}
-                                                            onClick={() => deleteOption(option.id)}
-                                                            className="text-red-600 hover:text-red-700"
-                                                        />
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="plain"
+                                                                    size="xs"
+                                                                    icon={<HiOutlineTrash />}
+                                                                    onClick={() => deleteOption(option.id)}
+                                                                    className="text-red-600 hover:text-red-700"
+                                                                />
+                                                            </div>
+                                                        </div>
                                                     </div>
 
-                                                    {/* Image Upload */}
-                                                    <div className="mr-8">
-                                                        <Upload onChange={(files) => handleImageUpload(option.id, files)}>
-                                                            <Button
-                                                                type="button"
-                                                                size="xs"
-                                                                variant="plain"
-                                                                icon={<HiOutlinePhotograph />}
-                                                            >
-                                                                {option.image ? 'تغییر تصویر' : 'افزودن تصویر'}
-                                                            </Button>
-                                                        </Upload>
-                                                        {option.image && (
-                                                            <div className="mt-2 relative inline-block">
-                                                                <img
-                                                                    src={option.image}
-                                                                    alt="Option"
+                                                        {(option.file_id || option.image) && (
+                                                            <div className="mr-8 relative inline-block">
+                                                                <QuestionFileImage 
+                                                                    fileId={option.file_id}
+                                                                    fallbackUrl={option.image}
                                                                     className="h-20 w-auto rounded border border-gray-200 dark:border-gray-700"
                                                                 />
                                                                 <Button
@@ -171,12 +192,11 @@ const RankingEditor = ({ options, onChange }: RankingEditorProps) => {
                                                                     size="xs"
                                                                     variant="plain"
                                                                     icon={<HiOutlineTrash />}
-                                                                    onClick={() => updateOption(option.id, { image: undefined })}
-                                                                    className="absolute -top-2 -right-2 bg-white dark:bg-gray-800 rounded-full text-red-600"
+                                                                    onClick={() => updateOption(option.id, { image: undefined, file_id: undefined })}
+                                                                    className="absolute -top-2 -right-2 bg-white dark:bg-gray-800 rounded-full text-red-600 shadow-sm"
                                                                 />
                                                             </div>
                                                         )}
-                                                    </div>
                                                 </div>
                                             </div>
                                         )}

@@ -1,5 +1,5 @@
 // Question Types
-export type QuestionType = 'multiple_choice' | 'descriptive' | 'mixed' | 'ranking'
+export type QuestionType = 'multiple_choice' | 'descriptive' | 'check_box' | 'mixed' | 'order'
 
 export interface BaseQuestion {
     id: string
@@ -9,20 +9,29 @@ export interface BaseQuestion {
     description?: string
     required: boolean
     score: number
+    image?: string
+    file_id?: number | string
 }
 
-// Multiple Choice Question
-export interface MultipleChoiceOption {
+export interface QuestionOption {
     id: string
     text: string
     image?: string
-    isCorrect: boolean
+    isCorrect?: boolean
+    correctOrder?: number
+    file_id?: number | string
 }
 
+// Multiple Choice Question (Single Select)
 export interface MultipleChoiceQuestion extends BaseQuestion {
     type: 'multiple_choice'
-    options: MultipleChoiceOption[]
-    allowMultiple: boolean
+    options: QuestionOption[]
+}
+
+// Check Box Question (Multi Select)
+export interface CheckBoxQuestion extends BaseQuestion {
+    type: 'check_box'
+    options: QuestionOption[]
 }
 
 // Descriptive Question
@@ -36,31 +45,24 @@ export interface DescriptiveQuestion extends BaseQuestion {
 // Mixed Question (Multiple Choice + Descriptive)
 export interface MixedQuestion extends BaseQuestion {
     type: 'mixed'
-    options: MultipleChoiceOption[]
-    allowMultiple: boolean
+    options: QuestionOption[]
     descriptionRequired: boolean
     descriptionPlaceholder?: string
 }
 
-// Ranking Question
-export interface RankingOption {
-    id: string
-    text: string
-    image?: string
-    correctOrder: number
-}
-
-export interface RankingQuestion extends BaseQuestion {
-    type: 'ranking'
-    options: RankingOption[]
+// Order Question
+export interface OrderQuestion extends BaseQuestion {
+    type: 'order'
+    options: QuestionOption[]
 }
 
 // Union type for all questions
 export type Question =
     | MultipleChoiceQuestion
+    | CheckBoxQuestion
     | DescriptiveQuestion
     | MixedQuestion
-    | RankingQuestion
+    | OrderQuestion
 
 // Question Form Data
 export interface QuestionFormData {

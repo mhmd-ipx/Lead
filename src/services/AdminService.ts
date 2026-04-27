@@ -382,6 +382,9 @@ export async function getApplicantExamSets(): Promise<ApplicantExamSet[]> {
                             status = 'in_progress'
                         }
 
+                        // Map company if available
+                        const company = assignment.user?.company || assignment.company || assignment.user?.managed_company;
+                        
                         applicantExamSets.push({
                             id: assignment.id.toString(),
                             title: collection.title,
@@ -395,10 +398,10 @@ export async function getApplicantExamSets(): Promise<ApplicantExamSet[]> {
                             duration: collection.duration_minutes,
                             applicantId: assignment.user?.id?.toString() || '',
                             applicantName: assignment.user?.name || 'ناشناس',
-                            companyId: '0', // Not provided in API
-                            companyName: '-', // Not provided in API
-                            username: undefined, // Not provided
-                            password: undefined, // Not provided
+                            companyId: company?.id?.toString() || '0',
+                            companyName: company?.name || '-',
+                            username: assignment.user?.phone, // Use phone as username
+                            password: assignment.code, // Use assignment code as password
                             exams: collection.exams ? collection.exams.map((exam: any) => ({
                                 id: exam.id.toString(),
                                 title: exam.title,
@@ -419,6 +422,26 @@ export async function getApplicantExamSets(): Promise<ApplicantExamSet[]> {
     } catch (error) {
         console.error('Error fetching applicant exam sets:', error)
         return []
+    }
+}
+
+export async function getApplicantExamSetById(id: string): Promise<ApplicantExamSet | null> {
+    try {
+        const sets = await getApplicantExamSets()
+        return sets.find(s => s.id === id) || null
+    } catch (error) {
+        console.error('Error fetching applicant exam set by id:', error)
+        return null
+    }
+}
+
+export async function getExamAssignmentResults(collectionId: number | string, userId: number | string): Promise<any> {
+    try {
+        const response = await apiClient.get<any>(`/exam-collections/${collectionId}/results?user_id=${userId}`)
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching exam assignment results:', error)
+        throw error
     }
 }
 
@@ -716,7 +739,7 @@ import { Exam as ApiExam, ExamListResponse } from '@/@types/exam'
 
 export async function getExamsList(): Promise<ApiExam[]> {
     try {
-        const response = await apiClient.get<ExamListResponse>('/exams')
+        const response = await apiClient.get<ExamListResponse>(API_ENDPOINTS.EXAMS.BASE)
         if (response.success && Array.isArray(response.data)) {
             return response.data
         }
@@ -731,7 +754,7 @@ import { CreateExamRequest } from '@/@types/exam'
 
 export async function createExam(data: CreateExamRequest): Promise<any> {
     try {
-        const response = await apiClient.post('/exams', data)
+        const response = await apiClient.post(API_ENDPOINTS.EXAMS.CREATE, data)
         return response
     } catch (error) {
         console.error('Error creating exam:', error)
@@ -741,7 +764,7 @@ export async function createExam(data: CreateExamRequest): Promise<any> {
 
 export async function getExam(id: string): Promise<any> {
     try {
-        const response = await apiClient.get<any>(`/exams/${id}`)
+        const response = await apiClient.get<any>(API_ENDPOINTS.EXAMS.GET_BY_ID(id))
         return response
     } catch (error) {
         console.error('Error fetching exam:', error)
@@ -751,7 +774,7 @@ export async function getExam(id: string): Promise<any> {
 
 export async function updateExam(id: string, data: any): Promise<any> {
     try {
-        const response = await apiClient.put<any>(`/exams/${id}`, data)
+        const response = await apiClient.put<any>(API_ENDPOINTS.EXAMS.UPDATE(id), data)
         return response
     } catch (error) {
         console.error('Error updating exam:', error)
@@ -759,9 +782,18 @@ export async function updateExam(id: string, data: any): Promise<any> {
     }
 }
 
+export async function deleteExam(id: number | string): Promise<void> {
+    try {
+        await apiClient.delete(API_ENDPOINTS.EXAMS.DELETE(id))
+    } catch (error) {
+        console.error('Error deleting exam:', error)
+        throw error
+    }
+}
+
 export async function addExamSection(examId: string, data: any): Promise<any> {
     try {
-        const response = await apiClient.post<any>(`/exams/${examId}/sections`, data)
+        const response = await apiClient.post<any>(API_ENDPOINTS.EXAMS.ADD_SECTION(examId), data)
         return response
     } catch (error) {
         console.error('Error adding exam section:', error)
@@ -771,7 +803,7 @@ export async function addExamSection(examId: string, data: any): Promise<any> {
 
 export async function deleteExamSection(sectionId: string): Promise<any> {
     try {
-        const response = await apiClient.delete<any>(`/exam-sections/${sectionId}`)
+        const response = await apiClient.delete<any>(API_ENDPOINTS.EXAM_SECTIONS.DELETE(sectionId))
         return response
     } catch (error) {
         console.error('Error deleting exam section:', error)
@@ -781,7 +813,7 @@ export async function deleteExamSection(sectionId: string): Promise<any> {
 
 export async function updateExamSection(sectionId: string, data: any): Promise<any> {
     try {
-        const response = await apiClient.put<any>(`/exam-sections/${sectionId}`, data)
+        const response = await apiClient.put<any>(API_ENDPOINTS.EXAM_SECTIONS.UPDATE(sectionId), data)
         return response
     } catch (error) {
         console.error('Error updating exam section:', error)
@@ -789,11 +821,9 @@ export async function updateExamSection(sectionId: string, data: any): Promise<a
     }
 }
 
-// Add Question is currently under development as per user request
-export async function addExamQuestion(sectionId: string, data: any): Promise<any> {
-    // This might be updated later
+export async function addExamQuestion(data: any): Promise<any> {
     try {
-        const response = await apiClient.post<any>(`/exam-sections/${sectionId}/questions`, data)
+        const response = await apiClient.post<any>(API_ENDPOINTS.QUESTIONS.CREATE, data)
         return response
     } catch (error) {
         console.error('Error adding exam question:', error)
@@ -803,7 +833,7 @@ export async function addExamQuestion(sectionId: string, data: any): Promise<any
 
 export async function deleteExamQuestion(questionId: string): Promise<any> {
     try {
-        const response = await apiClient.delete<any>(`/questions/${questionId}`)
+        const response = await apiClient.delete<any>(API_ENDPOINTS.QUESTIONS.DELETE(questionId))
         return response
     } catch (error) {
         console.error('Error deleting exam question:', error)
@@ -813,7 +843,7 @@ export async function deleteExamQuestion(questionId: string): Promise<any> {
 
 export async function updateExamQuestion(questionId: string, data: any): Promise<any> {
     try {
-        const response = await apiClient.put<any>(`/questions/${questionId}`, data)
+        const response = await apiClient.put<any>(API_ENDPOINTS.QUESTIONS.UPDATE(questionId), data)
         return response
     } catch (error) {
         console.error('Error updating exam question:', error)

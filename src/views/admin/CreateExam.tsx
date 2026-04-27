@@ -3,7 +3,6 @@ import { Card, Button, Input, Notification, toast } from '@/components/ui'
 import { createExam } from '@/services/AdminService'
 import { CreateExamRequest } from '@/@types/exam'
 import { Form, FormItem } from '@/components/ui/Form'
-import RichTextEditor from '@/components/shared/RichTextEditor'
 import { useForm } from 'react-hook-form'
 import {
     HiOutlineClipboardCheck,
@@ -25,8 +24,10 @@ import {
     HiOutlineArrowLeft,
     HiOutlineChevronUp,
     HiOutlineChevronDown,
-    HiOutlineEye
+    HiOutlineEye,
+    HiOutlinePhotograph
 } from 'react-icons/hi'
+import QuestionFileImage from '@/components/exam-builder/components/QuestionFileImage'
 import { MdDragIndicator } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
@@ -43,10 +44,12 @@ dayjs.locale('fa')
 
 interface ExamSection {
     id: string
+    title?: string
     priority: number
     content: string
     questions: Question[]
     isExpanded: boolean
+    isNew?: boolean
 }
 
 interface ExamFormData {
@@ -66,10 +69,14 @@ const CreateExam = () => {
     const [viewingQuestion, setViewingQuestion] = useState<Question | null>(null)
     const questionFormRef = useRef<QuestionFormRef>(null)
 
+    const [editingSectionContentId, setEditingSectionContentId] = useState<string | null>(null)
+
     const {
         handleSubmit,
         formState: { errors },
         register,
+        setValue,
+        control
     } = useForm<ExamFormData>()
 
     const onSubmit = async (data: ExamFormData) => {
@@ -169,46 +176,43 @@ const CreateExam = () => {
                 passing_score: 1,
                 status: 'draft',
                 sections: finalSections.map(section => ({
-                    title: `بخش ${section.priority}`,
+                    title: section.title || `بخش ${section.priority}`,
                     description: section.content || '',
                     order: section.priority,
                     questions: section.questions.map(q => {
-                        let options: string[] = []
+                        let options: any[] = []
                         let correctAnswer = ''
-                        let mappedType = 'multiple_choice'
+                        let mappedType = q.type
 
-                        // Map frontend types to backend supported types (multiple_choice, true_false, descriptive)
-                        if (q.type === 'multiple_choice' || q.type === 'mixed' || q.type === 'ranking') {
-                            mappedType = 'multiple_choice'
+                        // Options parsing logic
+                        if (q.type === 'multiple_choice' || q.type === 'check_box' || q.type === 'mixed' || q.type === 'order') {
+                            const qOptions = (q as any).options || []
+                            
+                            // NEW STANDARD FORMAT FOR OPTIONS (JSON Stringified Elements)
+                            options = qOptions.map((o: any) => JSON.stringify({
+                                text: o.text || '',
+                                file_id: o.file_id || null
+                            }))
 
-                            if (q.type === 'multiple_choice' || q.type === 'mixed') {
-                                options = q.options.map(o => o.text || '')
-                                const correctOpt = q.options.find(o => o.isCorrect)
-                                if (correctOpt) {
-                                    correctAnswer = correctOpt.text
-                                } else if (options.length > 0) {
-                                    // Fallback: use first option if none marked correct
-                                    correctAnswer = options[0]
-                                }
-                            } else if (q.type === 'ranking') {
-                                options = q.options.map(o => o.text || '')
-                                if (options.length > 0) {
-                                    correctAnswer = options[0]
-                                }
+                            const correctOpt = qOptions.find((o: any) => o.isCorrect)
+                            if (correctOpt) {
+                                correctAnswer = correctOpt.text
+                            } else if (qOptions.length > 0) {
+                                correctAnswer = qOptions[0].text
                             }
                         } else if (q.type === 'descriptive') {
-                            mappedType = 'descriptive'
                             correctAnswer = '-'
                         }
 
                         return {
                             question: q.title,
-                            type: mappedType as 'multiple_choice' | 'descriptive',
+                            type: mappedType as any,
                             options: options.length > 0 ? options : null,
                             correct_answer: correctAnswer,
-                            score: 1,
-                            difficulty: 'easy',
-                            category: 'general'
+                            score: q.score || 1,
+                            difficulty: 'medium',
+                            category: 'general',
+                            file_id: q.file_id || null
                         }
                     })
                 }))
@@ -242,6 +246,7 @@ const CreateExam = () => {
             content: '',
             questions: [],
             isExpanded: true,
+            isNew: true
         }
         setSections([...sections, newSection])
     }
@@ -291,7 +296,7 @@ const CreateExam = () => {
         }, 50)
     }
 
-    const handleSaveQuestion = (question: Question) => {
+    const handleSaveQuestion = (question: Question, addAnother: boolean = false) => {
         let targetSectionId = addingToSection
 
         if (!targetSectionId && editingQuestion) {
@@ -320,8 +325,15 @@ const CreateExam = () => {
             return section
         }))
 
-        setAddingToSection(null)
-        setEditingQuestion(undefined)
+        if (addAnother) {
+            // Force reset by toggling state
+            const currentSection = targetSectionId
+            setAddingToSection(null)
+            setTimeout(() => setAddingToSection(currentSection), 50)
+        } else {
+            setAddingToSection(null)
+            setEditingQuestion(undefined)
+        }
     }
 
     const triggerQuestionSave = (): boolean => {
@@ -356,7 +368,7 @@ const CreateExam = () => {
         setEditingQuestion(undefined)
     }
 
-    const deleteQuestionFromSection = (sectionId: string, questionId: string) => {
+    const deleteQuestion = (sectionId: string, questionId: string) => {
         if (confirm('آیا از حذف این سوال اطمینان دارید؟')) {
             setSections(sections.map(section => {
                 if (section.id === sectionId) {
@@ -399,7 +411,6 @@ const CreateExam = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            {/* Header Section */}
             <div id="admin-create-exam-header" className="relative bg-blue-400 from-primary-600 to-primary-800 rounded-2xl shadow-xl overflow-hidden text-gray p-8">
                 <div className="absolute top-0 right-0 p-4 opacity-10">
                     <HiOutlineClipboardCheck className="w-64 h-64 transform rotate-12 translate-x-16 -translate-y-16" />
@@ -483,13 +494,10 @@ const CreateExam = () => {
                                     placeholder="توضیحات کوتاه"
                                 />
                             </FormItem>
-
-
                         </div>
                     </div>
                 </Card>
 
-                {/* Sections */}
                 {/* Sections */}
                 <Card id="admin-create-exam-sections" className="border border-gray-200 dark:border-gray-700 my-6">
                     <div className="p-6">
@@ -500,13 +508,11 @@ const CreateExam = () => {
                         </div>
 
                         <div className="relative mt-8">
-                            {/* Connector Line */}
                             <div className="absolute top-0 bottom-0 right-6 md:right-8 w-0.5 bg-gray-200 dark:bg-gray-700 z-0 h-full"></div>
 
                             <div className="space-y-12">
                                 {sections.map((section, index) => (
                                     <div key={section.id} className="relative z-10">
-                                        {/* Step Header */}
                                         <div className="flex items-center gap-4 mb-6 group">
                                             <div className="flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 z-10 relative">
                                                 <span className="text-xl md:text-2xl font-bold text-primary-600 dark:text-primary-400">
@@ -515,12 +521,31 @@ const CreateExam = () => {
                                             </div>
                                             <div className="flex-1 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center hover:shadow-md transition-shadow cursor-pointer" onClick={() => toggleSection(section.id)}>
                                                 <div>
-                                                    <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-                                                        بخش {index + 1}
-                                                    </h2>
+                                                    <div className="flex items-center gap-2">
+                                                        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                                                            {section.title || `بخش ${index + 1}`}
+                                                        </h2>
+                                                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-semibold rounded-full border border-blue-100">
+                                                            {section.questions?.length || 0} سوال
+                                                        </span>
+                                                    </div>
                                                     <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1" dangerouslySetInnerHTML={{ __html: section.content || 'بدون توضیحات' }} />
                                                 </div>
-                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex items-center gap-1">
+                                                    <Button 
+                                                        variant="plain" 
+                                                        shape="circle" 
+                                                        size="sm" 
+                                                        icon={<HiOutlinePencil />} 
+                                                        onClick={(e) => { 
+                                                            e.stopPropagation(); 
+                                                            setEditingSectionContentId(editingSectionContentId === section.id ? null : section.id) 
+                                                            if (!section.isExpanded) {
+                                                                toggleSection(section.id)
+                                                            }
+                                                        }} 
+                                                        className={editingSectionContentId === section.id ? 'text-primary-600' : 'text-gray-500'}
+                                                    />
                                                     <Button
                                                         variant="plain"
                                                         shape="circle"
@@ -537,20 +562,51 @@ const CreateExam = () => {
                                             </div>
                                         </div>
 
-                                        {/* Section Content */}
                                         {section.isExpanded && (
                                             <div className="mr-8 md:mr-12 space-y-6">
 
-                                                {/* Rich Text Editor for Content */}
-                                                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-6">
-                                                    <h6 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                                                        محتوای بخش (متن و تصویر)
-                                                    </h6>
-                                                    <RichTextEditor
-                                                        content={section.content}
-                                                        onChange={({ html }) => updateSectionContent(section.id, html || '')}
-                                                    />
-                                                </div>
+                                                {/* Edit Section Form */}
+                                                {(editingSectionContentId === section.id || section.isNew) && (
+                                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-6 animate-in slide-in-from-top-2 duration-200">
+                                                        <div className="flex justify-between items-center mb-3">
+                                                            <h6 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                                                ویرایش بخش
+                                                            </h6>
+                                                            <div className="flex gap-2">
+                                                                <Button size="xs" variant="plain" onClick={() => setEditingSectionContentId(null)}>
+                                                                    انصراف
+                                                                </Button>
+                                                                <Button size="xs" variant="solid" onClick={() => setEditingSectionContentId(null)}>
+                                                                    تایید محتوا
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-4">
+                                                            <div>
+                                                                <label className="text-sm">عنوان بخش</label>
+                                                                <Input 
+                                                                    placeholder="عنوان بخش را وارد کنید..."
+                                                                    value={section.title || ''} 
+                                                                    onChange={(e) => {
+                                                                        const newSections = [...sections]
+                                                                        newSections[index].title = e.target.value
+                                                                        setSections(newSections)
+                                                                    }} 
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-sm mb-1 block">محتوا</label>
+                                                                <Input
+                                                                    textArea
+                                                                    rows={5}
+                                                                    placeholder="محتوای بخش را وارد کنید..."
+                                                                    value={section.content}
+                                                                    onChange={(e) => updateSectionContent(section.id, e.target.value)}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
 
                                                 {/* Questions */}
                                                 <div>
@@ -577,7 +633,6 @@ const CreateExam = () => {
                                                                                     >
                                                                                         {editingQuestion?.id === question.id ? (
                                                                                             <div className="border-2 border-primary-500 rounded-xl p-4 bg-white dark:bg-gray-800">
-
                                                                                                 <QuestionForm
                                                                                                     ref={questionFormRef}
                                                                                                     onSave={handleSaveQuestion}
@@ -585,7 +640,6 @@ const CreateExam = () => {
                                                                                                     existingQuestion={editingQuestion}
                                                                                                     questionNumber={qIndex + 1}
                                                                                                 />
-
                                                                                             </div>
                                                                                         ) : (
                                                                                             <div className="relative group">
@@ -594,62 +648,61 @@ const CreateExam = () => {
                                                                                                     bodyClass="p-5"
                                                                                                 >
                                                                                                     <div className="flex items-start gap-4">
-                                                                                                        {/* Icons based on type */}
-                                                                                                        <div className="flex-shrink-0 mt-1">
-                                                                                                            {question.type === 'multiple_choice' && <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><HiOutlineCheckCircle /></div>}
-                                                                                                            {question.type === 'descriptive' && <div className="p-2 bg-green-50 text-green-600 rounded-lg"><HiOutlineMenuAlt2 /></div>}
-                                                                                                            {question.type === 'mixed' && <div className="p-2 bg-purple-50 text-purple-600 rounded-lg"><HiOutlineClipboardCheck /></div>}
-                                                                                                            {question.type === 'ranking' && <div className="p-2 bg-orange-50 text-orange-600 rounded-lg"><HiOutlineStar /></div>}
+                                                                                                        <div className="w-7 h-7 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 text-xs font-bold shrink-0">
+                                                                                                            {qIndex + 1}
                                                                                                         </div>
-
                                                                                                         <div className="flex-1">
-                                                                                                            <div className="flex justify-between items-start mb-3">
-                                                                                                                <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-lg line-clamp-2">
-                                                                                                                    <span dangerouslySetInnerHTML={{ __html: question.title }}></span>
-                                                                                                                </h3>
-                                                                                                                <div className="flex items-center gap-2">
-                                                                                                                    <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300">
-                                                                                                                        {question.type === 'multiple_choice' ? 'تستی' :
-                                                                                                                            question.type === 'descriptive' ? 'تشریحی' :
-                                                                                                                                question.type === 'mixed' ? 'تستی-تشریحی' : 'اولویت‌بندی'}
-                                                                                                                    </span>
-
-                                                                                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
-                                                                                                                        <div {...provided.dragHandleProps} className="cursor-move p-1 text-gray-400 hover:text-gray-600">
-                                                                                                                            <HiOutlineSelector />
-                                                                                                                        </div>
-                                                                                                                        <Button
-                                                                                                                            variant="plain"
-                                                                                                                            shape="circle"
-                                                                                                                            size="xs"
-                                                                                                                            icon={<HiOutlineEye />}
-                                                                                                                            onClick={() => viewQuestion(question)}
-                                                                                                                            className="text-gray-500 hover:text-gray-600"
-                                                                                                                        />
-                                                                                                                        <Button
-                                                                                                                            variant="plain"
-                                                                                                                            shape="circle"
-                                                                                                                            size="xs"
-                                                                                                                            icon={<HiOutlinePencil />}
-                                                                                                                            onClick={() => openQuestionForm(section.id, question)}
-                                                                                                                            className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
-                                                                                                                        />
-                                                                                                                        <Button
-                                                                                                                            variant="plain"
-                                                                                                                            shape="circle"
-                                                                                                                            size="xs"
-                                                                                                                            icon={<HiOutlineTrash />}
-                                                                                                                            onClick={() => deleteQuestionFromSection(section.id, question.id)}
-                                                                                                                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                                                                                        />
-                                                                                                                    </div>
-                                                                                                                </div>
-                                                                                                            </div>
-                                                                                                            <div className="text-sm text-gray-500 flex gap-4">
-                                                                                                                {(question as any).options?.length > 0 && <span>{(question as any).options.length} گزینه</span>}
+                                                                                                            <div className="flex items-start justify-between gap-4">
+                                                                                                        <h3 className="font-semibold text-gray-800 text-[15px] leading-relaxed line-clamp-2" dangerouslySetInnerHTML={{ __html: question.title }}></h3>
+                                                                                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                                                                                            <span className="px-2 py-0.5 text-[10px] bg-gray-100 text-gray-500 rounded font-medium mr-2">
+                                                                                                                {question.type === 'multiple_choice' ? 'تستی' : 
+                                                                                                                 question.type === 'descriptive' ? 'تشریحی' :
+                                                                                                                 question.type === 'mixed' ? 'تستی-تشریحی' : 'اولویت‌بندی'}
+                                                                                                            </span>
+                                                                                                            <Button size="xs" variant="plain" icon={<HiOutlinePencil />} onClick={() => openQuestionForm(section.id, question)} />
+                                                                                                            <Button size="xs" variant="plain" icon={<HiOutlineTrash />} onClick={() => deleteQuestion(section.id, question.id)} className="text-red-500" />
+                                                                                                            <div {...provided.dragHandleProps} className="p-1 text-gray-400 hover:text-gray-600 cursor-move">
+                                                                                                                <HiOutlineSelector />
                                                                                                             </div>
                                                                                                         </div>
                                                                                                     </div>
+                                                                                                            
+                                                                                                            {/* Question Image Preview */}
+                                                                                                            {(question.file_id || question.image) && (
+                                                                                                                <div className="mt-3">
+                                                                                                                    <QuestionFileImage 
+                                                                                                                        fileId={question.file_id} 
+                                                                                                                        fallbackUrl={question.image}
+                                                                                                                        className="h-24 w-auto rounded border object-cover" 
+                                                                                                                    />
+                                                                                                                </div>
+                                                                                                            )}
+
+                                                                                                            {/* Options Preview */}
+                                                                                                            {(question.type === 'multiple_choice' || question.type === 'mixed' || question.type === 'ranking') && (question as any).options?.length > 0 && (
+                                                                                                                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                                                                                    {(question as any).options.map((opt: any, optIdx: number) => (
+                                                                                                                        <div key={optIdx} className="text-[13px] p-1.5 rounded border border-gray-100 bg-gray-50 text-gray-600 flex items-center gap-2">
+                                                                                                                            <span className="w-4 h-4 rounded-full bg-white border flex items-center justify-center text-[9px] font-bold shrink-0">
+                                                                                                                                {optIdx + 1}
+                                                                                                                            </span>
+                                                                                                                            <div className="flex flex-col gap-1 overflow-hidden">
+                                                                                                                                <span className="truncate">{opt.text}</span>
+                                                                                                                                {(opt.file_id || opt.image) && (
+                                                                                                                                    <QuestionFileImage 
+                                                                                                                                        fileId={opt.file_id}
+                                                                                                                                        fallbackUrl={opt.image}
+                                                                                                                                        className="h-8 w-auto rounded border"
+                                                                                                                                    />
+                                                                                                                                )}
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                    ))}
+                                                                                                                </div>
+                                                                                                            )}
+
+                                                                                                            </div></div>
                                                                                                 </Card>
                                                                                             </div>
                                                                                         )}

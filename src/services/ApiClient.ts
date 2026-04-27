@@ -128,6 +128,7 @@ class ApiClient {
         file: File | Blob,
         fieldName: string = 'file',
         additionalData?: Record<string, any>,
+        config?: AxiosRequestConfig
     ): Promise<T> {
         const formData = new FormData()
         formData.append(fieldName, file)
@@ -142,9 +143,7 @@ class ApiClient {
             url,
             method: 'POST',
             data: formData,
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
+            ...config
         })
     }
 
@@ -156,6 +155,7 @@ class ApiClient {
         files: File[] | Blob[],
         fieldName: string = 'files[]',
         additionalData?: Record<string, any>,
+        config?: AxiosRequestConfig
     ): Promise<T> {
         const formData = new FormData()
 
@@ -173,9 +173,7 @@ class ApiClient {
             url,
             method: 'POST',
             data: formData,
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
+            ...config
         })
     }
 
