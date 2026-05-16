@@ -894,6 +894,73 @@ export async function updateExamCollection(id: number | string, data: any): Prom
     }
 }
 
+// Exam Collection Analysis
+export interface CollectionAnalysis {
+    admin_analysis: string | null
+    score_planning: number | null
+    score_project_control: number | null
+    score_risk_management: number | null
+    score_team_leadership: number | null
+    score_negotiation: number | null
+    score_decision_making: number | null
+    files: {
+        id: number
+        parent_id: number | null
+        is_folder: number
+        name: string
+        size: number
+        type: string
+        address: string
+        created_at: string
+        updated_at: string
+    }[]
+}
+
+export interface CreateUpdateAnalysisRequest {
+    user_id: number
+    admin_analysis?: string
+    score_planning?: number
+    score_project_control?: number
+    score_risk_management?: number
+    score_team_leadership?: number
+    score_negotiation?: number
+    score_decision_making?: number
+    file_ids?: number[]
+}
+
+export async function getCollectionAnalysis(collectionId: number | string, userId: number | string): Promise<CollectionAnalysis | null> {
+    try {
+        const response = await apiClient.get<any>(`/exam-collections/${collectionId}/analysis?user_id=${userId}`)
+        if (response.success && response.data) {
+            return response.data
+        }
+        return null
+    } catch (error) {
+        console.error('Error fetching collection analysis:', error)
+        return null
+    }
+}
+
+export async function createCollectionAnalysis(collectionId: number | string, data: CreateUpdateAnalysisRequest): Promise<any> {
+    try {
+        const response = await apiClient.post<any>(`/exam-collections/${collectionId}/analysis`, data)
+        return response
+    } catch (error) {
+        console.error('Error creating collection analysis:', error)
+        throw error
+    }
+}
+
+export async function updateCollectionAnalysis(collectionId: number | string, data: CreateUpdateAnalysisRequest): Promise<any> {
+    try {
+        const response = await apiClient.put<any>(`/exam-collections/${collectionId}/analysis`, data)
+        return response
+    } catch (error) {
+        console.error('Error updating collection analysis:', error)
+        throw error
+    }
+}
+
 // Dashboard Stats
 export interface AdminDashboardStats {
     tickets: {

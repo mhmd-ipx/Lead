@@ -150,6 +150,7 @@ const AllExamsResults = () => {
     const [collectionLoading, setCollectionLoading] = useState(false)
     const [collectionDetails, setCollectionDetails] = useState<CollectionDetails | null>(null)
     const [copied, setCopied] = useState(false)
+    const [collectionStatuses, setCollectionStatuses] = useState<Record<string, string>>({})
 
     useEffect(() => {
         loadExamSets()
@@ -171,6 +172,27 @@ const AllExamsResults = () => {
         try {
             const data = await getApplicantExamSets()
             setExamSets(data)
+
+            // Fetch collection statuses
+            const statuses: Record<string, string> = {}
+            const uniqueCollectionIds = [...new Set(data.map((d: any) => d.collectionId).filter(Boolean))]
+            await Promise.all(
+                uniqueCollectionIds.map(async (colId: any) => {
+                    try {
+                        const col = await getExamCollectionById(colId)
+                        const status = col?.data?.status || col?.status || 'active'
+                        // Map status to all exam sets with this collectionId
+                        data.forEach((d: any) => {
+                            if (d.collectionId?.toString() === colId?.toString()) {
+                                statuses[d.id] = status
+                            }
+                        })
+                    } catch (err) {
+                        console.error('Error fetching collection status:', err)
+                    }
+                })
+            )
+            setCollectionStatuses(statuses)
         } catch (error) {
             console.error('Error loading exam sets:', error)
         } finally {
@@ -449,12 +471,13 @@ const AllExamsResults = () => {
                                                             className="exams-results-action-info"
                                                         />
                                                     </Tooltip>
-                                                    <Tooltip title="مشاهده نتایج">
+                                                    <Tooltip title={collectionStatuses[examSet.id] === 'archived' ? 'مشاهده نتایج' : 'نتایج هنوز منتشر نشده'}>
                                                         <Button
                                                             variant="plain"
                                                             size="sm"
                                                             icon={<HiOutlineEye />}
                                                             onClick={() => navigate(`/owner/managers/${examSet.applicantId}/exams/${examSet.id}/results`)}
+                                                            disabled={collectionStatuses[examSet.id] !== 'archived'}
                                                         />
                                                     </Tooltip>
                                                 </div>
