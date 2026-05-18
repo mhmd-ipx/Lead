@@ -321,7 +321,7 @@ const BillView = () => {
                             شناسه: <span className="font-mono">#{bill.id}</span>
                             {bill.company && (
                                 <span className="mr-3">
-                                    شرکت: <span className="font-semibold text-gray-900 dark:text-white">{bill.company.name}</span>
+                                    سازمان: <span className="font-semibold text-gray-900 dark:text-white">{bill.company.name}</span>
                                 </span>
                             )}
                         </p>
@@ -509,7 +509,7 @@ const BillView = () => {
                 <div className="mb-4">
                     <h5 className="text-lg font-semibold">افزودن سند به صورتحساب</h5>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        اسناد مورد نظر را انتخاب کنید (محدود به شرکت {bill.company?.name})
+                        اسناد مورد نظر را انتخاب کنید (محدود به سازمان {bill.company?.name})
                     </p>
                 </div>
 

@@ -383,7 +383,8 @@ export async function getApplicantExamSets(): Promise<ApplicantExamSet[]> {
                         }
 
                         // Map company if available
-                        const company = assignment.user?.company || assignment.company || assignment.user?.managed_company;
+                        const company = assignment.user?.company || assignment.company || assignment.user?.managed_company || assignment.user?.manager?.company;
+                        const companyName = collection.company_name || company?.name || '-';
                         
                         applicantExamSets.push({
                             id: assignment.id.toString(),
@@ -399,7 +400,7 @@ export async function getApplicantExamSets(): Promise<ApplicantExamSet[]> {
                             applicantId: assignment.user?.id?.toString() || '',
                             applicantName: assignment.user?.name || 'ناشناس',
                             companyId: company?.id?.toString() || '0',
-                            companyName: company?.name || '-',
+                            companyName: companyName,
                             username: assignment.user?.phone, // Use phone as username
                             password: assignment.code, // Use assignment code as password
                             exams: collection.exams ? collection.exams.map((exam: any) => ({
@@ -1025,5 +1026,80 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
             exams: { total: 0 },
             bills: { unpaid: 0 },
         }
+    }
+}
+
+export interface SystemUser {
+    id: number
+    phone: string
+    avatar: string | null
+    role: 'admin' | 'owner' | 'user' | 'manager'
+    status: 'active' | 'inactive'
+    last_login: string | null
+    name: string
+    email: string | null
+    email_verified_at: string | null
+    created_at: string
+    updated_at: string
+    company: {
+        id: number
+        name: string
+        logo: string | null
+        status: string
+    } | null
+    companies: Array<{
+        id: number
+        name: string
+        logo: string | null
+        status: string
+    }>
+}
+
+export interface GetAdminUsersResponse {
+    data: SystemUser[]
+    total: number
+    last_page: number
+}
+
+export async function getAdminUsers(page: number = 1): Promise<GetAdminUsersResponse> {
+    try {
+        const response = await apiClient.get<any>(`/admin/users?page=${page}`)
+        
+        // If response or response.data has the paginated payload
+        if (response && response.data) {
+            return {
+                data: response.data.data || [],
+                total: response.data.total || 0,
+                last_page: response.data.last_page || 1
+            }
+        }
+        
+        return {
+            data: [],
+            total: 0,
+            last_page: 1
+        }
+    } catch (error) {
+        console.error('Error fetching admin users:', error)
+        throw error
+    }
+}
+
+export async function updateAdminUser(
+    id: number,
+    data: {
+        name: string
+        email: string | null
+        phone: string
+        role: 'admin' | 'owner' | 'user'
+        status: 'active' | 'inactive'
+    }
+): Promise<any> {
+    try {
+        const response = await apiClient.post<any>(`/admin/users/${id}`, data)
+        return response
+    } catch (error) {
+        console.error(`Error updating admin user ${id}:`, error)
+        throw error
     }
 }

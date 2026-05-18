@@ -16,7 +16,9 @@ export type ExportSettings = {
     includeTimestamp: boolean
 }
 
-const getOptionLabel = (index: number, type: ExportSettings['optionLabelType']) => {
+const getOptionLabel = (oneBasedIndex: number | undefined | null, type: ExportSettings['optionLabelType']) => {
+    if (oneBasedIndex === undefined || oneBasedIndex === null || isNaN(oneBasedIndex)) return ''
+    const index = oneBasedIndex - 1
     if (type === 'none') return ''
     if (type === 'number') return `${index + 1}`
     if (type === 'alpha') return `${String.fromCharCode(65 + index)}`
@@ -57,10 +59,12 @@ export const generateExcelBlob = (data: any[], settings: ExportSettings): Blob =
 
         result.sections.forEach((section: any) => {
             rows.push({ 'مورد': `بخش: ${section.section_title}` })
+            if (section.section_description) {
+                const strippedDesc = section.section_description.replace(/<[^>]*>?/gm, ' ');
+                rows.push({ 'مورد': `توضیحات بخش: ${strippedDesc}` })
+            }
             section.questions.forEach((q: any) => {
                 const label = q.question_number
-                // FIX: Ensure we use the correct flag for question text
-                const content = settings.showQuestionText ? (q.question_text || q.text || `سوال ${q.question_number}`) : `سوال ${q.question_number}`
                 
                 let answerText = ''
                 let answerLabel = ''
@@ -84,16 +88,20 @@ export const generateExcelBlob = (data: any[], settings: ExportSettings): Blob =
                     answerText = settings.showOptionText ? selected.map((o: any) => o.text).join(', ') : ''
                 } else if (q.type === 'order') {
                     const ordered = q.answer?.ordered_options || []
-                    answerLabel = ordered.map((o: any) => `${o.user_priority}: ${getOptionLabel(o.index, settings.optionLabelType)}`).join(' | ')
+                    answerLabel = ordered.map((o: any) => `${o.user_priority}: ${getOptionLabel(o.index ?? o.original_index, settings.optionLabelType)}`).join(' | ')
                     answerText = settings.showOptionText ? ordered.map((o: any) => `${o.user_priority}: ${o.text}`).join(' | ') : ''
                 }
 
-                rows.push({
+                const rowObj: any = {
                     'شماره': label,
-                    'سوال': content,
-                    'لیبل پاسخ': answerLabel,
-                    'متن پاسخ': answerText
-                })
+                }
+                if (settings.showQuestionText) {
+                    rowObj['سوال'] = q.question_text || q.text || `سوال ${q.question_number}`
+                }
+                rowObj['لیبل پاسخ'] = answerLabel
+                rowObj['متن پاسخ'] = answerText
+
+                rows.push(rowObj)
             })
             rows.push({})
         })
@@ -180,14 +188,19 @@ export const generateDocxBlob = async (result: any, settings: ExportSettings): P
         }))
 
         for (const q of section.questions) {
-            // FIX: Ensure we use the correct flag for question text
-            const questionText = settings.showQuestionText ? (q.question_text || q.text || `سوال ${q.question_number}`) : `سوال ${q.question_number}`
+            const questionParagraphChildren: any[] = [
+                new TextRun({ text: `${q.question_number}- `, bold: true, font: "IRANSans" })
+            ]
+
+            if (settings.showQuestionText) {
+                const questionText = q.question_text || q.text || `سوال ${q.question_number}`
+                questionParagraphChildren.push(
+                    new TextRun({ text: questionText, bold: true, font: "IRANSans" })
+                )
+            }
             
             children.push(new Paragraph({
-                children: [
-                    new TextRun({ text: `${q.question_number}- `, bold: true, font: "IRANSans" }),
-                    new TextRun({ text: questionText, bold: true, font: "IRANSans" }),
-                ],
+                children: questionParagraphChildren,
                 bidirectional: true,
                 spacing: { before: 200 }
             }))
@@ -220,12 +233,23 @@ export const generateDocxBlob = async (result: any, settings: ExportSettings): P
                 answerContent = [new TextRun({ text: `گزینه‌های انتخابی: ${labelText || '---'}`, color: "4F46E5", font: "IRANSans" })]
             } else if (q.type === 'order') {
                 const ordered = q.answer?.ordered_options || []
-                const labelText = ordered.map((o: any) => {
-                    const l = getOptionLabel(o.index, settings.optionLabelType)
-                    const t = settings.showOptionText ? o.text : ''
-                    return `${o.user_priority}: ${l}${l && t ? ' - ' : ''}${t}`
-                }).join(' | ')
-                answerContent = [new TextRun({ text: `اولویت‌بندی: ${labelText || '---'}`, color: "4F46E5", font: "IRANSans" })]
+                answerContent = [
+                    new TextRun({ text: 'اولویت‌بندی:', color: "4F46E5", bold: true, font: "IRANSans" })
+                ]
+                if (ordered.length > 0) {
+                    ordered.forEach((o: any) => {
+                        const l = getOptionLabel(o.index ?? o.original_index, settings.optionLabelType)
+                        const t = settings.showOptionText ? o.text : ''
+                        answerContent.push(new TextRun({
+                            text: `${o.user_priority}: ${l}${l && t ? ' - ' : ''}${t}`,
+                            break: 1,
+                            color: "4F46E5",
+                            font: "IRANSans"
+                        }))
+                    })
+                } else {
+                    answerContent.push(new TextRun({ text: ' ---', color: "4F46E5", font: "IRANSans" }))
+                }
             }
 
             children.push(new Paragraph({

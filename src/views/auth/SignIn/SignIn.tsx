@@ -32,7 +32,7 @@ export const SignInBase = ({ disableSubmit }: SignInProps) => {
     }
 
     return (
-        <div dir="rtl" className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div dir="rtl" className="animate-in  fade-in slide-in-from-bottom-4 duration-700">
             {/* Logo */}
             <div className="mb-8 text-center scale-up-center">
                 <img
@@ -45,16 +45,16 @@ export const SignInBase = ({ disableSubmit }: SignInProps) => {
 
             {/* Title */}
             <div className="mb-6 text-center">
-                <h1 className="mb-2 text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-600 dark:from-blue-400 dark:via-indigo-300 dark:to-blue-400 leading-relaxed">
+                <h1 className="mb-2 text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-800 via-indigo-700 to-blue-700 dark:from-blue-400 dark:via-indigo-300 dark:to-blue-400 leading-relaxed">
                     پروژه ارزیابی و توسعه مدیران
                 </h1>
-                <p className="text-gray-500 dark:text-gray-400 font-medium text-sm">
+                <p className="text-slate-800 dark:text-slate-200 font-bold text-sm">
                     نوع ورود خود را انتخاب کنید
                 </p>
             </div>
 
             {/* Tab Switcher */}
-            <div className="relative flex rounded-xl p-1 mb-6 bg-gray-100 dark:bg-gray-800">
+            <div className="relative flex rounded-xl p-1 mb-6 bg-slate-100/90 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60">
                 {/* Sliding indicator */}
                 <div
                     className={classNames(
@@ -69,10 +69,10 @@ export const SignInBase = ({ disableSubmit }: SignInProps) => {
                     type="button"
                     onClick={() => setActiveTab('employer')}
                     className={classNames(
-                        'relative z-10 flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors duration-300 select-none',
+                        'relative z-10 flex-1 py-2.5 text-sm font-bold rounded-lg transition-colors duration-300 select-none',
                         activeTab === 'employer'
                             ? 'text-white'
-                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
+                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100',
                     )}
                 >
                     <span className="flex items-center justify-center gap-1.5">
@@ -87,10 +87,10 @@ export const SignInBase = ({ disableSubmit }: SignInProps) => {
                     type="button"
                     onClick={() => setActiveTab('examiner')}
                     className={classNames(
-                        'relative z-10 flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors duration-300 select-none',
+                        'relative z-10 flex-1 py-2.5 text-sm font-bold rounded-lg transition-colors duration-300 select-none',
                         activeTab === 'examiner'
                             ? 'text-white'
-                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
+                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100',
                     )}
                 >
                     <span className="flex items-center justify-center gap-1.5">

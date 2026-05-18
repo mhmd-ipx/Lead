@@ -16,7 +16,7 @@ const FooterContent = () => {
             <span>
                 Copyright &copy; {`${new Date().getFullYear()}`}{' '}
                 <span className="font-semibold">{`${APP_NAME}`}</span> All
-                rights reserved.
+                rights reserved
             </span>
             <div className="">
                 <a

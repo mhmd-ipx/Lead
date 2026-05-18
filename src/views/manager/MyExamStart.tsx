@@ -34,6 +34,8 @@ const MyExamStart = () => {
     const [currentStep, setCurrentStep] = useState(0)
     const [answers, setAnswers] = useState<Record<number, string>>({})
     const [submitting, setSubmitting] = useState(false)
+    const [submittedWithErrors, setSubmittedWithErrors] = useState(false)
+    const [scrollToQuestionId, setScrollToQuestionId] = useState<number | null>(null)
 
     useEffect(() => {
         const initExam = async () => {
@@ -76,6 +78,19 @@ const MyExamStart = () => {
         initExam()
     }, [examId])
 
+    useEffect(() => {
+        if (scrollToQuestionId) {
+            const timer = setTimeout(() => {
+                const element = document.getElementById(`question-card-${scrollToQuestionId}`)
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    setScrollToQuestionId(null)
+                }
+            }, 150)
+            return () => clearTimeout(timer)
+        }
+    }, [scrollToQuestionId, currentStep])
+
     const sections = useMemo(() => {
         return examDetails?.sections || []
     }, [examDetails])
@@ -101,22 +116,59 @@ const MyExamStart = () => {
     const handleSubmit = async () => {
         // Validation: Ensure all questions in all sections are answered
         const sections = examDetails.sections || []
-        const allQuestions = sections.flatMap((s: any) => s.questions || [])
-        const unansweredCount = allQuestions.filter((q: any) => {
-            const ans = answers[q.id]
-            if (!ans) return true
-            if (q.type === 'check_box') {
-                try { return JSON.parse(ans).length === 0 } catch { return true }
-            }
-            return false
-        }).length
+        
+        let firstUnansweredQId: number | null = null
+        let firstUnansweredSectionIndex = -1
+        let unansweredCount = 0
+
+        sections.forEach((sec: any, secIdx: number) => {
+            sec.questions?.forEach((q: any) => {
+                const ans = answers[q.id]
+                let isUnanswered = false
+                if (!ans) {
+                    isUnanswered = true
+                } else if (q.type === 'check_box') {
+                    try {
+                        if (JSON.parse(ans).length === 0) isUnanswered = true
+                    } catch {
+                        isUnanswered = true
+                    }
+                } else if (q.type === 'mixed') {
+                    try {
+                        const parsed = JSON.parse(ans)
+                        if (!parsed.selectedOption?.trim() || !parsed.descriptiveAnswer?.trim()) {
+                            isUnanswered = true
+                        }
+                    } catch {
+                        isUnanswered = true
+                    }
+                }
+
+                if (isUnanswered) {
+                    unansweredCount++
+                    if (firstUnansweredQId === null) {
+                        firstUnansweredQId = q.id
+                        firstUnansweredSectionIndex = secIdx
+                    }
+                }
+            })
+        })
 
         if (unansweredCount > 0) {
+            setSubmittedWithErrors(true)
+            
             toast.push(
                 <Notification title="هشدار" type="warning">
                     لطفاً به تمام سوالات ({unansweredCount} سوال باقیمانده) پاسخ دهید.
                 </Notification>
             )
+
+            if (firstUnansweredSectionIndex !== -1) {
+                if (firstUnansweredSectionIndex !== currentStep) {
+                    setCurrentStep(firstUnansweredSectionIndex)
+                }
+                setScrollToQuestionId(firstUnansweredQId)
+            }
             return
         }
 
@@ -134,6 +186,7 @@ const MyExamStart = () => {
                 sections: sections.map((section: any) => ({
                     section_id: section.id,
                     section_title: section.title,
+                    section_description: section.description,
                     questions: (section.questions || []).map((q: any, qIdx: number) => {
                         // Parse raw options from API (stored as JSON strings)
                         const rawOptions: any[] = q.options || []
@@ -296,12 +349,6 @@ const MyExamStart = () => {
                                 {examDetails.description}
                             </p>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="bg-violet-50 dark:bg-violet-900/20 px-4 py-2 rounded-xl border border-violet-100 dark:border-violet-800">
-                                <span className="text-xs text-violet-600 dark:text-violet-400 font-bold block uppercase">زمان باقی‌مانده</span>
-                                <span className="text-lg font-black text-violet-700 dark:text-violet-300">--:--</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -319,53 +366,86 @@ const MyExamStart = () => {
                 {/* Questions Area */}
                 {sections.length > 0 && currentSection ? (
                     <div className="space-y-6">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="w-1.5 h-6 bg-violet-600 rounded-full" />
-                            <h2 className="text-xl font-black text-gray-800 dark:text-gray-200">
-                                {currentSection.title}
-                            </h2>
+                        <div className="mb-8 bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-8 bg-violet-600 rounded-full" />
+                                <h2 className="text-2xl font-black text-gray-900 dark:text-white">
+                                    {currentSection.title}
+                                </h2>
+                            </div>
+
+                            {currentSection.description && (
+                                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                    <div className="text-lg leading-relaxed font-medium text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: currentSection.description }} />
+                                </div>
+                            )}
                         </div>
 
-                        {currentSection.description && (
-                            <p className="text-gray-600 dark:text-gray-400 mb-6 bg-gray-50 dark:bg-gray-900/40 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
-                                {currentSection.description}
-                            </p>
-                        )}
-
                         <div className="space-y-6">
-                            {(currentSection.questions || []).map((q: any, index: number) => (
-                                <Card
-                                    key={q.id}
-                                    className={`transition-all duration-300 ${answers[q.id]
-                                        ? 'border-emerald-200 dark:border-emerald-800 ring-4 ring-emerald-50 dark:ring-emerald-900/10'
-                                        : 'border-gray-100 dark:border-gray-700'
-                                        }`}
-                                >
-                                    <div className="space-y-4">
-                                        <div className="flex items-start gap-4">
-                                            <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg shadow-sm ${answers[q.id]
-                                                ? 'bg-emerald-500 text-white'
-                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
-                                                }`}>
-                                                {index + 1}
-                                            </div>
-                                            <div className="flex-1 pt-1">
-                                                <h4
-                                                    className="text-lg font-bold text-gray-900 dark:text-white leading-relaxed prose dark:prose-invert max-w-none"
-                                                    dangerouslySetInnerHTML={{ __html: q.question }}
-                                                />
-                                                {(q.file_id || q.file?.address) && (
-                                                    <div className="mt-4">
-                                                        <QuestionFileImage
-                                                            fileId={q.file_id}
-                                                            fallbackUrl={q.file?.address}
-                                                            className="max-h-64 w-auto rounded-xl border object-contain shadow-sm"
-                                                        />
-                                                    </div>
-                                                )}
+                            {(currentSection.questions || []).map((q: any, index: number) => {
+                                const isAnswered = (() => {
+                                    const ans = answers[q.id]
+                                    if (!ans) return false
+                                    if (q.type === 'check_box') {
+                                        try { return JSON.parse(ans).length > 0 } catch { return false }
+                                    }
+                                    if (q.type === 'mixed') {
+                                        try {
+                                            const parsed = JSON.parse(ans)
+                                            return !!(parsed.selectedOption?.trim() && parsed.descriptiveAnswer?.trim())
+                                        } catch {
+                                            return false
+                                        }
+                                    }
+                                    return true
+                                })()
+                                const isUnansweredError = submittedWithErrors && !isAnswered
 
+                                return (
+                                    <Card
+                                        key={q.id}
+                                        id={`question-card-${q.id}`}
+                                        className={`transition-all duration-300 ${isAnswered
+                                            ? 'border-emerald-200 dark:border-emerald-800 ring-4 ring-emerald-50 dark:ring-emerald-900/10'
+                                            : isUnansweredError
+                                                ? 'border-rose-300 dark:border-rose-800 ring-4 ring-rose-50 dark:ring-rose-950/20 bg-rose-50/5'
+                                                : 'border-gray-100 dark:border-gray-700'
+                                            }`}
+                                    >
+                                        <div className="space-y-4">
+                                            <div className="flex items-start gap-4">
+                                                <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg shadow-sm transition-all duration-300 ${isAnswered
+                                                    ? 'bg-emerald-500 text-white'
+                                                    : isUnansweredError
+                                                        ? 'bg-rose-500 text-white animate-pulse'
+                                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
+                                                    }`}>
+                                                    {index + 1}
+                                                </div>
+                                                <div className="flex-1 pt-1">
+                                                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                                                        <h4
+                                                            className="text-lg font-bold text-gray-900 dark:text-white leading-loose prose dark:prose-invert max-w-none flex-1"
+                                                            dangerouslySetInnerHTML={{ __html: q.question }}
+                                                        />
+                                                        {isUnansweredError && (
+                                                            <span className="text-xs font-black text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/50 px-3 py-1.5 rounded-lg shrink-0 w-fit animate-bounce whitespace-nowrap">
+                                                                ⚠️ لطفاً به این سوال پاسخ دهید
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {(q.file_id || q.file?.address) && (
+                                                        <div className="mt-4">
+                                                            <QuestionFileImage
+                                                                fileId={q.file_id}
+                                                                fallbackUrl={q.file?.address}
+                                                                className="max-h-64 w-auto rounded-xl border object-contain shadow-sm"
+                                                            />
+                                                        </div>
+                                                    )}
+
+                                                </div>
                                             </div>
-                                        </div>
 
                                         <div className="mr-14">
                                             {q.type === 'multiple_choice' && (
@@ -387,7 +467,7 @@ const MyExamStart = () => {
                                                             >
                                                                 <div className="flex flex-col gap-3 mt-1">
                                                                     {optData.text && (
-                                                                        <span className="font-medium mr-2 text-gray-800 dark:text-gray-200 leading-relaxed">
+                                                                        <span className="font-medium mr-2 text-gray-800 dark:text-gray-200 leading-loose">
                                                                             {optData.text}
                                                                         </span>
                                                                     )}
@@ -465,7 +545,7 @@ const MyExamStart = () => {
                                                                     
                                                                     <div className="flex flex-col gap-3 flex-1">
                                                                         {optData.text && (
-                                                                            <span className="font-medium text-gray-800 dark:text-gray-200 leading-relaxed">
+                                                                            <span className="font-medium text-gray-800 dark:text-gray-200 leading-loose">
                                                                                 {optData.text}
                                                                             </span>
                                                                         )}
@@ -528,7 +608,7 @@ const MyExamStart = () => {
                                                                     >
                                                                         <div className="flex flex-col gap-3 mt-1">
                                                                             {optData.text && (
-                                                                                <span className="font-medium mr-2 text-gray-800 dark:text-gray-200 leading-relaxed">
+                                                                                <span className="font-medium mr-2 text-gray-800 dark:text-gray-200 leading-loose">
                                                                                     {optData.text}
                                                                                 </span>
                                                                             )}
@@ -617,7 +697,7 @@ const MyExamStart = () => {
                                                                                                     />
                                                                                                 )}
                                                                                                 {optData.text && (
-                                                                                                    <span className="font-medium text-gray-800 dark:text-gray-200 truncate text-base">
+                                                                                                    <span className="font-medium text-gray-800 dark:text-gray-200 leading-loose text-base">
                                                                                                         {optData.text}
                                                                                                     </span>
                                                                                                 )}
@@ -642,7 +722,8 @@ const MyExamStart = () => {
                                         </div>
                                     </div>
                                 </Card>
-                            ))}
+                            )
+                        })}
                         </div>
                     </div>
                 ) : (

@@ -274,9 +274,9 @@ const Bills = () => {
                     </div>
                     <div className="w-full md:w-64">
                         <Select
-                            placeholder="فیلتر بر اساس شرکت"
-                            options={[{ label: 'همه شرکت‌ها', value: null }, ...companies]}
-                            value={companies.find(c => c.value === selectedCompany) || { label: 'همه شرکت‌ها', value: null }}
+                            placeholder="فیلتر بر اساس سازمان"
+                            options={[{ label: 'همه سازمان‌ها', value: null }, ...companies]}
+                            value={companies.find(c => c.value === selectedCompany) || { label: 'همه سازمان‌ها', value: null }}
                             onChange={(option) => setSelectedCompany(option?.value || null)}
                             isClearable
                         />
@@ -327,7 +327,7 @@ const Bills = () => {
                                 <Tr>
                                     <Th>#</Th>
                                     <Th>شماره صورتحساب</Th>
-                                    <Th>شرکت</Th>
+                                    <Th>سازمان</Th>
                                     <Th>تاریخ صدور</Th>
                                     <Th>مبلغ</Th>
                                     <Th>تعداد اسناد</Th>

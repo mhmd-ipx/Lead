@@ -391,6 +391,7 @@ const SignInForm = (props: SignInFormProps) => {
                     <Form onSubmit={phoneForm.handleSubmit(onSendOTP)}>
                         <FormItem
                             label="شماره موبایل"
+                            labelClass="text-slate-850 dark:text-slate-200 font-extrabold text-sm mb-1.5 block"
                             invalid={Boolean(phoneForm.formState.errors.phone)}
                             errorMessage={phoneForm.formState.errors.phone?.message}
                         >
@@ -402,6 +403,7 @@ const SignInForm = (props: SignInFormProps) => {
                                         type="tel"
                                         placeholder="09123456789"
                                         autoComplete="off"
+                                        className="border-2 border-slate-400 dark:border-slate-500 focus:border-indigo-600 dark:focus:border-indigo-500 bg-white/95 focus:bg-white dark:bg-slate-900/95 dark:focus:bg-slate-950 font-bold text-slate-850 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl transition-all duration-200"
                                         {...field}
                                     />
                                 )}
@@ -412,18 +414,18 @@ const SignInForm = (props: SignInFormProps) => {
                             loading={isSubmitting}
                             variant="solid"
                             type="submit"
-                            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95"
+                            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95 font-extrabold"
                         >
                             {isSubmitting ? 'در حال ارسال...' : 'ارسال کد تایید'}
                         </Button>
                     </Form>
-                    <div className="mt-4">
+                    <div className="mt-2">
                         <Button
                             block
-                            variant="plain"
+                            variant="default"
                             type="button"
                             onClick={handleSwitchToPhonePassword}
-                            className="text-gray-500 hover:text-indigo-600 font-medium"
+                            className="bg-transparent border-2 border-slate-400 dark:border-slate-500 text-slate-800 dark:text-slate-200 hover:bg-slate-200/30 dark:hover:bg-slate-800/30 font-extrabold shadow-sm rounded-xl py-2 mt-2 transition-all duration-200 active:scale-95"
                         >
                             ورود با رمز ثابت
                         </Button>
@@ -432,12 +434,12 @@ const SignInForm = (props: SignInFormProps) => {
             ) : step === 'otp' ? (
                 <div>
                     <div className="text-center mb-4">
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-slate-850 dark:text-slate-200 font-extrabold">
                             کد 4 رقمی به شماره {phoneNumber} ارسال شد
                         </p>
                         <div className="mt-2">
                             {timer > 0 ? (
-                                <p className="text-sm font-semibold text-primary">
+                                <p className="text-sm font-black text-primary">
                                     زمان باقیمانده: {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
                                 </p>
                             ) : (
@@ -448,6 +450,7 @@ const SignInForm = (props: SignInFormProps) => {
                                     onClick={handleResendOTP}
                                     loading={isSubmitting}
                                     disabled={!canResend}
+                                    className="font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800"
                                 >
                                     ارسال مجدد کد
                                 </Button>
@@ -457,6 +460,7 @@ const SignInForm = (props: SignInFormProps) => {
                     <Form onSubmit={otpForm.handleSubmit(onVerifyOTP)}>
                         <FormItem
                             label="کد OTP"
+                            labelClass="text-slate-850 dark:text-slate-200 font-extrabold text-sm mb-1.5 block"
                             invalid={Boolean(otpForm.formState.errors.otp)}
                             errorMessage={otpForm.formState.errors.otp?.message}
                         >
@@ -468,6 +472,7 @@ const SignInForm = (props: SignInFormProps) => {
                                         length={4}
                                         placeholder="0"
                                         fullWidth
+                                        inputClass="border-2 border-slate-400 dark:border-slate-500 focus:border-indigo-600 dark:focus:border-indigo-500 bg-white/95 focus:bg-white dark:bg-slate-900/95 dark:focus:bg-slate-950 font-bold text-slate-850 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl transition-all duration-200"
                                         {...field}
                                     />
                                 )}
@@ -479,7 +484,7 @@ const SignInForm = (props: SignInFormProps) => {
                                 variant="plain"
                                 type="button"
                                 onClick={handleBack}
-                                className="font-medium"
+                                className="font-extrabold text-slate-700 dark:text-slate-300 hover:text-slate-900"
                             >
                                 بازگشت
                             </Button>
@@ -488,7 +493,7 @@ const SignInForm = (props: SignInFormProps) => {
                                 loading={isSubmitting}
                                 variant="solid"
                                 type="submit"
-                                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95"
+                                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95 font-extrabold"
                             >
                                 {isSubmitting ? 'ورود...' : 'ورود'}
                             </Button>
@@ -498,7 +503,7 @@ const SignInForm = (props: SignInFormProps) => {
             ) : step === 'register' ? (
                 <div>
                     <div className="text-center mb-4">
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-slate-850 dark:text-slate-200 font-extrabold">
                             شما هنوز ثبت‌نام نکرده‌اید. لطفاً نام خود را وارد کنید
                         </p>
                     </div>
@@ -508,6 +513,7 @@ const SignInForm = (props: SignInFormProps) => {
 
                         <FormItem
                             label="نام"
+                            labelClass="text-slate-850 dark:text-slate-200 font-extrabold text-sm mb-1.5 block"
                             invalid={Boolean(registerForm.formState.errors.name)}
                             errorMessage={registerForm.formState.errors.name?.message}
                         >
@@ -519,6 +525,7 @@ const SignInForm = (props: SignInFormProps) => {
                                         type="text"
                                         placeholder="نام خود را وارد کنید"
                                         autoComplete="off"
+                                        className="border-2 border-slate-400 dark:border-slate-500 focus:border-indigo-600 dark:focus:border-indigo-500 bg-white/95 focus:bg-white dark:bg-slate-900/95 dark:focus:bg-slate-950 font-bold text-slate-850 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl transition-all duration-200"
                                         {...field}
                                     />
                                 )}
@@ -527,6 +534,7 @@ const SignInForm = (props: SignInFormProps) => {
 
                         <FormItem
                             label="رمز عبور"
+                            labelClass="text-slate-850 dark:text-slate-200 font-extrabold text-sm mb-1.5 block"
                             invalid={Boolean(registerForm.formState.errors.password)}
                             errorMessage={registerForm.formState.errors.password?.message}
                         >
@@ -538,6 +546,7 @@ const SignInForm = (props: SignInFormProps) => {
                                         type="password"
                                         placeholder="••••••"
                                         autoComplete="new-password"
+                                        className="border-2 border-slate-400 dark:border-slate-500 focus:border-indigo-600 dark:focus:border-indigo-500 bg-white/95 focus:bg-white dark:bg-slate-900/95 dark:focus:bg-slate-950 font-bold text-slate-850 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl transition-all duration-200"
                                         {...field}
                                     />
                                 )}
@@ -549,7 +558,7 @@ const SignInForm = (props: SignInFormProps) => {
                                 variant="plain"
                                 type="button"
                                 onClick={handleBack}
-                                className="font-medium"
+                                className="font-extrabold text-slate-700 dark:text-slate-300 hover:text-slate-900"
                             >
                                 بازگشت
                             </Button>
@@ -558,7 +567,7 @@ const SignInForm = (props: SignInFormProps) => {
                                 loading={isSubmitting}
                                 variant="solid"
                                 type="submit"
-                                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95"
+                                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95 font-extrabold"
                             >
                                 {isSubmitting ? 'در حال ثبت‌نام...' : 'ثبت‌نام و ورود'}
                             </Button>
@@ -568,13 +577,14 @@ const SignInForm = (props: SignInFormProps) => {
             ) : (
                 <div>
                     <div className="text-center mb-4">
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-slate-850 dark:text-slate-200 font-extrabold">
                             ورود با شماره موبایل و رمز عبور ثابت
                         </p>
                     </div>
                     <Form onSubmit={phonePasswordForm.handleSubmit(onPhonePasswordSignIn)}>
                         <FormItem
                             label="شماره موبایل"
+                            labelClass="text-slate-850 dark:text-slate-200 font-extrabold text-sm mb-1.5 block"
                             invalid={Boolean(phonePasswordForm.formState.errors.phone)}
                             errorMessage={phonePasswordForm.formState.errors.phone?.message}
                         >
@@ -586,6 +596,7 @@ const SignInForm = (props: SignInFormProps) => {
                                         type="tel"
                                         placeholder="09123456789"
                                         autoComplete="tel"
+                                        className="border-2 border-slate-400 dark:border-slate-500 focus:border-indigo-600 dark:focus:border-indigo-500 bg-white/95 focus:bg-white dark:bg-slate-900/95 dark:focus:bg-slate-950 font-bold text-slate-850 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl transition-all duration-200"
                                         {...field}
                                     />
                                 )}
@@ -593,6 +604,7 @@ const SignInForm = (props: SignInFormProps) => {
                         </FormItem>
                         <FormItem
                             label="رمز عبور"
+                            labelClass="text-slate-850 dark:text-slate-200 font-extrabold text-sm mb-1.5 block"
                             invalid={Boolean(phonePasswordForm.formState.errors.password)}
                             errorMessage={phonePasswordForm.formState.errors.password?.message}
                         >
@@ -604,6 +616,7 @@ const SignInForm = (props: SignInFormProps) => {
                                         type="password"
                                         placeholder="••••••"
                                         autoComplete="current-password"
+                                        className="border-2 border-slate-400 dark:border-slate-500 focus:border-indigo-600 dark:focus:border-indigo-500 bg-white/95 focus:bg-white dark:bg-slate-900/95 dark:focus:bg-slate-950 font-bold text-slate-850 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl transition-all duration-200"
                                         {...field}
                                     />
                                 )}
@@ -615,7 +628,7 @@ const SignInForm = (props: SignInFormProps) => {
                                 variant="plain"
                                 type="button"
                                 onClick={handleBack}
-                                className="font-medium"
+                                className="font-extrabold text-slate-700 dark:text-slate-300 hover:text-slate-900"
                             >
                                 بازگشت
                             </Button>
@@ -624,7 +637,7 @@ const SignInForm = (props: SignInFormProps) => {
                                 loading={isSubmitting}
                                 variant="solid"
                                 type="submit"
-                                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95"
+                                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95 font-extrabold"
                             >
                                 {isSubmitting ? 'ورود...' : 'ورود'}
                             </Button>

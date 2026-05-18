@@ -524,7 +524,7 @@ const Company = () => {
                   rows={2}
                   value={company.address}
                   onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange('address', e.target.value)}
-                  placeholder="آدرس کامل شرکت"
+                  placeholder="آدرس کامل سازمان"
                 />
               </div>
 

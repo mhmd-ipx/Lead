@@ -10,31 +10,34 @@ interface QuestionFileImageProps {
 
 const QuestionFileImage = ({ fileId, className, fallbackUrl }: QuestionFileImageProps) => {
     const [imageUrl, setImageUrl] = useState<string | undefined>(fallbackUrl)
-    const [isLoading, setIsLoading] = useState(false)
+    const [isFetchingUrl, setIsFetchingUrl] = useState(false)
+    const [isImageLoading, setIsImageLoading] = useState(true)
 
     useEffect(() => {
         if (fileId && (typeof fileId === 'number' || (typeof fileId === 'string' && fileId !== 'uploading'))) {
             fetchImageUrl(fileId)
         } else {
             setImageUrl(fallbackUrl)
+            setIsImageLoading(true)
         }
     }, [fileId, fallbackUrl])
 
     const fetchImageUrl = async (id: number | string) => {
-        setIsLoading(true)
+        setIsFetchingUrl(true)
         try {
             const res = await apiGetFileInfo(id)
             if (res && res.address) {
                 setImageUrl(res.address)
+                setIsImageLoading(true)
             }
         } catch (error) {
             console.error('Error fetching question image:', error)
         } finally {
-            setIsLoading(false)
+            setIsFetchingUrl(false)
         }
     }
 
-    if (isLoading) {
+    if (isFetchingUrl) {
         return <Skeleton className={className} />
     }
 
@@ -43,12 +46,20 @@ const QuestionFileImage = ({ fileId, className, fallbackUrl }: QuestionFileImage
     }
 
     return (
-        <img 
-            src={imageUrl} 
-            alt="Question/Option" 
-            className={className} 
-            onError={() => setImageUrl(undefined)}
-        />
+        <>
+            {isImageLoading && <Skeleton className={className} />}
+            <img 
+                src={imageUrl} 
+                alt="Question/Option" 
+                className={className} 
+                style={isImageLoading ? { display: 'none' } : {}}
+                onLoad={() => setIsImageLoading(false)}
+                onError={() => {
+                    setIsImageLoading(false)
+                    setImageUrl(undefined)
+                }}
+            />
+        </>
     )
 }
 

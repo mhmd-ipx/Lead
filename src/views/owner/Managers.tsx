@@ -4,7 +4,6 @@ import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import {
   HiOutlinePlus,
   HiOutlinePencil,
-  HiOutlineTrash,
   HiOutlineEye,
   HiOutlineSearch,
   HiOutlineClipboardCheck,
@@ -117,7 +116,6 @@ const TableRowSkeleton = () => (
 const Managers = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | ''>('')
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [infoDialogOpen, setInfoDialogOpen] = useState(false)
   const [selectedManager, setSelectedManager] = useState<any | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all')
@@ -147,20 +145,6 @@ const Managers = () => {
   const handleViewDetails = (manager: any) => {
     setSelectedManager(manager)
     setInfoDialogOpen(true)
-  }
-
-  const handleDeleteManager = async () => {
-    if (!selectedManager) return
-
-    try {
-      // await deleteManager(selectedManager.id)
-      // Revalidate data after delete
-      await mutate()
-      setDeleteDialogOpen(false)
-      setSelectedManager(null)
-    } catch (error) {
-      console.error('Error deleting manager:', error)
-    }
   }
 
   const getStatusTag = (status: Manager['status']) => {
@@ -463,18 +447,6 @@ const Managers = () => {
                                 onClick={() => navigate(`/owner/managers/${manager.id}/edit`)}
                               />
                             </Tooltip>
-                            <Tooltip title="حذف">
-                              <Button
-                                variant="plain"
-                                size="sm"
-                                icon={<HiOutlineTrash />}
-                                onClick={() => {
-                                  setSelectedManager(manager)
-                                  setDeleteDialogOpen(true)
-                                }}
-                                className="text-red-600 hover:text-red-700"
-                              />
-                            </Tooltip>
                           </div>
                         </td>
                       </tr>
@@ -499,33 +471,6 @@ const Managers = () => {
           </div>
         </div>
       </Card>
-
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={deleteDialogOpen}
-        type="danger"
-        title="حذف متقاضی"
-        confirmText="بله، حذف کن"
-        cancelText="انصراف"
-        onClose={() => {
-          setDeleteDialogOpen(false)
-          setSelectedManager(null)
-        }}
-        onRequestClose={() => {
-          setDeleteDialogOpen(false)
-          setSelectedManager(null)
-        }}
-        onCancel={() => {
-          setDeleteDialogOpen(false)
-          setSelectedManager(null)
-        }}
-        onConfirm={handleDeleteManager}
-      >
-        <p>آیا مطمئن هستید که می‌خواهید متقاضی "{selectedManager?.user.name}" را حذف کنید؟</p>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-          این عملیات قابل برگشت نیست و تمام نیازسنجی‌ها و نتایج آزمون‌های مرتبط نیز حذف خواهند شد.
-        </p>
-      </ConfirmDialog>
 
       {/* Info Dialog */}
       <Dialog

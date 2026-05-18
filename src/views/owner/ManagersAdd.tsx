@@ -52,7 +52,7 @@ const ManagersAdd = () => {
       console.error('Error loading manager:', error)
       toast.push(
         <Notification type="danger" title="خطا">
-          {error?.response?.data?.message || 'خطا در بارگذاری اطلاعات متقاضی.'}
+          {error?.message || 'خطا در بارگذاری اطلاعات متقاضی.'}
         </Notification>,
         { placement: 'top-center' }
       )
@@ -122,7 +122,7 @@ const ManagersAdd = () => {
       console.error('Error saving manager:', error)
       toast.push(
         <Notification type="danger" title="خطا">
-          {error?.response?.data?.message || 'خطا در ذخیره اطلاعات متقاضی.'}
+          {error?.message || 'خطا در ذخیره اطلاعات متقاضی.'}
         </Notification>,
         { placement: 'top-center' }
       )

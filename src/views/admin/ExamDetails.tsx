@@ -28,6 +28,7 @@ import type { Question } from '@/components/exam-builder/types/QuestionTypes'
 import QuestionForm, { QuestionFormRef } from '@/components/exam-builder/components/QuestionForm'
 import QuestionViewModal from '@/components/exam-builder/modals/QuestionViewModal'
 import dayjs from 'dayjs'
+import RichTextEditor from '@/components/shared/RichTextEditor'
 import 'dayjs/locale/fa'
 import relativeTime from 'dayjs/plugin/relativeTime'
 
@@ -658,13 +659,14 @@ const ExamDetails = () => {
                                                         </div>
                                                         <div>
                                                             <label className="text-sm mb-1 block">محتوا</label>
-                                                            <Input
-                                                                textArea
-                                                                rows={5}
-                                                                placeholder="محتوای بخش را وارد کنید..."
-                                                                value={section.content}
-                                                                onChange={(e) => updateSectionState(section.id, { content: e.target.value })}
-                                                            />
+                                                            <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden mt-1">
+                                                                <RichTextEditor
+                                                                    value={section.content || ''}
+                                                                    onChange={(html) => updateSectionState(section.id, { content: html })}
+                                                                    minHeight={150}
+                                                                    placeholder="محتوای بخش را وارد کنید..."
+                                                                />
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>

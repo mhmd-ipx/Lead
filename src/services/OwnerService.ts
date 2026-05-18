@@ -37,11 +37,36 @@ import API_ENDPOINTS from '@/constants/api.endpoints'
 
 // Dashboard
 export const getDashboardStats = async (): Promise<DashboardStats> => {
-  // In real implementation, this would be an API call
-  // return ApiService.fetchDataWithAxios<DashboardStats>({ method: 'GET', url: '/owner/dashboard/stats' })
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(mockDashboardStats), 500)
-  })
+  try {
+    const response = await apiClient.get<any>('/dashboard/stats')
+    const stats = response.data ?? response
+    
+    // Attempt to map to DashboardStats or use zeros if missing
+    return {
+      totalManagers: stats?.totalManagers ?? stats?.managers?.total ?? 0,
+      activeManagers: stats?.activeManagers ?? stats?.managers?.active ?? 0,
+      completedAssessments: stats?.completedAssessments ?? stats?.assessments?.completed ?? 0,
+      activeExams: stats?.activeExams ?? stats?.exams?.active ?? 0,
+      completedExams: stats?.completedExams ?? stats?.exams?.completed ?? 0,
+      pendingExams: stats?.pendingExams ?? stats?.exams?.pending ?? 0,
+      totalPaid: stats?.totalPaid ?? stats?.payments?.paid ?? 0,
+      totalPending: stats?.totalPending ?? stats?.payments?.pending ?? 0,
+      unreadNotifications: stats?.unreadNotifications ?? stats?.notifications?.unread ?? 0
+    }
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error)
+    return {
+      totalManagers: 0,
+      activeManagers: 0,
+      completedAssessments: 0,
+      activeExams: 0,
+      completedExams: 0,
+      pendingExams: 0,
+      totalPaid: 0,
+      totalPending: 0,
+      unreadNotifications: 0
+    }
+  }
 }
 
 // Company Profile

@@ -15,6 +15,34 @@
                 "item1": "آیتم منوی گروهی جمع‌شونده 1",
                 "item2": "آیتم منوی گروهی جمع‌شونده 2"
             }
+        },
+        "admin": {
+            "dashboard": "داشبورد",
+            "organizations": "سازمان‌ها",
+            "assessments": {
+                "completed": "نیازسنجی‌ها"
+            },
+            "applicant": {
+                "exams": "آزمون‌های متقاضیان"
+            },
+            "accounting": {
+                "title": "امور مالی",
+                "documents": "اسناد",
+                "bills": "صورت‌حساب‌ها"
+            },
+            "support": {
+                "tickets": "پشتیبانی"
+            },
+            "notifications": "اعلان‌ها",
+            "system": {
+                "settings": "تنظیمات کاربری"
+            },
+            "configuration": "پیکربندی",
+            "assessment": {
+                "forms": "فرم نیازسنجی"
+            },
+            "exams": "آزمون‌ها",
+            "users": "کاربران سیستم"
         }
     }
 }

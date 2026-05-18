@@ -13,6 +13,7 @@ module.exports = {
 		theme: {
 			fontFamily: {
 				sans: [
+					'IRANSans',
 					'Inter',
 					'ui-sans-serif',
 					'system-ui',

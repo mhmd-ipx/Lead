@@ -10,7 +10,9 @@ import {
     HiOutlineClock,
     HiOutlineCheckCircle,
     HiArrowLeft,
-    HiArrowRight
+    HiArrowRight,
+    HiOutlineDownload,
+    HiOutlinePrinter
 } from 'react-icons/hi'
 import { getAssessmentById, getExamsList, createExamCollection } from '@/services/AdminService'
 import { CompletedAssessment, AssessmentStep, AssessmentQuestion } from '@/mock/data/adminData'
@@ -23,6 +25,9 @@ import persian from "react-date-object/calendars/persian"
 import persian_fa from "react-date-object/locales/persian_fa"
 import TimePicker from "react-multi-date-picker/plugins/time_picker"
 import "react-multi-date-picker/styles/layouts/mobile.css"
+import ExportSettingsModal from './components/ExportSettingsModal'
+import { generateExcelBlob, generateDocxBlob, ExportSettings } from '@/utils/exportUtils'
+import { saveAs } from 'file-saver'
 
 type StatisticCardProps = {
     title: string
@@ -73,6 +78,7 @@ const CompletedAssessmentView = () => {
         duration_minutes: 60,
     })
     const [submitting, setSubmitting] = useState(false)
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false)
 
     const navigate = useNavigate()
     const { id } = useParams<{ id: string }>()
@@ -147,7 +153,7 @@ const CompletedAssessmentView = () => {
 
     const handleAssignExams = async () => {
         if (!assessment) return
-        if (!collectionForm.title || !collectionForm.start_datetime || !collectionForm.end_datetime || !collectionForm.due_date) {
+        if (!collectionForm.title || !collectionForm.start_datetime || !collectionForm.end_datetime) {
             toast.push(
                 <Notification title="لطفاً تمام فیلدها را پر کنید" type="warning" />,
                 { placement: 'top-center' }
@@ -164,7 +170,7 @@ const CompletedAssessmentView = () => {
                 status: 'active' as const,
                 start_datetime: dayjs(collectionForm.start_datetime).format('YYYY-MM-DD HH:mm:ss'),
                 end_datetime: dayjs(collectionForm.end_datetime).format('YYYY-MM-DD HH:mm:ss'),
-                due_date: dayjs(collectionForm.due_date).format('YYYY-MM-DD'),
+                due_date: dayjs(collectionForm.end_datetime).format('YYYY-MM-DD'),
                 duration_minutes: Number(collectionForm.duration_minutes),
                 exam_ids: selectedExamIds,
                 user_id: Number(assessment.managerId),
@@ -194,6 +200,56 @@ const CompletedAssessmentView = () => {
             setSelectedExamIds(selectedExamIds.filter(id => id !== examId))
         } else {
             setSelectedExamIds([...selectedExamIds, examId])
+        }
+    }
+
+    const handleExport = async (settings: ExportSettings) => {
+        if (!assessment) return
+
+        const exportSections = assessment.steps.map((step, stepIndex) => {
+            return {
+                section_title: `مرحله ${stepIndex + 1}: ${step.title}`,
+                questions: step.questions.map((q, qIndex) => {
+                    const rawAnswer = assessment.answers[step.id]?.[q.id];
+                    let answerText = 'پاسخ داده نشده';
+                    
+                    if (rawAnswer !== undefined && rawAnswer !== null) {
+                        if (Array.isArray(rawAnswer)) {
+                            answerText = rawAnswer.join(' - ');
+                        } else if (typeof rawAnswer === 'number') {
+                            answerText = `${rawAnswer} از 5`;
+                        } else {
+                            answerText = String(rawAnswer);
+                        }
+                    }
+                    
+                    return {
+                        question_number: qIndex + 1,
+                        question_text: q.question,
+                        type: 'descriptive',
+                        options: [],
+                        answer: { text: answerText }
+                    };
+                })
+            };
+        });
+
+        const exportData = [{
+            applicantName: assessment.managerName,
+            companyName: assessment.companyName,
+            examTitle: assessment.templateName,
+            completedAt: assessment.submittedAt || assessment.createdAt,
+            sections: exportSections
+        }]
+
+        const filename = `${assessment.managerName}-${assessment.templateName}-${dayjs().format('YYYY-MM-DD')}`
+
+        if (settings.format === 'xlsx') {
+            const blob = generateExcelBlob(exportData, settings)
+            saveAs(blob, `${filename}.xlsx`)
+        } else {
+            const blob = await generateDocxBlob(exportData[0], settings)
+            saveAs(blob, `${filename}.docx`)
         }
     }
 
@@ -267,15 +323,32 @@ const CompletedAssessmentView = () => {
                         </p>
                     </div>
                 </div>
-                <Button
-                    id="admin-assessment-view-action-assign"
-                    variant="solid"
-                    icon={<HiOutlineAcademicCap />}
-                    size="sm"
-                    onClick={handleOpenAssignDialog}
-                >
-                    اختصاص آزمون
-                </Button>
+                <div className="flex items-center gap-3">
+                    <Button
+                        variant="plain"
+                        icon={<HiOutlinePrinter />}
+                        onClick={() => window.print()}
+                    >
+                        چاپ نیازسنجی
+                    </Button>
+                    <Button
+                        variant="solid"
+                        icon={<HiOutlineDownload />}
+                        size="sm"
+                        onClick={() => setIsExportModalOpen(true)}
+                    >
+                        دریافت خروجی
+                    </Button>
+                    <Button
+                        id="admin-assessment-view-action-assign"
+                        variant="solid"
+                        icon={<HiOutlineAcademicCap />}
+                        size="sm"
+                        onClick={handleOpenAssignDialog}
+                    >
+                        اختصاص آزمون
+                    </Button>
+                </div>
             </div>
 
             {/* Statistics Cards */}
@@ -557,26 +630,7 @@ const CompletedAssessmentView = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                مهلت انجام (Due Date) <span className="text-red-500">*</span>
-                                            </label>
-                                            <DatePicker
-                                                value={collectionForm.due_date}
-                                                onChange={(date: any) => {
-                                                    const jsDate = date?.toDate ? date.toDate() : date;
-                                                    setCollectionForm({ ...collectionForm, due_date: jsDate })
-                                                }}
-                                                calendar={persian}
-                                                locale={persian_fa}
-                                                format="YYYY/MM/DD"
-                                                containerClassName="w-full"
-                                                inputClass="w-full h-11 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500"
-                                                placeholder="انتخاب تاریخ"
-                                                calendarPosition="bottom-right"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                مدت زمان کل (دقیقه) <span className="text-red-500">*</span>
+                                                مجموع زمان مورد نیاز (دقیقه) <span className="text-red-500">*</span>
                                             </label>
                                             <Input
                                                 type="number"
@@ -632,6 +686,13 @@ const CompletedAssessmentView = () => {
                     </div>
                 </div>
             </Dialog>
+
+            <ExportSettingsModal
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+                onConfirm={handleExport}
+                title="تنظیمات خروجی نیازسنجی"
+            />
         </div>
     )
 }

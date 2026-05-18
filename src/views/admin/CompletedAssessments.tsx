@@ -103,7 +103,7 @@ const CompletedAssessments = () => {
                 getCompletedAssessments(),
                 getExamsList()
             ])
-            setAssessments(assessmentsData)
+            setAssessments([...assessmentsData].reverse())
             setExams(examsData || [])
         } catch (error) {
             console.error('Error loading data:', error)
@@ -166,7 +166,7 @@ const CompletedAssessments = () => {
 
     const handleAssignExams = async () => {
         if (!selectedAssessment) return
-        if (!collectionForm.title || !collectionForm.start_datetime || !collectionForm.end_datetime || !collectionForm.due_date) {
+        if (!collectionForm.title || !collectionForm.start_datetime || !collectionForm.end_datetime) {
             toast.push(
                 <Notification title="لطفاً تمام فیلدها را پر کنید" type="warning" />,
                 { placement: 'top-center' }
@@ -183,7 +183,7 @@ const CompletedAssessments = () => {
                 status: 'active' as const,
                 start_datetime: dayjs(collectionForm.start_datetime).format('YYYY-MM-DD HH:mm:ss'),
                 end_datetime: dayjs(collectionForm.end_datetime).format('YYYY-MM-DD HH:mm:ss'),
-                due_date: dayjs(collectionForm.due_date).format('YYYY-MM-DD'),
+                due_date: dayjs(collectionForm.end_datetime).format('YYYY-MM-DD'),
                 duration_minutes: Number(collectionForm.duration_minutes),
                 exam_ids: selectedExamIds, // Already numbers
                 user_id: Number(selectedAssessment.manager.user_id),
@@ -660,26 +660,7 @@ const CompletedAssessments = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                مهلت انجام (Due Date) <span className="text-red-500">*</span>
-                                            </label>
-                                            <DatePicker
-                                                value={collectionForm.due_date}
-                                                onChange={(date: any) => {
-                                                    const jsDate = date?.toDate ? date.toDate() : date;
-                                                    setCollectionForm({ ...collectionForm, due_date: jsDate })
-                                                }}
-                                                calendar={persian}
-                                                locale={persian_fa}
-                                                format="YYYY/MM/DD"
-                                                containerClassName="w-full"
-                                                inputClass="w-full h-11 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500"
-                                                placeholder="انتخاب تاریخ"
-                                                calendarPosition="bottom-right"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                مدت زمان کل (دقیقه) <span className="text-red-500">*</span>
+                                                مجموع زمان مورد نیاز (دقیقه) <span className="text-red-500">*</span>
                                             </label>
                                             <Input
                                                 type="number"

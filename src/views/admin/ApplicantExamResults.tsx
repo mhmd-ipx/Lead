@@ -67,7 +67,7 @@ interface UserAnswer {
     status: string
     started_at: string
     completed_at: string
-    answers: {
+    answers?: {
         exam_id: number
         exam_title: string
         sections: {
@@ -75,7 +75,7 @@ interface UserAnswer {
             section_title: string
             questions: any[]
         }[]
-    }
+    } | null
     exam: {
         id: number
         title: string
@@ -213,7 +213,7 @@ const ApplicantExamResults = () => {
             companyName: examSetInfo.companyName,
             examTitle: ans.exam.title,
             completedAt: dayjs(ans.completed_at).format('YYYY/MM/DD HH:mm'),
-            sections: ans.answers.sections,
+            sections: ans.answers?.sections || [],
         }))
         const filename = `Results-${examSetInfo.applicantName}-${dayjs().format('YYYY-MM-DD')}`
         await exportToZip(exportData, settings, filename)

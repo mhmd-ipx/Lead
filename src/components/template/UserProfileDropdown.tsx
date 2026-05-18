@@ -8,22 +8,24 @@ import { PiUserDuotone, PiSignOutDuotone, PiGearDuotone } from 'react-icons/pi'
 import { useAuth } from '@/auth'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 
+import { getImageUrl } from '@/utils/imageUrl'
+
 type DropdownList = {
     label: string
     path: string
     icon: JSX.Element
 }
 
-const dropdownItemList: DropdownList[] = [
-    {
-        label: 'تنظیمات کاربری',
-        path: '/owner/user-profile',
-        icon: <PiGearDuotone />,
-    },
-]
-
 const _UserDropdown = () => {
-    const { avatar, userName, email } = useSessionUser((state) => state.user)
+    const { avatar, userName, phone, authority } = useSessionUser((state) => state.user)
+    const isAdmin = authority?.includes('admin')
+    const dropdownItemList: DropdownList[] = [
+        {
+            label: 'تنظیمات کاربری',
+            path: isAdmin ? '/admin/settings' : '/owner/user-profile',
+            icon: <PiGearDuotone />,
+        },
+    ]
     const [isOpen, setIsOpen] = useState(false)
 
     const { signOut } = useAuth()
@@ -42,7 +44,7 @@ const _UserDropdown = () => {
     }
 
     const avatarProps = {
-        ...(avatar ? { src: avatar } : { icon: <PiUserDuotone /> }),
+        ...(avatar ? { src: getImageUrl(avatar) } : { icon: <PiUserDuotone /> }),
     }
 
     return (
@@ -64,8 +66,8 @@ const _UserDropdown = () => {
                             <div className="font-bold text-gray-900 dark:text-gray-100">
                                 {userName || 'Anonymous'}
                             </div>
-                            <div className="text-xs">
-                                {email || 'No email available'}
+                            <div className="text-xs font-mono">
+                                {phone || '-'}
                             </div>
                         </div>
                     </div>

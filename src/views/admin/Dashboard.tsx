@@ -94,7 +94,11 @@ const StatCard = ({
     return (
         <div
             id={id}
-            className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-4 hover:shadow-md transition-shadow duration-200"
+            className={classNames(
+                "bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-4 hover:shadow-md transition-all duration-200",
+                onView && "cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400"
+            )}
+            onClick={onView}
         >
             <div className="flex justify-between items-start">
                 <div>
@@ -143,7 +147,10 @@ const StatCard = ({
                         variant="default"
                         icon={<HiOutlineEye />}
                         className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-blue-600 dark:text-blue-400 border-0"
-                        onClick={onView}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onView();
+                        }}
                     >
                         مشاهده
                     </Button>
@@ -421,12 +428,12 @@ const Dashboard = () => {
                     icon={<HiOutlineTicket />}
                     iconBg="bg-amber-100 dark:bg-amber-500/20"
                     iconColor="text-amber-600 dark:text-amber-400"
-                    onView={() => navigate('/admin/support')}
+                    onView={() => navigate('/admin/support/tickets')}
                     id="admin-dashboard-stats-tickets"
                 />
                 <StatCard
                     loading={statsLoading}
-                    title="شرکت‌های ثبت شده"
+                    title="سازمان‌های ثبت شده"
                     value={stats?.companies.total ?? 0}
                     icon={<HiOutlineOfficeBuilding />}
                     iconBg="bg-indigo-100 dark:bg-indigo-500/20"
@@ -441,6 +448,7 @@ const Dashboard = () => {
                     icon={<HiOutlineUsers />}
                     iconBg="bg-violet-100 dark:bg-violet-500/20"
                     iconColor="text-violet-600 dark:text-violet-400"
+                    onView={() => navigate('/admin/users')}
                     id="admin-dashboard-stats-users"
                 />
                 <StatCard
@@ -453,7 +461,7 @@ const Dashboard = () => {
                     icon={<HiOutlineClipboardList />}
                     iconBg="bg-orange-100 dark:bg-orange-500/20"
                     iconColor="text-orange-600 dark:text-orange-400"
-                    onView={() => navigate('/admin/assessments')}
+                    onView={() => navigate('/admin/assessments/completed')}
                     id="admin-dashboard-stats-assessments"
                 />
                 <StatCard
@@ -498,7 +506,7 @@ const Dashboard = () => {
                                 variant="default"
                                 icon={<HiOutlineEye />}
                                 className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-blue-600 dark:text-blue-400 border-0"
-                                onClick={() => navigate('/admin/support')}
+                                onClick={() => navigate('/admin/support/tickets')}
                             >
                                 مشاهده
                             </Button>

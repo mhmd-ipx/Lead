@@ -232,6 +232,7 @@ const ExaminerSignInForm = (props: ExaminerSignInFormProps) => {
                 <Form onSubmit={accessForm.handleSubmit(onVerifyAccess)}>
                     <FormItem
                         label="شماره موبایل"
+                        labelClass="text-slate-850 dark:text-slate-200 font-extrabold text-sm mb-1.5 block"
                         invalid={Boolean(accessForm.formState.errors.phone)}
                         errorMessage={accessForm.formState.errors.phone?.message}
                     >
@@ -243,6 +244,7 @@ const ExaminerSignInForm = (props: ExaminerSignInFormProps) => {
                                     type="tel"
                                     placeholder="09123456789"
                                     autoComplete="off"
+                                    className="border-2 border-slate-400 dark:border-slate-500 focus:border-violet-600 dark:focus:border-violet-500 bg-white/95 focus:bg-white dark:bg-slate-900/95 dark:focus:bg-slate-950 font-bold text-slate-850 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl transition-all duration-200"
                                     {...field}
                                 />
                             )}
@@ -251,6 +253,7 @@ const ExaminerSignInForm = (props: ExaminerSignInFormProps) => {
 
                     <FormItem
                         label="کد آزمون"
+                        labelClass="text-slate-850 dark:text-slate-200 font-extrabold text-sm mb-1.5 block"
                         invalid={Boolean(accessForm.formState.errors.code)}
                         errorMessage={accessForm.formState.errors.code?.message}
                     >
@@ -262,6 +265,7 @@ const ExaminerSignInForm = (props: ExaminerSignInFormProps) => {
                                     type="text"
                                     placeholder="مثال: WIFST"
                                     autoComplete="off"
+                                    className="border-2 border-slate-400 dark:border-slate-500 focus:border-violet-600 dark:focus:border-violet-500 bg-white/95 focus:bg-white dark:bg-slate-900/95 dark:focus:bg-slate-950 font-bold text-slate-850 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl transition-all duration-200"
                                     {...field}
                                     onChange={(e) =>
                                         field.onChange(
@@ -278,7 +282,7 @@ const ExaminerSignInForm = (props: ExaminerSignInFormProps) => {
                         loading={isSubmitting}
                         variant="solid"
                         type="submit"
-                        className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95"
+                        className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95 font-extrabold"
                     >
                         {isSubmitting ? 'در حال بررسی...' : 'بررسی و ارسال کد تأیید'}
                     </Button>
@@ -286,16 +290,16 @@ const ExaminerSignInForm = (props: ExaminerSignInFormProps) => {
             ) : (
                 <div>
                     <div className="text-center mb-4">
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-slate-850 dark:text-slate-200 font-extrabold">
                             کد ۴ رقمی به شماره{' '}
-                            <span className="font-semibold text-primary">
+                            <span className="font-black text-primary">
                                 {phoneNumber}
                             </span>{' '}
                             ارسال شد
                         </p>
                         <div className="mt-2">
                             {timer > 0 ? (
-                                <p className="text-sm font-semibold text-primary">
+                                <p className="text-sm font-black text-primary">
                                     زمان باقیمانده:{' '}
                                     {Math.floor(timer / 60)}:
                                     {(timer % 60).toString().padStart(2, '0')}
@@ -308,6 +312,7 @@ const ExaminerSignInForm = (props: ExaminerSignInFormProps) => {
                                     onClick={handleResendOTP}
                                     loading={isSubmitting}
                                     disabled={!canResend}
+                                    className="font-bold text-violet-600 dark:text-violet-400 hover:text-violet-850"
                                 >
                                     ارسال مجدد کد
                                 </Button>
@@ -318,6 +323,7 @@ const ExaminerSignInForm = (props: ExaminerSignInFormProps) => {
                     <Form onSubmit={otpForm.handleSubmit(onVerifyOTP)}>
                         <FormItem
                             label="کد OTP"
+                            labelClass="text-slate-850 dark:text-slate-200 font-extrabold text-sm mb-1.5 block"
                             invalid={Boolean(otpForm.formState.errors.otp)}
                             errorMessage={otpForm.formState.errors.otp?.message}
                         >
@@ -329,6 +335,7 @@ const ExaminerSignInForm = (props: ExaminerSignInFormProps) => {
                                         length={4}
                                         placeholder="0"
                                         fullWidth
+                                        inputClass="border-2 border-slate-400 dark:border-slate-500 focus:border-violet-600 dark:focus:border-violet-500 bg-white/95 focus:bg-white dark:bg-slate-900/95 dark:focus:bg-slate-950 font-bold text-slate-850 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl transition-all duration-200"
                                         {...field}
                                     />
                                 )}
@@ -341,7 +348,7 @@ const ExaminerSignInForm = (props: ExaminerSignInFormProps) => {
                                 variant="plain"
                                 type="button"
                                 onClick={handleBack}
-                                className="font-medium"
+                                className="font-extrabold text-slate-700 dark:text-slate-300 hover:text-slate-900"
                             >
                                 بازگشت
                             </Button>
@@ -350,7 +357,7 @@ const ExaminerSignInForm = (props: ExaminerSignInFormProps) => {
                                 loading={isSubmitting}
                                 variant="solid"
                                 type="submit"
-                                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95"
+                                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 border-none shadow-lg transform transition-transform duration-200 active:scale-95 font-extrabold"
                             >
                                 {isSubmitting ? 'ورود...' : 'ورود'}
                             </Button>

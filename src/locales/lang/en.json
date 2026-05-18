@@ -15,6 +15,34 @@
                 "item1": "Group collapse menu item 1",
                 "item2": "Group collapse menu item 2"
             }
+        },
+        "admin": {
+            "dashboard": "Dashboard",
+            "organizations": "Organizations",
+            "assessments": {
+                "completed": "Assessments"
+            },
+            "applicant": {
+                "exams": "Applicant Exams"
+            },
+            "accounting": {
+                "title": "Accounting",
+                "documents": "Documents",
+                "bills": "Bills"
+            },
+            "support": {
+                "tickets": "Support"
+            },
+            "notifications": "Notifications",
+            "system": {
+                "settings": "User Settings"
+            },
+            "configuration": "Configuration",
+            "assessment": {
+                "forms": "Assessment Forms"
+            },
+            "exams": "Exams",
+            "users": "System Users"
         }
     }
 }

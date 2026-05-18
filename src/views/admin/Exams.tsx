@@ -6,9 +6,6 @@ import {
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table'
-import { DragDropContext, Draggable } from '@hello-pangea/dnd'
-import { MdDragIndicator } from 'react-icons/md'
-import { StrictModeDroppable } from '@/components/shared'
 import { getExamsList, deleteExam, createExam } from '@/services/AdminService'
 import { Exam } from '@/@types/exam'
 import {
@@ -22,7 +19,6 @@ import {
 } from 'react-icons/hi'
 import { useNavigate } from 'react-router-dom'
 import type { ColumnDef } from '@tanstack/react-table'
-import type { DropResult } from '@hello-pangea/dnd'
 
 type ExamWithPriority = Exam & {
     priority: number
@@ -94,22 +90,7 @@ const Exams = () => {
         loadExams()
     }, [])
 
-    const reorderData = (startIndex: number, endIndex: number) => {
-        const newData = [...data]
-        const [movedRow] = newData.splice(startIndex, 1)
-        newData.splice(endIndex, 0, movedRow)
-        const updatedData = newData.map((item, index) => ({
-            ...item,
-            priority: index + 1
-        }))
-        setData(updatedData)
-    }
-
-    const handleDragEnd = (result: DropResult) => {
-        const { source, destination } = result
-        if (!destination) return
-        reorderData(source.index, destination.index)
-    }
+    // Reorder and drag/drop handlers have been removed since reordering is disabled.
 
     const handleDelete = async (exam: ExamWithPriority) => {
         if (!confirm(`آیا از حذف آزمون "${exam.title}" اطمینان دارید؟\nاین عملیات برگشت‌پذیر نیست.`)) return
@@ -246,18 +227,7 @@ const Exams = () => {
     const columns: ColumnDef<ExamWithPriority>[] = useMemo(
         () => [
             {
-                id: 'dragger',
-                header: '',
-                accessorKey: 'dragger',
-                cell: () => (
-                    <span className="cursor-move text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                        <MdDragIndicator className="w-5 h-5" />
-                    </span>
-                ),
-                size: 50,
-            },
-            {
-                header: 'اولویت',
+                header: 'ردیف',
                 accessorKey: 'priority',
                 cell: (info) => (
                     <div className="flex items-center justify-center">
@@ -281,8 +251,8 @@ const Exams = () => {
                 header: 'توضیحات',
                 accessorKey: 'description',
                 cell: (info) => (
-                    <div className="text-sm text-gray-600 dark:text-gray-400 max-w-md truncate">
-                        {info.getValue() as string}
+                    <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-normal break-words leading-relaxed max-w-md">
+                        {info.getValue() as string || '---'}
                     </div>
                 ),
             },
@@ -383,11 +353,14 @@ const Exams = () => {
             {/* Header */}
             <div id="admin-exams-header" className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         مدیریت آزمون‌ها
+                        <span className="text-sm font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
+                            {data.length} آزمون
+                        </span>
                     </h1>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        مدیریت آزمون‌ها و تعیین اولویت آن‌ها
+                        مدیریت و ویرایش آزمون‌های موجود در سیستم
                     </p>
                 </div>
                 <Button
@@ -400,19 +373,9 @@ const Exams = () => {
                 </Button>
             </div>
 
-            {/* Info Card */}
-            <Card id="admin-exams-info" className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                    💡 برای تغییر اولویت آزمون‌ها، آن‌ها را بکشید و در جای مورد نظر رها کنید.
-                </p>
-            </Card>
-
             {/* Table Card */}
             <Card id="admin-exams-table-container">
                 <div className="p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                        لیست آزمون‌ها ({data.length} آزمون)
-                    </h2>
                     <div className="overflow-x-auto">
                         <Table className="w-full">
                             <THead>
@@ -429,48 +392,20 @@ const Exams = () => {
                                     </Tr>
                                 ))}
                             </THead>
-                            <DragDropContext onDragEnd={handleDragEnd}>
-                                <StrictModeDroppable droppableId="exams-table-body">
-                                    {(provided) => (
-                                        <TBody
-                                            ref={provided.innerRef}
-                                            {...provided.droppableProps}
-                                        >
-                                            {table.getRowModel().rows.map((row) => (
-                                                <Draggable
-                                                    key={row.id}
-                                                    draggableId={row.id}
-                                                    index={row.index}
-                                                >
-                                                    {(provided, snapshot) => (
-                                                        <Tr
-                                                            ref={provided.innerRef}
-                                                            className={
-                                                                snapshot.isDragging
-                                                                    ? 'table bg-gray-50 dark:bg-gray-800'
-                                                                    : ''
-                                                            }
-                                                            style={provided.draggableProps.style}
-                                                            {...provided.draggableProps}
-                                                            {...provided.dragHandleProps}
-                                                        >
-                                                            {row.getVisibleCells().map((cell) => (
-                                                                <Td key={cell.id}>
-                                                                    {flexRender(
-                                                                        cell.column.columnDef.cell,
-                                                                        cell.getContext()
-                                                                    )}
-                                                                </Td>
-                                                            ))}
-                                                        </Tr>
-                                                    )}
-                                                </Draggable>
-                                            ))}
-                                            {provided.placeholder}
-                                        </TBody>
-                                    )}
-                                </StrictModeDroppable>
-                            </DragDropContext>
+                            <TBody>
+                                {table.getRowModel().rows.map((row) => (
+                                    <Tr key={row.id}>
+                                        {row.getVisibleCells().map((cell) => (
+                                            <Td key={cell.id}>
+                                                {flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext()
+                               				    )}
+                                            </Td>
+                                        ))}
+                                    </Tr>
+                                ))}
+                            </TBody>
                         </Table>
                     </div>
                 </div>

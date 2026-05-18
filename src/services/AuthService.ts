@@ -96,3 +96,11 @@ export async function apiResetPassword<T>(data: ResetPassword) {
     })
 }
 
+/**
+ * Update user profile details
+ * POST /user/profile
+ */
+export async function apiUpdateProfile(data: FormData) {
+    return apiClient.post<any>('/user/profile', data)
+}
+

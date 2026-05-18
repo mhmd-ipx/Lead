@@ -226,12 +226,6 @@ const adminRoutes: Routes = [
         authority: [ADMIN],
     },
     {
-        key: 'adminTemplates',
-        path: '/admin/templates',
-        component: lazy(() => import('@/views/admin/Templates')),
-        authority: [ADMIN],
-    },
-    {
         key: 'adminSystemSettings',
         path: '/admin/settings',
         component: lazy(() => import('@/views/admin/Settings')),
@@ -259,6 +253,12 @@ const adminRoutes: Routes = [
         key: 'adminSupportTicketView',
         path: '/admin/support/ticket/:ticketId',
         component: lazy(() => import('@/views/admin/SupportTicketView')),
+        authority: [ADMIN],
+    },
+    {
+        key: 'adminSystemUsers',
+        path: '/admin/users',
+        component: lazy(() => import('@/views/admin/SystemUsers')),
         authority: [ADMIN],
     },
 ]

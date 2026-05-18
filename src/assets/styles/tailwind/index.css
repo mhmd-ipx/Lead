@@ -3,8 +3,33 @@
 @tailwind utilities;
 
 @font-face {
-	font-family: yekanbakh;
-	src: url("../../fonts/yekanbakh/Yekan-Bakh-FaNum-04-Regular.woff");
+	font-family: 'IRANSans';
+	src: url("../../fonts/IRANSans/IRANSansWeb(FaNum).woff2") format("woff2");
+	font-weight: normal;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'IRANSans';
+	src: url("../../fonts/IRANSans/IRANSansWeb(FaNum)_Bold.woff2") format("woff2");
+	font-weight: bold;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'IRANSans';
+	src: url("../../fonts/IRANSans/IRANSansWeb(FaNum)_Medium.woff2") format("woff2");
+	font-weight: 500;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'IRANSans';
+	src: url("../../fonts/IRANSans/IRANSansWeb(FaNum)_Light.woff2") format("woff2");
+	font-weight: 300;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'IRANSans';
+	src: url("../../fonts/IRANSans/IRANSansWeb(FaNum)_UltraLight.woff2") format("woff2");
+	font-weight: 200;
 	font-style: normal;
 }
 @layer base {
@@ -65,7 +90,7 @@
 	body {
 		@apply text-gray-500 dark:text-gray-400 text-sm bg-gray-100 dark:bg-gray-950 leading-normal font-medium;
 		-webkit-font-smoothing: antialiased;
-		font-family: yekanbakh;
+		font-family: 'IRANSans', sans-serif;
 		font-feature-settings: "ss01" !important;
 	}
 
@@ -109,18 +134,71 @@
 }
 .apexcharts-tooltip .apexcharts-tooltip-y-group {
 	margin-right: 10px !important;
-	font-family: yekanbakh !important;
+	font-family: 'IRANSans' !important;
 }
 .apexcharts-text{
-	font-family: yekanbakh !important;
+	font-family: 'IRANSans' !important;
 }
 .apexcharts-tooltip-title{
-	font-family: yekanbakh !important;
+	font-family: 'IRANSans' !important;
 }
 ._9w8d5{
-	font-family: yekanbakh !important;
+	font-family: 'IRANSans' !important;
 }
 .apexcharts-legend-text{
 	margin-right: 10px !important;
-	font-family: yekanbakh !important;
+	font-family: 'IRANSans' !important;
+}
+
+
+
+@layer utilities {
+	.bg-primary { background-color: var(--primary); }
+	.text-primary { color: var(--primary); }
+	.border-primary { border-color: var(--primary); }
+	.ring-primary { --tw-ring-color: var(--primary); }
+	.bg-primary-deep { background-color: var(--primary-deep); }
+	.text-primary-deep { color: var(--primary-deep); }
+	.border-primary-deep { border-color: var(--primary-deep); }
+	.ring-primary-deep { --tw-ring-color: var(--primary-deep); }
+	.bg-primary-mild { background-color: var(--primary-mild); }
+	.text-primary-mild { color: var(--primary-mild); }
+	.border-primary-mild { border-color: var(--primary-mild); }
+	.ring-primary-mild { --tw-ring-color: var(--primary-mild); }
+	.bg-primary-subtle { background-color: var(--primary-subtle); }
+	.text-primary-subtle { color: var(--primary-subtle); }
+	.border-primary-subtle { border-color: var(--primary-subtle); }
+	.ring-primary-subtle { --tw-ring-color: var(--primary-subtle); }
+	.bg-error { background-color: var(--error); }
+	.text-error { color: var(--error); }
+	.border-error { border-color: var(--error); }
+	.ring-error { --tw-ring-color: var(--error); }
+	.bg-error-subtle { background-color: var(--error-subtle); }
+	.text-error-subtle { color: var(--error-subtle); }
+	.border-error-subtle { border-color: var(--error-subtle); }
+	.ring-error-subtle { --tw-ring-color: var(--error-subtle); }
+	.bg-success { background-color: var(--success); }
+	.text-success { color: var(--success); }
+	.border-success { border-color: var(--success); }
+	.ring-success { --tw-ring-color: var(--success); }
+	.bg-success-subtle { background-color: var(--success-subtle); }
+	.text-success-subtle { color: var(--success-subtle); }
+	.border-success-subtle { border-color: var(--success-subtle); }
+	.ring-success-subtle { --tw-ring-color: var(--success-subtle); }
+	.bg-info { background-color: var(--info); }
+	.text-info { color: var(--info); }
+	.border-info { border-color: var(--info); }
+	.ring-info { --tw-ring-color: var(--info); }
+	.bg-info-subtle { background-color: var(--info-subtle); }
+	.text-info-subtle { color: var(--info-subtle); }
+	.border-info-subtle { border-color: var(--info-subtle); }
+	.ring-info-subtle { --tw-ring-color: var(--info-subtle); }
+	.bg-warning { background-color: var(--warning); }
+	.text-warning { color: var(--warning); }
+	.border-warning { border-color: var(--warning); }
+	.ring-warning { --tw-ring-color: var(--warning); }
+	.bg-warning-subtle { background-color: var(--warning-subtle); }
+	.text-warning-subtle { color: var(--warning-subtle); }
+	.border-warning-subtle { border-color: var(--warning-subtle); }
+	.ring-warning-subtle { --tw-ring-color: var(--warning-subtle); }
 }

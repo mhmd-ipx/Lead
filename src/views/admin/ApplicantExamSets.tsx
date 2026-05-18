@@ -233,7 +233,7 @@ const ApplicantExamSets = () => {
         setLoading(true)
         try {
             const data = await getApplicantExamSets()
-            setExamSets(data)
+            setExamSets([...data].reverse())
         } catch (error) {
             console.error('Error loading exam sets:', error)
         } finally {
@@ -465,7 +465,7 @@ const ApplicantExamSets = () => {
             <div id="admin-applicant-exams-stats" className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
                 <StatisticCard
                     id="admin-applicant-exams-stats-all"
-                    title="همه آزمون‌ها"
+                    title="همه وضعیت ها"
                     value={loading ? undefined as any : totalExamSets}
                     iconClass="bg-purple-200 text-purple-700"
                     icon={<HiOutlineAcademicCap />}
@@ -507,15 +507,12 @@ const ApplicantExamSets = () => {
 
             {/* Table */}
             <Card id="admin-applicant-exams-table">
-                <div className="p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                        لیست مجموعه آزمون‌ها
-                        {!loading && selectedCategory !== 'all' && (
-                            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 mr-2">
-                                ({filteredExamSets.length} مورد)
-                            </span>
-                        )}
-                    </h2>
+                <div className="p-1">
+                    {!loading && selectedCategory !== 'all' && (
+                        <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-4">
+                            ({filteredExamSets.length} مورد یافت شد)
+                        </div>
+                    )}
                     <div className="overflow-x-auto">
                         <Table>
                             <THead>
@@ -560,7 +557,7 @@ const ApplicantExamSets = () => {
                                             <Td>
                                                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                                                     <HiOutlineCalendar className="w-4 h-4" />
-                                                    <span dir="ltr">{new Date(examSet.examDate).toLocaleDateString('fa-IR')}</span>
+                                                    <span dir="ltr">{examSet.examDate ? new Date(examSet.examDate).toLocaleDateString('fa-IR') : '-'}</span>
                                                 </div>
                                             </Td>
                                             <Td>
@@ -668,7 +665,7 @@ const ApplicantExamSets = () => {
                                             <HiOutlineClock className="w-5 h-5" />
                                         </div>
                                         <div>
-                                            <div className="text-xs text-gray-500 dark:text-gray-400">مدت زمان کل</div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400">مدت زمان مورد نیاز </div>
                                             <div className="font-semibold text-gray-900 dark:text-white">
                                                 {collectionDetails.duration_minutes} دقیقه
                                             </div>
@@ -912,7 +909,7 @@ const ApplicantExamSets = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">مدت زمان (دقیقه)</label>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">مجموع زمان مورد نیاز (دقیقه)</label>
                                     <Input
                                         type="number"
                                         value={editFormData.duration_minutes}
@@ -996,6 +993,15 @@ const ApplicantExamSets = () => {
                                             toast.push(<Notification title="لطفاً حداقل یک آزمون انتخاب کنید" type="warning" />, { placement: 'top-center' })
                                             return
                                         }
+                                        const totalDuration = availableExams
+                                            .filter(e => editFormData.exam_ids.includes(Number(e.id)))
+                                            .reduce((sum, e) => sum + (e.duration || 0), 0)
+
+                                        setEditFormData(prev => ({
+                                            ...prev,
+                                            duration_minutes: totalDuration > 0 ? totalDuration : prev.duration_minutes
+                                        }))
+
                                         setStep(2)
                                     }}
                                     disabled={editFormData.exam_ids.length === 0}

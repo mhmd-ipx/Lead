@@ -1,4 +1,4 @@
-import { forwardRef, useContext, useCallback, useState } from 'react'
+import { forwardRef, useContext, useCallback, useState, useEffect } from 'react'
 import classNames from 'classnames'
 import CheckboxGroupContext from './context'
 import type { CommonProps } from '../@types/common'
@@ -49,6 +49,10 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>((props, ref) => {
     }, [controlledChecked, groupValue, value, defaultChecked])
 
     const [checkboxChecked, setCheckboxChecked] = useState(isChecked())
+
+    useEffect(() => {
+        setCheckboxChecked(isChecked())
+    }, [controlledChecked, groupValue, value, defaultChecked, isChecked])
 
     const getControlProps = () => {
         const checkedValue = checkboxChecked

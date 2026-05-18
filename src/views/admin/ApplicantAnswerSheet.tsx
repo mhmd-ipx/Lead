@@ -22,15 +22,16 @@ interface UserAnswer {
     status: string
     started_at: string
     completed_at: string
-    answers: {
+    answers?: {
         exam_id: number
         exam_title: string
         sections: {
             section_id: number
             section_title: string
+            section_description?: string
             questions: any[]
         }[]
-    }
+    } | null
     exam: {
         id: number
         title: string
@@ -89,7 +90,7 @@ const ApplicantAnswerSheet = () => {
             companyName: applicantInfo.companyName,
             examTitle: answer.exam.title,
             completedAt: dayjs(answer.completed_at).format('YYYY/MM/DD HH:mm'),
-            sections: answer.answers.sections
+            sections: answer.answers?.sections || []
         }]
 
         const filename = `${applicantInfo.applicantName}-${answer.exam.title}-${dayjs().format('YYYY-MM-DD')}`
@@ -216,7 +217,12 @@ const ApplicantAnswerSheet = () => {
                     </div>
 
                     <div className="p-6 space-y-10">
-                        {answer.answers.sections.map((section, sIdx) => (
+                        {(!answer.answers?.sections || answer.answers.sections.length === 0) && (
+                            <div className="text-center py-12 text-gray-500 dark:text-gray-400 font-medium">
+                                پاسخی برای این آزمون ثبت نشده است.
+                            </div>
+                        )}
+                        {(answer.answers?.sections || []).map((section, sIdx) => (
                             <div key={section.section_id || sIdx}>
                                 <div className="flex items-center gap-4 mb-6">
                                     <h4 className="text-base font-bold text-white bg-indigo-600 px-4 py-1.5 rounded-full shadow-md">
@@ -224,7 +230,9 @@ const ApplicantAnswerSheet = () => {
                                     </h4>
                                     <div className="flex-1 h-[2px] bg-gradient-to-r from-indigo-100 to-transparent dark:from-indigo-900/40"></div>
                                 </div>
-
+                                {section.section_description && (
+                                    <div className="mb-6 prose dark:prose-invert max-w-none text-sm text-gray-600 dark:text-gray-400" dangerouslySetInnerHTML={{ __html: section.section_description }} />
+                                )}
                                 <div className="space-y-8">
                                     {section.questions.map((question: any, qIdx: number) => (
                                         <div key={question.question_id || qIdx} className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm">

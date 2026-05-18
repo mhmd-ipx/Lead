@@ -3,6 +3,7 @@ import AuthContext from './AuthContext'
 import appConfig from '@/configs/app.config'
 import { useSessionUser, useToken } from '@/store/authStore'
 import { apiVerifyOtp, apiSignOut, apiSignUp } from '@/services/AuthService'
+import { getImageUrl } from '@/utils/imageUrl'
 import { REDIRECT_URL_KEY } from '@/constants/app.constant'
 import { useNavigate } from 'react-router-dom'
 import type {
@@ -100,7 +101,7 @@ function AuthProvider({ children }: AuthProviderProps) {
             userId: apiUser.id?.toString() || null,
             userName: apiUser.name || null,
             phone: apiUser.phone || null,
-            avatar: apiUser.avatar || null,
+            avatar: apiUser.avatar ? getImageUrl(apiUser.avatar) : null,
             authority: apiUser.role ? [apiUser.role] : [],
         }
     }

@@ -29,6 +29,15 @@ const ExportSettingsModal = ({ isOpen, onClose, onConfirm, title = 'تنظیما
         if (!isOpen) {
             setIsGenerating(false)
             setProgress(0)
+        } else {
+            setSettings({
+                format: 'docx',
+                showQuestionText: true,
+                showOptionText: true,
+                optionLabelType: 'number',
+                includeApplicantInfo: true,
+                includeTimestamp: true,
+            })
         }
     }, [isOpen])
 
