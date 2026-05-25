@@ -334,18 +334,18 @@ const AssessmentForms = () => {
                                             {stepIndex + 1}
                                         </span>
                                     </div>
-                                    <div className="flex-1 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center hover:shadow-md transition-shadow">
+                                    <div className="flex-1 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 hover:shadow-md transition-shadow">
                                         <div>
-                                            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                                            <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100">
                                                 {step.title}
                                             </h2>
                                             {step.description && (
-                                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
                                                     {step.description}
                                                 </p>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity self-end sm:self-auto border-t sm:border-0 border-gray-100 dark:border-gray-700 pt-2 sm:pt-0 w-full sm:w-auto justify-end">
                                             <Button
                                                 variant="plain"
                                                 shape="circle"
@@ -424,9 +424,9 @@ const AssessmentForms = () => {
                                             <Card
                                                 id={`admin-assessment-question-${question.id}`}
                                                 className="hover:shadow-md transition-all duration-300 border-l-4 border-l-transparent hover:border-l-primary-500 group"
-                                                bodyClass="p-5"
+                                                bodyClass="p-4 sm:p-5"
                                             >
-                                                <div className="flex items-start gap-4">
+                                                <div className="flex items-start gap-3 sm:gap-4">
                                                     <div className="flex-shrink-0 mt-1">
                                                         {question.type === 'text' && <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><HiOutlineMenuAlt2 /></div>}
                                                         {question.type === 'select' && <div className="p-2 bg-purple-50 text-purple-600 rounded-lg"><HiOutlineViewList /></div>}
@@ -435,20 +435,20 @@ const AssessmentForms = () => {
                                                         {question.type === 'rating' && <div className="p-2 bg-yellow-50 text-yellow-600 rounded-lg"><HiOutlineStar /></div>}
                                                     </div>
 
-                                                    <div className="flex-1">
-                                                        <div className="flex justify-between items-start mb-3">
-                                                            <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-lg">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-3">
+                                                            <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-base sm:text-lg break-words">
                                                                 {question.question}
                                                                 {question.required && (
                                                                     <span className="text-red-500 mr-2 text-sm" title="اجباری">*</span>
                                                                 )}
                                                             </h3>
-                                                            <div className="flex items-center gap-2">
-                                                                <Tag className="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 border-0">
+                                                            <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
+                                                                <Tag className="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 border-0 text-xs sm:text-sm whitespace-nowrap">
                                                                     {getTypeLabel(question.type)}
                                                                 </Tag>
 
-                                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
+                                                                <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity sm:mr-2">
                                                                     <Button
                                                                         variant="plain"
                                                                         shape="circle"

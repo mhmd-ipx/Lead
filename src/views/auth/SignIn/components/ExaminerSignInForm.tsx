@@ -134,9 +134,9 @@ const ExaminerSignInForm = (props: ExaminerSignInFormProps) => {
                     setPhoneNumber(values.phone)
 
                     // نمایش کد OTP در مودال (فقط در حالت توسعه)
-                    setOtpCode(otpResponse.data.code)
-                    setOtpExpiresAt(otpResponse.data.expires_at)
-                    setShowOtpModal(true)
+                    // setOtpCode(otpResponse.data.code)
+                    // setOtpExpiresAt(otpResponse.data.expires_at)
+                    // setShowOtpModal(true)
 
                     setStep('otp')
                     startTimer()
@@ -205,9 +205,9 @@ const ExaminerSignInForm = (props: ExaminerSignInFormProps) => {
             const response = await apiSendOtp({ phone: phoneNumber })
             if (response.success) {
                 // نمایش کد OTP جدید در مودال (فقط در حالت توسعه)
-                setOtpCode(response.data.code)
-                setOtpExpiresAt(response.data.expires_at)
-                setShowOtpModal(true)
+                // setOtpCode(response.data.code)
+                // setOtpExpiresAt(response.data.expires_at)
+                // setShowOtpModal(true)
 
                 startTimer()
                 setMessage?.('کد تأیید مجدداً ارسال شد', 'success')
@@ -367,12 +367,12 @@ const ExaminerSignInForm = (props: ExaminerSignInFormProps) => {
             )}
 
             {/* Modal برای نمایش کد OTP (فقط در حالت توسعه) */}
-            <OtpCodeModal
+            {/* <OtpCodeModal
                 isOpen={showOtpModal}
                 onClose={() => setShowOtpModal(false)}
                 code={otpCode}
                 expiresAt={otpExpiresAt}
-            />
+            /> */}
         </div>
     )
 }

@@ -209,7 +209,7 @@ const QuestionForm = forwardRef<QuestionFormRef, QuestionFormProps>(({ onSave, o
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                     />
-                    <div className="mt-3 flex flex-wrap items-center gap-4">
+                    <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-4">
                         <Upload 
                             showList={false}
                             onChange={async (files) => {
@@ -312,13 +312,14 @@ const QuestionForm = forwardRef<QuestionFormRef, QuestionFormProps>(({ onSave, o
                 </div>
                 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-end gap-2 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
                     <Button 
                         type="button" 
                         size="sm" 
                         variant="plain" 
                         onClick={onCancel}
                         disabled={isUploading}
+                        className="w-full sm:w-auto"
                     >
                         انصراف
                     </Button>
@@ -331,6 +332,7 @@ const QuestionForm = forwardRef<QuestionFormRef, QuestionFormProps>(({ onSave, o
                             if (data) onSave(data, true)
                         }}
                         disabled={!isValid() || isUploading}
+                        className="w-full sm:w-auto"
                     >
                         ذخیره و افزودن بعدی
                     </Button>
@@ -343,6 +345,7 @@ const QuestionForm = forwardRef<QuestionFormRef, QuestionFormProps>(({ onSave, o
                             if (data) onSave(data, false)
                         }}
                         disabled={!isValid() || isUploading}
+                        className="w-full sm:w-auto"
                     >
                         ذخیره سوال
                     </Button>

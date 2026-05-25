@@ -21,19 +21,12 @@ const FooterContent = () => {
             <div className="">
                 <a
                     className="text-gray"
-                    href="/#"
+                    href="https://atrindanesh.com/"
                     onClick={(e) => e.preventDefault()}
                 >
-                    Term & Conditions
+                    Atrin Danesh Rastan
                 </a>
-                <span className="mx-2 text-muted"> | </span>
-                <a
-                    className="text-gray"
-                    href="/#"
-                    onClick={(e) => e.preventDefault()}
-                >
-                    Privacy & Policy
-                </a>
+
             </div>
         </div>
     )

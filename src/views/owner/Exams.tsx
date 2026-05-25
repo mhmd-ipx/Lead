@@ -100,18 +100,18 @@ const Exams = () => {
 
     return (
       <Card key={exam.id} className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
+        <div className="flex flex-col md:flex-row items-start justify-between mb-4 gap-4">
+          <div className="flex-1 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {exam.title}
               </h3>
-              {getExamStatusTag(exam)}
+              <div className="w-fit scale-[0.85] origin-right sm:scale-100">{getExamStatusTag(exam)}</div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
               {exam.description}
             </p>
-            <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
               <span className="flex items-center gap-1">
                 <HiOutlineUsers className="w-4 h-4" />
                 {stats.totalAssigned} مدیر
@@ -126,8 +126,9 @@ const Exams = () => {
               </span>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 w-full md:w-auto">
             <Button
+              className="flex-1 md:flex-none"
               variant="plain"
               size="sm"
               icon={<HiOutlineEye />}
@@ -136,6 +137,7 @@ const Exams = () => {
               نتایج
             </Button>
             <Button
+              className="flex-1 md:flex-none"
               variant="plain"
               size="sm"
               icon={<HiOutlineDocumentDownload />}
@@ -183,12 +185,12 @@ const Exams = () => {
         {/* Dates */}
         {(exam.startDate || exam.endDate) && (
           <div className="border-t pt-4 mt-4">
-            <div className="flex gap-4 text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-gray-500 dark:text-gray-400">
               {exam.startDate && (
-                <span>شروع: {formatDate(exam.startDate)}</span>
+                <span className="flex items-center gap-1"><HiOutlineClock className="w-4 h-4" /> شروع: {formatDate(exam.startDate)}</span>
               )}
               {exam.endDate && (
-                <span>پایان: {formatDate(exam.endDate)}</span>
+                <span className="flex items-center gap-1"><HiOutlineClock className="w-4 h-4" /> پایان: {formatDate(exam.endDate)}</span>
               )}
             </div>
           </div>
@@ -270,8 +272,8 @@ const Exams = () => {
     ]
 
     return (
-      <Card>
-        <div className="overflow-x-auto">
+      <Card className="p-0">
+        <div className="overflow-x-auto hidden lg:block">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
@@ -295,6 +297,55 @@ const Exams = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile List View */}
+        <div className="lg:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+          {examResults.map((result) => (
+            <div key={result.id} className="p-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <Avatar size={40} src="" />
+                  <div>
+                    <div className="font-semibold text-gray-900 dark:text-white text-sm">
+                      {result.managerName}
+                    </div>
+                    <div className="text-[11px] text-gray-500 mt-0.5">
+                      {result.examTitle}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  <Tooltip title="مشاهده جزئیات">
+                    <Button
+                      variant="plain"
+                      size="sm"
+                      shape="circle"
+                      icon={<HiOutlineEye />}
+                      onClick={() => navigate(`/owner/results/${result.managerId}`)}
+                      className="text-gray-500 hover:text-gray-700"
+                    />
+                  </Tooltip>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-gray-400">نمره</span>
+                  <div className="text-xs font-bold text-gray-900 dark:text-white">
+                    {result.score}/{result.totalScore} <span className="text-gray-500 font-normal">({result.percentage}%)</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-gray-400">وضعیت</span>
+                  <div className="w-fit scale-[0.85] origin-right">{getResultStatusTag(result.status)}</div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-gray-500 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <span>تاریخ تکمیل: {result.completedAt ? formatDate(result.completedAt) : '-'}</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </Card>
     )
   }
@@ -310,21 +361,22 @@ const Exams = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           آزمون‌ها و نتایج
         </h1>
         <Button
           variant="solid"
           icon={<HiOutlinePlus />}
+          className="w-full sm:w-auto"
         >
           ایجاد آزمون جدید
         </Button>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6">
+      <div className="flex md:grid md:grid-cols-4 gap-4 overflow-x-auto pb-2 md:pb-0">
+        <Card className="p-6 min-w-[200px] shrink-0 md:min-w-0 md:shrink-1">
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {exams.length}
@@ -334,7 +386,7 @@ const Exams = () => {
             </div>
           </div>
         </Card>
-        <Card className="p-6">
+        <Card className="p-6 min-w-[200px] shrink-0 md:min-w-0 md:shrink-1">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">
               {exams.filter(e => e.status === 'active').length}
@@ -344,7 +396,7 @@ const Exams = () => {
             </div>
           </div>
         </Card>
-        <Card className="p-6">
+        <Card className="p-6 min-w-[200px] shrink-0 md:min-w-0 md:shrink-1">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">
               {examResults.filter(r => r.status === 'passed').length}
@@ -354,7 +406,7 @@ const Exams = () => {
             </div>
           </div>
         </Card>
-        <Card className="p-6">
+        <Card className="p-6 min-w-[200px] shrink-0 md:min-w-0 md:shrink-1">
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">
               {examResults.length}
@@ -414,21 +466,23 @@ const Exams = () => {
 
       {/* Share Section */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          اشتراک‌گذاری نتایج
-        </h3>
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            نتایج آزمون‌ها را در شبکه‌های اجتماعی به اشتراک بگذارید
-          </p>
-          <div className="flex gap-2">
-            <Button variant="default" size="sm" icon={<HiOutlineShare />}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4">
+              اشتراک‌گذاری نتایج
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-0">
+              نتایج آزمون‌ها را در شبکه‌های اجتماعی به اشتراک بگذارید
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <Button variant="default" size="sm" icon={<HiOutlineShare />} className="flex-1 sm:flex-none">
               توییتر
             </Button>
-            <Button variant="default" size="sm" icon={<HiOutlineShare />}>
+            <Button variant="default" size="sm" icon={<HiOutlineShare />} className="flex-1 sm:flex-none">
               لینکدین
             </Button>
-            <Button variant="default" size="sm" icon={<HiOutlineShare />}>
+            <Button variant="default" size="sm" icon={<HiOutlineShare />} className="flex-1 sm:flex-none">
               کپی لینک
             </Button>
           </div>

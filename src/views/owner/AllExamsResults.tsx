@@ -53,7 +53,7 @@ const StatisticCard = (props: StatisticCardProps) => {
     return (
         <button
             className={classNames(
-                'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full',
+                'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full min-w-[240px] md:min-w-0 shrink-0 md:shrink-1',
                 active && 'bg-white dark:bg-gray-900 shadow-md',
             )}
             onClick={() => onClick(label)}
@@ -338,7 +338,7 @@ const AllExamsResults = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div id="exams-results-header" className="flex items-center justify-between">
+            <div id="exams-results-header" className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                         آزمون‌ها و نتایج
@@ -348,7 +348,7 @@ const AllExamsResults = () => {
                     </p>
                 </div>
                 <Input
-                    className="w-64"
+                    className="w-full sm:w-64"
                     placeholder="جستجو..."
                     prefix={<HiOutlineSearch />}
                     value={searchQuery}
@@ -357,7 +357,7 @@ const AllExamsResults = () => {
             </div>
 
             {/* Stats Cards */}
-            <div id="exams-results-stats-cards" className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
+            <div id="exams-results-stats-cards" className="flex md:grid md:grid-cols-4 gap-4 overflow-x-auto pb-2 md:pb-0 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
                 <StatisticCard
                     title="همه آزمون‌ها"
                     value={loading ? undefined as any : totalExamSets}
@@ -397,9 +397,9 @@ const AllExamsResults = () => {
             </div>
 
             {/* Table */}
-            <Card id="exams-results-table">
-                <div className="p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <Card id="exams-results-table" className="p-0">
+                <div className="p-6 border-b border-gray-100 dark:border-gray-800">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-0">
                         لیست مجموعه آزمون‌ها
                         {!loading && selectedCategory !== 'all' && (
                             <span className="text-sm font-normal text-gray-500 dark:text-gray-400 mr-2">
@@ -407,7 +407,8 @@ const AllExamsResults = () => {
                             </span>
                         )}
                     </h2>
-                    <div className="overflow-x-auto">
+                </div>
+                <div className="overflow-x-auto hidden lg:block">
                         <Table>
                             <THead>
                                 <Tr>
@@ -499,7 +500,93 @@ const AllExamsResults = () => {
                                 )}
                             </TBody>
                         </Table>
-                    </div>
+                </div>
+
+                {/* Mobile List View */}
+                <div className="lg:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+                    {loading ? (
+                        [...Array(3)].map((_, index) => (
+                            <div key={index} className="p-4 space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <Skeleton variant="circle" width={32} height={32} />
+                                    <Skeleton width={120} height={16} />
+                                </div>
+                                <Skeleton width="100%" height={24} />
+                            </div>
+                        ))
+                    ) : filteredExamSets.length > 0 ? (
+                        filteredExamSets.map((examSet) => (
+                            <div key={examSet.id} className="p-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-lg">
+                                            {examSet.applicantName?.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-gray-900 dark:text-white text-sm">
+                                                {examSet.applicantName}
+                                            </div>
+                                            <div className="text-[11px] text-gray-500 mt-0.5 flex items-center gap-1">
+                                                <HiOutlineOfficeBuilding className="w-3 h-3" />
+                                                <span>{examSet.companyName}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-1">
+                                        <Tooltip title="جزییات آزمون">
+                                            <Button
+                                                variant="plain"
+                                                size="sm"
+                                                shape="circle"
+                                                icon={<HiOutlineInformationCircle />}
+                                                onClick={() => handleInfoClick(examSet)}
+                                                className="text-gray-500 hover:text-indigo-600 bg-gray-50 dark:bg-gray-800/50"
+                                            />
+                                        </Tooltip>
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-3 mb-3 border-t border-gray-100 dark:border-gray-800 pt-3">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-gray-400">تاریخ آزمون</span>
+                                        <span className="text-xs text-gray-700 dark:text-gray-300 flex items-center gap-1" dir="ltr">
+                                            <HiOutlineCalendar className="w-3.5 h-3.5" />
+                                            {examSet.examDate ? new Date(examSet.examDate).toLocaleDateString('fa-IR') : '-'}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-gray-400">نتایج</span>
+                                        <div className="text-xs font-bold text-gray-900 dark:text-white">
+                                            {examSet.completedExams} <span className="font-normal text-gray-500">/ {examSet.totalExams} آزمون</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col gap-1 col-span-2">
+                                        <span className="text-[10px] text-gray-400">وضعیت</span>
+                                        <div className="w-fit scale-[0.85] origin-right">{getStatusTag(examSet.status)}</div>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-800 mt-2">
+                                    <Button
+                                        className="w-full"
+                                        variant="default"
+                                        size="sm"
+                                        icon={<HiOutlineEye />}
+                                        onClick={() => navigate(`/owner/managers/${examSet.applicantId}/exams/${examSet.id}/results`)}
+                                        disabled={collectionStatuses[examSet.id] !== 'archived'}
+                                    >
+                                        {collectionStatuses[examSet.id] === 'archived' ? 'مشاهده نتایج' : 'نتایج هنوز منتشر نشده'}
+                                    </Button>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                            {searchQuery || selectedCategory !== 'all'
+                                ? 'مجموعه آزمونی با این فیلتر یافت نشد'
+                                : 'هنوز مجموعه آزمونی ثبت نشده است'}
+                        </div>
+                    )}
                 </div>
             </Card>
 

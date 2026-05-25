@@ -229,12 +229,13 @@ const Company = () => {
     return (
       <div className="space-y-6">
         {/* Header Skeleton */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Skeleton width={100} height={40} />
-            <Skeleton width={180} height={32} />
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Skeleton width={80} height={40} className="hidden sm:block" />
+            <Skeleton width={40} height={40} className="sm:hidden" />
+            <Skeleton width={160} height={32} />
           </div>
-          <Skeleton width={140} height={40} />
+          <Skeleton width="100%" height={40} className="sm:w-[140px]" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -312,9 +313,9 @@ const Company = () => {
         </div>
 
         {/* Action Buttons Skeleton */}
-        <div className="flex justify-end gap-3">
-          <Skeleton width={80} height={40} />
-          <Skeleton width={120} height={40} />
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6">
+          <Skeleton width="100%" height={40} className="sm:w-[80px]" />
+          <Skeleton width="100%" height={40} className="sm:w-[120px]" />
         </div>
       </div>
     )
@@ -331,16 +332,23 @@ const Company = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3">
           <Button
             variant="plain"
             icon={<HiOutlineArrowLeft />}
             onClick={() => navigate('/owner/companies')}
+            className="hidden sm:flex"
           >
             بازگشت
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <Button
+            variant="plain"
+            icon={<HiOutlineArrowLeft />}
+            onClick={() => navigate('/owner/companies')}
+            className="sm:hidden px-2"
+          />
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
             {isEditMode ? 'ویرایش سازمان' : 'افزودن سازمان جدید'}
           </h1>
         </div>
@@ -349,6 +357,7 @@ const Company = () => {
           icon={<HiOutlineSave />}
           loading={saving}
           onClick={handleSave}
+          className="w-full sm:w-auto"
         >
           {isEditMode ? 'ذخیره تغییرات' : 'ایجاد سازمان'}
         </Button>
@@ -546,10 +555,11 @@ const Company = () => {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6">
         <Button
           variant="plain"
           onClick={() => navigate('/owner/companies')}
+          className="w-full sm:w-auto"
         >
           انصراف
         </Button>
@@ -558,6 +568,7 @@ const Company = () => {
           icon={<HiOutlineSave />}
           loading={saving}
           onClick={handleSave}
+          className="w-full sm:w-auto"
         >
           ذخیره تغییرات
         </Button>

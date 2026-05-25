@@ -295,36 +295,38 @@ const CompletedAssessments = () => {
         return (
             <div className="space-y-6">
                 {/* Header */}
-                <div className="flex justify-between items-center gap-4">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                             نیازسنجی‌های تکمیل شده
                         </h1>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
                             مدیریت نیازسنجی‌ها و اختصاص آزمون‌ها
                         </p>
                     </div>
                 </div>
 
                 {/* Statistics Cards Skeleton */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 md:grid md:grid-cols-3 scrollbar-hide">
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="p-4 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                            <div className="flex justify-between items-center">
-                                <div className="space-y-2">
-                                    <Skeleton width={100} height={14} />
-                                    <Skeleton width={60} height={32} />
+                        <div key={i} className="w-[70vw] sm:w-auto shrink-0 snap-start">
+                            <div className="p-4 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                                <div className="flex justify-between items-center">
+                                    <div className="space-y-2">
+                                        <Skeleton width={100} height={14} />
+                                        <Skeleton width={60} height={32} />
+                                    </div>
+                                    <Skeleton variant="circle" width={48} height={48} />
                                 </div>
-                                <Skeleton variant="circle" width={48} height={48} />
                             </div>
                         </div>
                     ))}
                 </div>
 
                 {/* Table Skeleton */}
-                <Card>
-                    <div className="p-6">
-                        <div className="overflow-x-auto">
+                <Card className="p-1 sm:p-0">
+                    <div className="p-4 sm:p-6">
+                        <div className="hidden sm:block overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                 <thead className="bg-gray-50 dark:bg-gray-800">
                                     <tr>
@@ -342,6 +344,23 @@ const CompletedAssessments = () => {
                                 </tbody>
                             </table>
                         </div>
+                        <div className="sm:hidden space-y-4">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="p-4 border border-gray-100 dark:border-gray-800 rounded-lg space-y-4">
+                                    <div className="flex gap-3">
+                                        <Skeleton variant="circle" width={40} height={40} />
+                                        <div className="space-y-2 flex-1">
+                                            <Skeleton width={120} height={16} />
+                                            <Skeleton width={80} height={12} />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <Skeleton width={60} height={20} />
+                                        <Skeleton width={80} height={20} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </Card>
             </div>
@@ -351,18 +370,18 @@ const CompletedAssessments = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div id="admin-assessments-completed-header">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                         نیازسنجی‌های تکمیل شده
                     </h1>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
                         مدیریت نیازسنجی‌ها و اختصاص آزمون‌ها
                     </p>
                 </div>
                 <Input
                     id="admin-assessments-completed-search"
-                    className="w-64"
+                    className="w-full sm:w-64"
                     placeholder="جستجو..."
                     prefix={<HiOutlineSearch />}
                     value={searchQuery}
@@ -371,52 +390,61 @@ const CompletedAssessments = () => {
             </div>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <StatisticCard
-                    id="admin-assessments-completed-stats-all"
-                    title="همه نیازسنجی‌ها"
-                    value={totalAssessments}
-                    iconClass="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                    icon={<HiOutlineClipboardCheck />}
-                    label="all"
-                    active={selectedCategory === 'all'}
-                    onClick={setSelectedCategory}
-                />
-                <StatisticCard
-                    id="admin-assessments-completed-stats-assigned"
-                    title="اختصاص داده شده"
-                    value={assignedAssessments}
-                    iconClass="bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-                    icon={<HiOutlineCheckCircle />}
-                    label="assigned"
-                    active={selectedCategory === 'assigned'}
-                    onClick={setSelectedCategory}
-                />
-                <StatisticCard
-                    id="admin-assessments-completed-stats-pending"
-                    title="در انتظار"
-                    value={pendingAssessments}
-                    iconClass="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
-                    icon={<HiOutlineClock />}
-                    label="pending"
-                    active={selectedCategory === 'pending'}
-                    onClick={setSelectedCategory}
-                />
+            <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 md:grid md:grid-cols-3 scrollbar-hide">
+                <div className="w-[70vw] sm:w-auto shrink-0 snap-start">
+                    <StatisticCard
+                        id="admin-assessments-completed-stats-all"
+                        title="همه نیازسنجی‌ها"
+                        value={totalAssessments}
+                        iconClass="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                        icon={<HiOutlineClipboardCheck />}
+                        label="all"
+                        active={selectedCategory === 'all'}
+                        onClick={setSelectedCategory}
+                    />
+                </div>
+                <div className="w-[70vw] sm:w-auto shrink-0 snap-start">
+                    <StatisticCard
+                        id="admin-assessments-completed-stats-assigned"
+                        title="اختصاص داده شده"
+                        value={assignedAssessments}
+                        iconClass="bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                        icon={<HiOutlineCheckCircle />}
+                        label="assigned"
+                        active={selectedCategory === 'assigned'}
+                        onClick={setSelectedCategory}
+                    />
+                </div>
+                <div className="w-[70vw] sm:w-auto shrink-0 snap-start">
+                    <StatisticCard
+                        id="admin-assessments-completed-stats-pending"
+                        title="در انتظار"
+                        value={pendingAssessments}
+                        iconClass="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+                        icon={<HiOutlineClock />}
+                        label="pending"
+                        active={selectedCategory === 'pending'}
+                        onClick={setSelectedCategory}
+                    />
+                </div>
             </div>
 
             {/* Assessments Table */}
-            <Card id="admin-assessments-completed-table">
-                <div className="p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Card id="admin-assessments-completed-table" className="p-1 sm:p-0">
+                <div className="p-4 sm:p-6 pb-0 sm:pb-4 border-b border-gray-100 dark:border-gray-800 sm:border-0 flex justify-between items-center">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                         <HiOutlineClipboardCheck className="w-5 h-5" />
                         لیست نیازسنجی‌ها
                         {selectedCategory !== 'all' && (
-                            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 mr-2">
+                            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 mr-2 hidden sm:inline">
                                 ({filteredAssessments.length} مورد)
                             </span>
                         )}
                     </h2>
-                    <div className="overflow-x-auto">
+                </div>
+                <div className="p-0 sm:p-6 sm:pt-0">
+                    {/* Desktop Table View */}
+                    <div className="hidden sm:block overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead className="bg-gray-50 dark:bg-gray-800">
                                 <tr>
@@ -510,6 +538,70 @@ const CompletedAssessments = () => {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Mobile List View */}
+                    <div className="sm:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+                        {filteredAssessments.map((assessment) => (
+                            <div key={assessment.id} className="p-4 space-y-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                <div className="flex justify-between items-start gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg text-blue-600 dark:text-blue-400">
+                                            <HiOutlineUser className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-gray-900 dark:text-white text-sm mb-1">
+                                                {assessment.manager.user.name}
+                                            </div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                                <HiOutlineOfficeBuilding className="w-3.5 h-3.5" />
+                                                {assessment.manager.company.name}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>{getStatusTag(assessment.status)}</div>
+                                </div>
+
+                                <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">آزمون‌های اختصاص داده شده:</div>
+                                    <div className={classNames(
+                                        "text-xs font-bold px-2 py-1 rounded-md",
+                                        (assessment.assignedExams?.length || 0) > 0
+                                            ? "text-indigo-600 bg-indigo-100 dark:text-indigo-100 dark:bg-indigo-500/20"
+                                            : "text-gray-500 bg-gray-200 dark:text-gray-400 dark:bg-gray-700"
+                                    )}>
+                                        {(assessment.assignedExams?.length || 0)} آزمون
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                                    <Button
+                                        variant="plain"
+                                        className="flex-1 text-xs"
+                                        icon={<HiOutlineEye />}
+                                        onClick={() => navigate(`/admin/assessments/${assessment.id}`)}
+                                    >
+                                        مشاهده
+                                    </Button>
+                                    <Button
+                                        variant="solid"
+                                        className="flex-1 text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
+                                        icon={<HiOutlineAcademicCap />}
+                                        onClick={() => handleOpenAssignDialog(assessment)}
+                                    >
+                                        اختصاص آزمون
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                        {filteredAssessments.length === 0 && (
+                            <div className="text-center py-12">
+                                <HiOutlineClipboardCheck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                                    {searchQuery ? 'نیازسنجی با این فیلتر یافت نشد' : 'هنوز نیازسنجی‌ای ثبت نشده است'}
+                                </p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </Card>
 
@@ -519,25 +611,27 @@ const CompletedAssessments = () => {
                 onClose={handleCloseDialog}
                 onRequestClose={handleCloseDialog}
                 width={800}
-                className="pb-0"
+                className="pb-0 w-full md:w-[800px]"
             >
-                <div className="p-6 h-full flex flex-col">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                        <HiOutlineAcademicCap className="w-6 h-6 text-indigo-600" />
-                        <span>اختصاص مجموعه آزمون</span>
-                        <span className="text-sm font-normal text-gray-500 mx-2">|</span>
-                        <span className="text-sm font-normal text-gray-500">مرحله {step} از 2</span>
+                <div className="p-4 sm:p-6 h-full flex flex-col">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex flex-col sm:flex-row sm:items-center gap-2">
+                        <div className="flex items-center gap-2">
+                            <HiOutlineAcademicCap className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" />
+                            <span>اختصاص مجموعه آزمون</span>
+                        </div>
+                        <div className="hidden sm:block text-sm font-normal text-gray-500 mx-2">|</div>
+                        <span className="text-xs sm:text-sm font-normal text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded w-fit">مرحله {step} از 2</span>
                     </h3>
 
                     {selectedAssessment && (
-                        <div className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg flex justify-between items-center">
+                        <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                             <div>
-                                <p className="text-xs text-indigo-600 dark:text-indigo-300 font-medium mb-1">نیازسنجی مربوط به:</p>
-                                <p className="font-bold text-gray-900 dark:text-white">{selectedAssessment.manager.user.name}</p>
+                                <p className="text-[10px] sm:text-xs text-indigo-600 dark:text-indigo-300 font-medium mb-1">نیازسنجی مربوط به:</p>
+                                <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">{selectedAssessment.manager.user.name}</p>
                             </div>
-                            <div className="text-left">
-                                <p className="text-xs text-indigo-600 dark:text-indigo-300 font-medium mb-1">سازمان:</p>
-                                <p className="font-bold text-gray-900 dark:text-white">{selectedAssessment.manager.company.name}</p>
+                            <div className="text-right sm:text-left">
+                                <p className="text-[10px] sm:text-xs text-indigo-600 dark:text-indigo-300 font-medium mb-1">سازمان:</p>
+                                <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">{selectedAssessment.manager.company.name}</p>
                             </div>
                         </div>
                     )}
@@ -674,21 +768,23 @@ const CompletedAssessments = () => {
                         )}
                     </div>
 
-                    <div className="flex justify-between border-t border-gray-100 dark:border-gray-700 pt-4 mt-auto">
+                    <div className="flex flex-col-reverse sm:flex-row sm:justify-between border-t border-gray-100 dark:border-gray-700 pt-4 mt-auto gap-3">
                         <Button
                             variant="plain"
                             onClick={handleCloseDialog}
                             disabled={submitting}
+                            className="w-full sm:w-auto"
                         >
                             انصراف
                         </Button>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 w-full sm:w-auto">
                             {step === 2 && (
                                 <Button
                                     variant="default"
                                     onClick={handlePrevStep}
                                     disabled={submitting}
                                     icon={<HiArrowRight className="ml-2" />}
+                                    className="flex-1 sm:flex-none"
                                 >
                                     مرحله قبل
                                 </Button>
@@ -699,6 +795,7 @@ const CompletedAssessments = () => {
                                     onClick={handleNextStep}
                                     disabled={selectedExamIds.length === 0}
                                     icon={<HiArrowLeft className="mr-2" />}
+                                    className="flex-1 sm:flex-none"
                                 >
                                     مرحله بعد
                                 </Button>
@@ -708,6 +805,7 @@ const CompletedAssessments = () => {
                                     onClick={handleAssignExams}
                                     loading={submitting}
                                     icon={<HiOutlineCheckCircle className="mr-2" />}
+                                    className="flex-1 sm:flex-none"
                                 >
                                     تایید و اختصاص
                                 </Button>

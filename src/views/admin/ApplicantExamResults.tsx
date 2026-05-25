@@ -240,50 +240,53 @@ const ApplicantExamResults = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center gap-4">
-                <Button variant="plain" icon={<HiOutlineArrowLeft />} onClick={() => navigate('/admin/applicant-exams')}>
-                    بازگشت
-                </Button>
-                <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-2xl shadow-sm border border-indigo-200 dark:border-indigo-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 sm:gap-4 order-2 sm:order-1">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xl sm:text-2xl shadow-sm border border-indigo-200 dark:border-indigo-800">
                         {examSetInfo.applicantName.charAt(0)}
                     </div>
                     <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                            <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white line-clamp-1">
                                 نتایج {examSetInfo.title}
                             </h1>
                             <Tag className={classNames(
-                                "border-0 text-white",
+                                "border-0 text-white w-fit text-xs sm:text-sm",
                                 examSetInfo.status === 'completed' ? "bg-emerald-500" : "bg-amber-500"
                             )}>
                                 {examSetInfo.status === 'completed' ? 'تکمیل شده' : 'در حال انجام'}
                             </Tag>
                         </div>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                             <span className="flex items-center gap-1.5 font-medium text-gray-900 dark:text-white">
-                                <HiOutlineUser className="text-lg text-indigo-500" />
+                                <HiOutlineUser className="text-base sm:text-lg text-indigo-500" />
                                 {examSetInfo.applicantName}
                             </span>
                             <span className="flex items-center gap-1.5">
-                                <HiOutlineOfficeBuilding className="text-lg text-indigo-500" />
+                                <HiOutlineOfficeBuilding className="text-base sm:text-lg text-indigo-500" />
                                 {examSetInfo.companyName}
                             </span>
                             {examSetInfo.id && (
                                 <span className="flex items-center gap-1.5">
-                                    <HiOutlineIdentification className="text-lg text-indigo-500" />
-                                    کد اختصاصی: <span className="font-mono">{examSetInfo.id}</span>
+                                    <HiOutlineIdentification className="text-base sm:text-lg text-indigo-500" />
+                                    کد: <span className="font-mono">{examSetInfo.id}</span>
                                 </span>
                             )}
                         </div>
                     </div>
                 </div>
+                <div className="order-1 sm:order-2 self-end sm:self-auto">
+                    <Button variant="plain" size="sm" icon={<HiOutlineArrowLeft />} onClick={() => navigate('/admin/applicant-exams')}>
+                        بازگشت
+                    </Button>
+                </div>
             </div>
 
             {/* Tabs */}
-            <Card>
+            <Card className="px-0 sm:px-4">
                 <Tabs value={activeTab} onChange={(val) => setActiveTab(val)}>
-                    <TabList className="px-6 pt-4">
+                    <div className="overflow-x-auto custom-scrollbar -mx-4 sm:mx-0 px-4 sm:px-0">
+                        <TabList className="pt-4 flex-nowrap whitespace-nowrap min-w-max border-b-0 pb-1">
                         <TabNav value="answer-sheets">
                             <div className="flex items-center gap-2"><HiOutlineDocumentText /><span>پاسخنامه‌ها</span></div>
                         </TabNav>
@@ -299,52 +302,87 @@ const ApplicantExamResults = () => {
                         <TabNav value="status">
                             <div className="flex items-center gap-2"><HiOutlineInformationCircle /><span>وضعیت آزمون</span></div>
                         </TabNav>
-                    </TabList>
+                        </TabList>
+                    </div>
 
-                    <div className="p-6">
+                    <div className="p-4 sm:p-6">
                         {/* Answer Sheets Tab */}
                         <TabContent value="answer-sheets">
                             <div className="space-y-4">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">پاسخنامه‌های آزمون‌ها</h4>
+                                    <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">پاسخنامه‌های آزمون‌ها</h4>
                                     <Button variant="solid" color="indigo-600" icon={<HiOutlineDownload />}
+                                        className="w-full sm:w-auto"
                                         onClick={() => setIsExportModalOpen(true)} disabled={userAnswers.length === 0}>
                                         خروجی نتایج
                                     </Button>
                                 </div>
                                 {userAnswers.length > 0 ? (
-                                    <Table>
-                                        <THead><Tr><Th>عنوان آزمون</Th><Th>تاریخ تکمیل</Th><Th className="text-center">عملیات</Th></Tr></THead>
-                                        <TBody>
+                                    <>
+                                        <div className="hidden sm:block overflow-x-auto">
+                                            <Table>
+                                                <THead><Tr><Th>عنوان آزمون</Th><Th>تاریخ تکمیل</Th><Th className="text-center">عملیات</Th></Tr></THead>
+                                                <TBody>
+                                                    {userAnswers.map((answer) => (
+                                                        <Tr key={answer.id}>
+                                                            <Td>
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500">
+                                                                        <HiOutlineClipboardList className="text-lg" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="font-semibold text-gray-900 dark:text-white">{answer.exam.title}</div>
+                                                                        <div className="text-xs text-gray-500">مدت آزمون: {answer.exam.duration} دقیقه</div>
+                                                                    </div>
+                                                                </div>
+                                                            </Td>
+                                                            <Td>
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{dayjs(answer.completed_at).format('YYYY/MM/DD')}</span>
+                                                                    <span className="text-[10px] text-gray-400">ساعت {dayjs(answer.completed_at).format('HH:mm')}</span>
+                                                                </div>
+                                                            </Td>
+                                                            <Td className="text-center">
+                                                                <Button size="sm" variant="solid" color="indigo-600" icon={<HiOutlineDocumentSearch />}
+                                                                    onClick={() => navigate(`/admin/applicant-exams/${examSetId}/results/${answer.id}`)}>
+                                                                    مشاهده پاسخنامه
+                                                                </Button>
+                                                            </Td>
+                                                        </Tr>
+                                                    ))}
+                                                </TBody>
+                                            </Table>
+                                        </div>
+                                        {/* Mobile view */}
+                                        <div className="sm:hidden flex flex-col space-y-3">
                                             {userAnswers.map((answer) => (
-                                                <Tr key={answer.id}>
-                                                    <Td>
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500">
-                                                                <HiOutlineClipboardList className="text-lg" />
-                                                            </div>
-                                                            <div>
-                                                                <div className="font-semibold text-gray-900 dark:text-white">{answer.exam.title}</div>
-                                                                <div className="text-xs text-gray-500">مدت آزمون: {answer.exam.duration} دقیقه</div>
-                                                            </div>
+                                                <div key={answer.id} className="p-3 border border-gray-100 dark:border-gray-800 rounded-lg">
+                                                    <div className="flex items-start gap-3 mb-3">
+                                                        <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 flex-shrink-0">
+                                                            <HiOutlineClipboardList className="text-xl" />
                                                         </div>
-                                                    </Td>
-                                                    <Td>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{dayjs(answer.completed_at).format('YYYY/MM/DD')}</span>
-                                                            <span className="text-[10px] text-gray-400">ساعت {dayjs(answer.completed_at).format('HH:mm')}</span>
+                                                        <div>
+                                                            <div className="font-semibold text-gray-900 dark:text-white text-sm">{answer.exam.title}</div>
+                                                            <div className="text-xs text-gray-500 mt-1">مدت: {answer.exam.duration} دقیقه</div>
                                                         </div>
-                                                    </Td>
-                                                    <Td className="text-center">
-                                                        <Button size="sm" variant="solid" color="indigo-600" icon={<HiOutlineDocumentSearch />}
-                                                            onClick={() => navigate(`/admin/applicant-exams/${examSetId}/results/${answer.id}`)}>
-                                                            مشاهده پاسخنامه
-                                                        </Button>
-                                                    </Td>
-                                                </Tr>
+                                                    </div>
+                                                    <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800/50 rounded mb-3 text-xs">
+                                                        <span className="text-gray-500">تاریخ تکمیل:</span>
+                                                        <span className="font-medium text-gray-900 dark:text-gray-100">{dayjs(answer.completed_at).format('YYYY/MM/DD')} ({dayjs(answer.completed_at).format('HH:mm')})</span>
+                                                    </div>
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant="solid" 
+                                                        color="indigo-600" 
+                                                        className="w-full"
+                                                        icon={<HiOutlineDocumentSearch />}
+                                                        onClick={() => navigate(`/admin/applicant-exams/${examSetId}/results/${answer.id}`)}>
+                                                        مشاهده پاسخنامه
+                                                    </Button>
+                                                </div>
                                             ))}
-                                        </TBody>
-                                    </Table>
+                                        </div>
+                                    </>
                                 ) : (
                                     <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
                                         <HiOutlineDocumentText className="w-12 h-12 text-gray-400 mx-auto mb-3" />

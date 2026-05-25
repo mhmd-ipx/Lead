@@ -272,12 +272,13 @@ const SupportTicketView = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-start md:items-center gap-4">
                     <Button
                         variant="plain"
                         icon={<HiOutlineArrowLeft />}
                         onClick={() => navigate('/owner/support/tickets')}
+                        className="mt-1 md:mt-0 shrink-0"
                     >
                         بازگشت
                     </Button>
@@ -505,6 +506,7 @@ const SupportTicketView = () => {
                                 onClick={handleSendReply}
                                 disabled={!replyMessage.trim() || isSending}
                                 loading={isSending}
+                                className="w-full sm:w-auto"
                             >
                                 ارسال پاسخ
                             </Button>

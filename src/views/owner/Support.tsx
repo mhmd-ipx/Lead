@@ -91,7 +91,7 @@ const Support = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div id="support-header" className="flex items-center justify-between">
+            <div id="support-header" className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                         <HiOutlineTicket className="text-3xl" />
@@ -106,16 +106,17 @@ const Support = () => {
                     variant="solid"
                     icon={<HiOutlinePlus />}
                     onClick={() => navigate('/owner/support/create')}
+                    className="w-full sm:w-auto"
                 >
                     ایجاد تیکت جدید
                 </Button>
             </div>
 
             {/* Stats */}
-            <div id="support-stats-cards" className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div id="support-stats-cards" className="flex md:grid md:grid-cols-5 gap-4 overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
                 <Card
                     className={classNames(
-                        'p-4 cursor-pointer transition-all',
+                        'p-4 cursor-pointer transition-all min-w-[200px] shrink-0 md:min-w-0 md:shrink-1',
                         selectedFilter === 'all' && 'ring-2 ring-primary'
                     )}
                     onClick={() => setSelectedFilter('all')}
@@ -137,7 +138,7 @@ const Support = () => {
 
                 <Card
                     className={classNames(
-                        'p-4 cursor-pointer transition-all',
+                        'p-4 cursor-pointer transition-all min-w-[200px] shrink-0 md:min-w-0 md:shrink-1',
                         selectedFilter === 'open' && 'ring-2 ring-primary'
                     )}
                     onClick={() => setSelectedFilter('open')}
@@ -159,7 +160,7 @@ const Support = () => {
 
                 <Card
                     className={classNames(
-                        'p-4 cursor-pointer transition-all',
+                        'p-4 cursor-pointer transition-all min-w-[200px] shrink-0 md:min-w-0 md:shrink-1',
                         selectedFilter === 'in_progress' && 'ring-2 ring-primary'
                     )}
                     onClick={() => setSelectedFilter('in_progress')}
@@ -181,7 +182,7 @@ const Support = () => {
 
                 <Card
                     className={classNames(
-                        'p-4 cursor-pointer transition-all',
+                        'p-4 cursor-pointer transition-all min-w-[200px] shrink-0 md:min-w-0 md:shrink-1',
                         selectedFilter === 'waiting_for_user' && 'ring-2 ring-primary'
                     )}
                     onClick={() => setSelectedFilter('waiting_for_user')}
@@ -203,7 +204,7 @@ const Support = () => {
 
                 <Card
                     className={classNames(
-                        'p-4 cursor-pointer transition-all',
+                        'p-4 cursor-pointer transition-all min-w-[200px] shrink-0 md:min-w-0 md:shrink-1',
                         selectedFilter === 'closed' && 'ring-2 ring-primary'
                     )}
                     onClick={() => setSelectedFilter('closed')}
@@ -235,9 +236,9 @@ const Support = () => {
             </Card>
 
             {/* Tickets Table */}
-            <Card id="support-table">
-                <div className="p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <Card id="support-table" className="p-0">
+                <div className="p-6 border-b border-gray-100 dark:border-gray-800">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-0">
                         لیست تیکت‌ها
                         {!isLoading && selectedFilter !== 'all' && (
                             <span className="text-sm font-normal text-gray-500 dark:text-gray-400 mr-2">
@@ -245,7 +246,8 @@ const Support = () => {
                             </span>
                         )}
                     </h2>
-                    <div className="overflow-x-auto">
+                </div>
+                <div className="overflow-x-auto hidden lg:block">
                         <Table>
                             <THead>
                                 <Tr>
@@ -320,7 +322,75 @@ const Support = () => {
                                 )}
                             </TBody>
                         </Table>
-                    </div>
+                </div>
+
+                {/* Mobile List View */}
+                <div className="lg:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+                    {isLoading ? (
+                        Array(3).fill(0).map((_, index) => (
+                            <div key={index} className="p-4 space-y-4">
+                                <div className="flex justify-between">
+                                    <Skeleton width={120} height={20} />
+                                    <Skeleton width={60} height={20} />
+                                </div>
+                                <Skeleton width="100%" height={16} />
+                                <div className="flex justify-between">
+                                    <Skeleton width={80} height={16} />
+                                    <Skeleton width={80} height={16} />
+                                </div>
+                            </div>
+                        ))
+                    ) : filteredTickets.length > 0 ? (
+                        filteredTickets.map((ticket) => (
+                            <div key={ticket.id} className="p-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="pr-2">
+                                        <div className="font-semibold text-gray-900 dark:text-white text-sm mb-1 line-clamp-1">
+                                            {ticket.subject}
+                                        </div>
+                                        <div className="font-mono text-xs text-primary mb-1">
+                                            #{ticket.ticket_number}
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-2 shrink-0">
+                                        <div className="w-fit scale-[0.85] origin-left">{getStatusTag(ticket.status)}</div>
+                                        <div className="w-fit scale-[0.85] origin-left">{getPriorityTag(ticket.priority)}</div>
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-3 mb-3 border-t border-gray-100 dark:border-gray-800 pt-3">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-gray-400">دسته‌بندی</span>
+                                        <span className="text-xs text-gray-700 dark:text-gray-300">
+                                            {ticket.category}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-gray-400">آخرین بروزرسانی</span>
+                                        <span className="text-xs text-gray-700 dark:text-gray-300" dir="ltr">
+                                            {formatDate(ticket.updated_at)}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-800 mt-2">
+                                    <Button
+                                        className="w-full"
+                                        variant="solid"
+                                        size="sm"
+                                        onClick={() => navigate(`/owner/support/ticket/${ticket.id}`)}
+                                    >
+                                        مشاهده
+                                    </Button>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                            <HiOutlineTicket className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                            تیکتی یافت نشد
+                        </div>
+                    )}
                 </div>
             </Card>
         </div>

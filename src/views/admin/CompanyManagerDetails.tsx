@@ -52,41 +52,45 @@ const CompanyManagerDetails = () => {
             <div className="space-y-6">
                 {/* Header Skeleton */}
                 <div className="flex items-center gap-4">
-                    <Skeleton width={200} height={40} />
+                    <Skeleton width={150} height={40} />
                 </div>
 
                 {/* Profile Card Skeleton */}
-                <Card className="p-6">
-                    <div className="flex items-start gap-6">
+                <Card className="p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
                         <Skeleton variant="circle" width={80} height={80} />
-                        <div className="flex-1 space-y-4">
-                            <Skeleton width={200} height={32} />
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="flex-1 w-full space-y-4">
+                            <div className="flex justify-center sm:justify-start">
+                                <Skeleton width={200} height={32} />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <Skeleton width="100%" height={20} />
                                 <Skeleton width="100%" height={20} />
                                 <Skeleton width="100%" height={20} />
                                 <Skeleton width="100%" height={20} />
                             </div>
-                            <div className="flex gap-4">
+                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-center sm:items-start justify-center sm:justify-start">
                                 <Skeleton width={120} height={16} />
                                 <Skeleton width={120} height={16} />
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            <Skeleton width={100} height={40} />
+                        <div className="w-full sm:w-auto mt-4 sm:mt-0 flex">
+                            <Skeleton width={100} height={40} className="w-full sm:w-[100px]" />
                         </div>
                     </div>
                 </Card>
 
                 {/* Statistics Skeleton */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <Card key={i} className="p-4">
-                            <div className="text-center space-y-2">
-                                <Skeleton width={60} height={32} className="mx-auto" />
-                                <Skeleton width={120} height={16} className="mx-auto" />
-                            </div>
-                        </Card>
+                <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 md:grid md:grid-cols-3 scrollbar-hide">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="w-[70vw] sm:w-auto shrink-0 snap-start">
+                            <Card className="p-4 h-full">
+                                <div className="text-center space-y-2">
+                                    <Skeleton width={60} height={32} className="mx-auto" />
+                                    <Skeleton width={120} height={16} className="mx-auto" />
+                                </div>
+                            </Card>
+                        </div>
                     ))}
                 </div>
             </div>
@@ -122,51 +126,53 @@ const CompanyManagerDetails = () => {
             </div>
 
             {/* Manager Profile Card */}
-            <Card className="p-6">
-                <div className="flex items-start gap-6">
-                    <Avatar size="lg" src={manager.user.avatar || undefined}>
+            <Card className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+                    <Avatar size="lg" src={manager.user.avatar || undefined} className="w-20 h-20 sm:w-16 sm:h-16 shrink-0">
                         {manager.user.name.charAt(0)}
                     </Avatar>
-                    <div className="flex-1">
-                        <div className="flex items-center gap-4 mb-2">
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <div className="flex-1 w-full text-center sm:text-right">
+                        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 mb-4 sm:mb-2">
+                            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                                 {manager.user.name}
                             </h1>
                             {getStatusBadge(manager.status)}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                                <HiOutlineOfficeBuilding className="w-5 h-5" />
-                                <span>{manager.position}</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 text-sm sm:text-base">
+                            <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 sm:bg-transparent p-2 sm:p-0 rounded-lg">
+                                <HiOutlineOfficeBuilding className="w-5 h-5 shrink-0" />
+                                <span className="truncate">{manager.position}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                                <HiOutlineMail className="w-5 h-5" />
-                                <span>{manager.user.email}</span>
+                            <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 sm:bg-transparent p-2 sm:p-0 rounded-lg">
+                                <HiOutlineMail className="w-5 h-5 shrink-0" />
+                                <span className="truncate">{manager.user.email}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                                <HiOutlinePhone className="w-5 h-5" />
+                            <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 sm:bg-transparent p-2 sm:p-0 rounded-lg">
+                                <HiOutlinePhone className="w-5 h-5 shrink-0" />
                                 <span>{manager.user.phone}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                                <span>بخش: {manager.department}</span>
+                            <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 sm:bg-transparent p-2 sm:p-0 rounded-lg">
+                                <span className="truncate">بخش: {manager.department}</span>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                        <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-2 sm:gap-4">
+                            <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                                 آخرین ورود: {manager.user.last_login ? formatDate(manager.user.last_login) : 'هرگز'}
                             </span>
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                            <span className="hidden sm:inline text-gray-300 dark:text-gray-600">|</span>
+                            <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                                 تاریخ عضویت: {formatDate(manager.created_at)}
                             </span>
                         </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="w-full sm:w-auto mt-2 sm:mt-0 flex justify-center border-t border-gray-100 dark:border-gray-800 sm:border-0 pt-4 sm:pt-0">
                         <Button
                             variant="solid"
                             icon={<HiOutlinePencil />}
+                            className="w-full sm:w-auto"
                             onClick={() => navigate(`/admin/companies/${companyId}/managers/${manager.id}/edit`)}
                         >
                             ویرایش
@@ -176,37 +182,43 @@ const CompanyManagerDetails = () => {
             </Card>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="p-4">
-                    <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">
-                            {manager.assessment_status === 'completed' ? '1' : '0'}
+            <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 md:grid md:grid-cols-3 scrollbar-hide">
+                <div className="w-[70vw] sm:w-auto shrink-0 snap-start">
+                    <Card className="p-4 h-full border-2 border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-all">
+                        <div className="text-center">
+                            <div className="text-3xl sm:text-2xl font-bold text-blue-600 mb-1">
+                                {manager.assessment_status === 'completed' ? '1' : '0'}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                                نیازسنجی انجام شده
+                            </div>
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                            نیازسنجی انجام شده
+                    </Card>
+                </div>
+                <div className="w-[70vw] sm:w-auto shrink-0 snap-start">
+                    <Card className="p-4 h-full border-2 border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-all">
+                        <div className="text-center">
+                            <div className="text-3xl sm:text-2xl font-bold text-green-600 mb-1">
+                                {manager.exam_status === 'completed' ? '1' : '0'}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                                آزمون‌های شرکت کرده
+                            </div>
                         </div>
-                    </div>
-                </Card>
-                <Card className="p-4">
-                    <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">
-                            {manager.exam_status === 'completed' ? '1' : '0'}
+                    </Card>
+                </div>
+                <div className="w-[70vw] sm:w-auto shrink-0 snap-start">
+                    <Card className="p-4 h-full border-2 border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-all">
+                        <div className="text-center">
+                            <div className={`text-3xl sm:text-2xl font-bold mb-1 ${manager.status === 'active' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {manager.status === 'active' ? 'فعال' : 'غیرفعال'}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                                وضعیت حساب
+                            </div>
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                            آزمون‌های شرکت کرده
-                        </div>
-                    </div>
-                </Card>
-                <Card className="p-4">
-                    <div className="text-center">
-                        <div className={`text-2xl font-bold ${manager.status === 'active' ? 'text-emerald-600' : 'text-red-600'}`}>
-                            {manager.status === 'active' ? 'فعال' : 'غیرفعال'}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                            وضعیت حساب
-                        </div>
-                    </div>
-                </Card>
+                    </Card>
+                </div>
             </div>
 
             {/* Tabs for detailed information */}

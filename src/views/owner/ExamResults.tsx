@@ -124,17 +124,19 @@ const ExamResults = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                 <Button variant="plain" icon={<HiOutlineArrowLeft />}
-                    onClick={() => navigate(-1)}>
+                    onClick={() => navigate(-1)}
+                    className="self-start sm:self-auto"
+                >
                     بازگشت
                 </Button>
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-2xl shadow-sm border border-indigo-200 dark:border-indigo-800">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xl sm:text-2xl shadow-sm border border-indigo-200 dark:border-indigo-800 shrink-0">
                         {applicantName?.charAt(0)}
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                             نتایج {title}
                         </h1>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -154,14 +156,14 @@ const ExamResults = () => {
             {/* Tabs */}
             <Card>
                 <Tabs value={activeTab} onChange={(val) => setActiveTab(val)}>
-                    <TabList className="px-6 pt-4">
-                        <TabNav value="results">
+                    <TabList className="px-6 pt-4 overflow-x-auto flex-nowrap hide-scrollbar">
+                        <TabNav value="results" className="whitespace-nowrap">
                             <div className="flex items-center gap-2"><HiOutlineChartBar /><span>نتایج</span></div>
                         </TabNav>
-                        <TabNav value="analysis">
+                        <TabNav value="analysis" className="whitespace-nowrap">
                             <div className="flex items-center gap-2"><HiOutlinePencilAlt /><span>تحلیل</span></div>
                         </TabNav>
-                        <TabNav value="files">
+                        <TabNav value="files" className="whitespace-nowrap">
                             <div className="flex items-center gap-2"><HiOutlineFolder /><span>فایل‌ها</span></div>
                         </TabNav>
                     </TabList>
@@ -254,28 +256,30 @@ const ExamResults = () => {
                                             ))}
                                         </div>
                                     ) : (
-                                        <Table className="mt-4">
-                                            <THead><Tr><Th>فایل</Th><Th>سایز</Th><Th>تاریخ</Th><Th></Th></Tr></THead>
-                                            <TBody>
-                                                {files.map((file) => (
-                                                    <Tr key={file.id}>
-                                                        <Td>
-                                                            <div className="flex items-center gap-3">
-                                                                <FileIcon type={file.type} size={32} />
-                                                                <span className="font-medium text-gray-900 dark:text-white">{file.name}</span>
-                                                            </div>
-                                                        </Td>
-                                                        <Td>{formatFileSize(file.size)}</Td>
-                                                        <Td>{new Date(file.created_at).toLocaleDateString('fa-IR')}</Td>
-                                                        <Td>
-                                                            <Button size="sm" variant="default" icon={<HiOutlineDownload />} onClick={() => handleDownload(file)}>
-                                                                دانلود
-                                                            </Button>
-                                                        </Td>
-                                                    </Tr>
-                                                ))}
-                                            </TBody>
-                                        </Table>
+                                        <div className="overflow-x-auto mt-4">
+                                            <Table>
+                                                <THead><Tr><Th>فایل</Th><Th>سایز</Th><Th>تاریخ</Th><Th></Th></Tr></THead>
+                                                <TBody>
+                                                    {files.map((file) => (
+                                                        <Tr key={file.id}>
+                                                            <Td>
+                                                                <div className="flex items-center gap-3">
+                                                                    <FileIcon type={file.type} size={32} />
+                                                                    <span className="font-medium text-gray-900 dark:text-white whitespace-nowrap">{file.name}</span>
+                                                                </div>
+                                                            </Td>
+                                                            <Td className="whitespace-nowrap">{formatFileSize(file.size)}</Td>
+                                                            <Td className="whitespace-nowrap">{new Date(file.created_at).toLocaleDateString('fa-IR')}</Td>
+                                                            <Td>
+                                                                <Button size="sm" variant="default" icon={<HiOutlineDownload />} onClick={() => handleDownload(file)}>
+                                                                    دانلود
+                                                                </Button>
+                                                            </Td>
+                                                        </Tr>
+                                                    ))}
+                                                </TBody>
+                                            </Table>
+                                        </div>
                                     )
                                 ) : (
                                     <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">

@@ -137,7 +137,7 @@ const VerticalMenuContent = (props: VerticalMenuContentProps) => {
             }
         >
             {renderNavigation(navigationTree, 0)}
-            {userAuthority.some(role => [OWNER, ADMIN, MANAGER].includes(role)) && <LogoutButton />}
+            {userAuthority.some(role => [OWNER, ADMIN, MANAGER].includes(role)) && <LogoutButton collapsed={collapsed} />}
         </Menu>
     )
 }

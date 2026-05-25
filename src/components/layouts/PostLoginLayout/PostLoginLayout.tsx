@@ -41,7 +41,7 @@ const PostLoginLayout = ({ layoutType, children }: PostLoginLayoutProps) => {
     const { token } = useToken()
 
     useEffect(() => {
-        console.log('User Token:', token)
+        //console.log('User Token:', token)
     }, [token])
 
     return (

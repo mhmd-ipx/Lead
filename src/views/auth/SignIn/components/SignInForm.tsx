@@ -155,9 +155,9 @@ const SignInForm = (props: SignInFormProps) => {
                     setIsRegistered(response.data.is_registered)
 
                     // نمایش کد OTP در مودال (فقط در حالت توسعه)
-                    setOtpCode(response.data.code)
-                    setOtpExpiresAt(response.data.expires_at)
-                    setShowOtpModal(true)
+                    // setOtpCode(response.data.code)
+                    // setOtpExpiresAt(response.data.expires_at)
+                    // setShowOtpModal(true)
 
                     // انتقال به مرحله وارد کردن OTP
                     setStep('otp')
@@ -189,7 +189,7 @@ const SignInForm = (props: SignInFormProps) => {
                         code: otp,
                     })
 
-                    console.log('🔐 Verify Response in Form:', response)
+                    // console.log('🔐 Verify Response in Form:', response)
 
                     if (response.success) {
                         // بررسی نقش کاربر - مدیر نمی‌تواند از این فرم وارد شود
@@ -218,7 +218,7 @@ const SignInForm = (props: SignInFormProps) => {
                         setUser(mappedUser)
                         setSessionSignedIn(true)
 
-                        console.log('✅ Login successful, redirecting...')
+                        // console.log('✅ Login successful, redirecting...')
 
                         // Redirect به dashboard
                         navigate(appConfig.authenticatedEntryPath)
@@ -266,7 +266,7 @@ const SignInForm = (props: SignInFormProps) => {
                     },
                 })
 
-                console.log('🔐 Register Response:', response)
+                // console.log('🔐 Register Response:', response)
 
                 if (response.success) {
                     // ثبت‌نام و لاگین موفق - مستقیماً از response استفاده می‌کنیم
@@ -288,7 +288,7 @@ const SignInForm = (props: SignInFormProps) => {
                     setUser(mappedUser)
                     setSessionSignedIn(true)
 
-                    console.log('✅ Register successful, redirecting...')
+                    // console.log('✅ Register successful, redirecting...')
 
                     // Redirect به dashboard
                     navigate(appConfig.authenticatedEntryPath)
@@ -314,7 +314,7 @@ const SignInForm = (props: SignInFormProps) => {
             try {
                 const response = await apiLogin({ phone, password })
 
-                console.log('🔐 Login Response:', response)
+                // console.log('🔐 Login Response:', response)
 
                 if (response.success) {
                     // بررسی نقش کاربر - مدیر نمی‌تواند از این فرم وارد شود
@@ -343,7 +343,7 @@ const SignInForm = (props: SignInFormProps) => {
                     setUser(mappedUser)
                     setSessionSignedIn(true)
 
-                    console.log('✅ Login successful, redirecting...')
+                    // console.log('✅ Login successful, redirecting...')
 
                     // Redirect به dashboard
                     navigate(appConfig.authenticatedEntryPath)
@@ -367,9 +367,9 @@ const SignInForm = (props: SignInFormProps) => {
 
                 if (response.success) {
                     // نمایش کد OTP جدید در مودال
-                    setOtpCode(response.data.code)
-                    setOtpExpiresAt(response.data.expires_at)
-                    setShowOtpModal(true)
+                    // setOtpCode(response.data.code)
+                    // setOtpExpiresAt(response.data.expires_at)
+                    // setShowOtpModal(true)
 
                     setTimer(120) // Reset timer to 2 minutes
                     setCanResend(false)
@@ -647,12 +647,12 @@ const SignInForm = (props: SignInFormProps) => {
             )}
 
             {/* Modal برای نمایش کد OTP (فقط در حالت توسعه) */}
-            <OtpCodeModal
+            {/* <OtpCodeModal
                 isOpen={showOtpModal}
                 onClose={() => setShowOtpModal(false)}
                 code={otpCode}
                 expiresAt={otpExpiresAt}
-            />
+            /> */}
         </div>
     )
 }

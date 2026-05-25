@@ -45,7 +45,7 @@ const StatisticCard = (props: StatisticCardProps & { currency?: string }) => {
     return (
         <button
             className={classNames(
-                'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full',
+                'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full min-w-[240px] md:min-w-0 shrink-0 md:shrink-1',
                 active && 'bg-white dark:bg-gray-900 shadow-md',
             )}
             onClick={() => onClick(label)}
@@ -252,7 +252,7 @@ const Bills = () => {
             </div>
 
             {/* Stats Cards */}
-            <div id="bills-stats-cards" className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
+            <div id="bills-stats-cards" className="flex md:grid md:grid-cols-3 gap-4 overflow-x-auto pb-2 md:pb-0 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
                 <StatisticCard
                     title="همه صورتحساب‌ها"
                     value={totalBills}
@@ -283,9 +283,9 @@ const Bills = () => {
             </div>
 
             {/* Table */}
-            <Card id="bills-table">
-                <div className="p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <Card id="bills-table" className="p-0">
+                <div className="p-6 border-b border-gray-100 dark:border-gray-800">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-0">
                         لیست صورتحساب‌ها
                         {selectedCategory !== 'all' && (
                             <span className="text-sm font-normal text-gray-500 dark:text-gray-400 mr-2">
@@ -293,8 +293,9 @@ const Bills = () => {
                             </span>
                         )}
                     </h2>
-                    <div className="overflow-x-auto">
-                        <Table>
+                </div>
+                <div className="overflow-x-auto hidden lg:block">
+                    <Table>
                             <THead>
                                 <Tr>
                                     <Th>شماره صورتحساب</Th>
@@ -419,7 +420,119 @@ const Bills = () => {
                             </TBody>
                         </Table>
                     </div>
-                </div>
+
+                    {/* Mobile List View */}
+                    <div className="lg:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+                        {loading ? (
+                            [...Array(5)].map((_, index) => (
+                                <div key={index} className="p-4 space-y-4">
+                                    <Skeleton width={120} height={20} />
+                                    <div className="flex justify-between">
+                                        <Skeleton width={80} height={16} />
+                                        <Skeleton width={100} height={16} />
+                                    </div>
+                                    <Skeleton width="100%" height={32} />
+                                </div>
+                            ))
+                        ) : filteredBills.length === 0 ? (
+                            <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                                صورتحسابی با این فیلتر یافت نشد
+                            </div>
+                        ) : (
+                            filteredBills.map((bill) => (
+                                <div key={bill.id} className="p-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div>
+                                            <div className="font-mono font-bold text-gray-900 dark:text-white text-sm mb-1">
+                                                {bill.bill_number}
+                                            </div>
+                                            <div className="text-[11px] text-gray-500">
+                                                تاریخ صدور: {formatDate(bill.created_at)}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-2">
+                                            <div className="w-fit scale-[0.85] origin-left">{getStatusTag(bill.status)}</div>
+                                            <div className="font-bold text-sm">
+                                                {formatCurrency(bill.total_amount, bill.currency)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-3 mb-3 border-t border-gray-100 dark:border-gray-800 pt-3">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] text-gray-400">تعداد اسناد</span>
+                                            <div className="text-xs text-gray-700 dark:text-gray-300 font-medium">
+                                                {bill.financial_documents_count || 0} سند
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] text-gray-400">فاکتور رسمی</span>
+                                            <div className="w-fit scale-[0.85] origin-right">
+                                                {bill.official_invoice_requested ? (
+                                                    bill.official_invoice_pdf_url ? (
+                                                        <Tag className="bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-100 border-0">
+                                                            صادر شده
+                                                        </Tag>
+                                                    ) : (
+                                                        <Tag className="bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-100 border-0">
+                                                            در حال پردازش
+                                                        </Tag>
+                                                    )
+                                                ) : (
+                                                    <Tag className="bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-100 border-0">
+                                                        درخواست نشده
+                                                    </Tag>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                                        {bill.status === 'paid' && !bill.official_invoice_requested && (
+                                            <Button
+                                                className="flex-1"
+                                                variant="default"
+                                                size="sm"
+                                                icon={<HiOutlineDocumentText />}
+                                                onClick={() => handleRequestOfficialInvoice(bill.id)}
+                                            >
+                                                درخواست فاکتور
+                                            </Button>
+                                        )}
+                                        {bill.status === 'pending' && (
+                                            <>
+                                                <Button
+                                                    className="flex-1"
+                                                    variant="solid"
+                                                    size="sm"
+                                                    icon={<HiOutlineCash />}
+                                                    onClick={() => navigate(`/owner/accounting/bills/${bill.id}/payment`)}
+                                                >
+                                                    پرداخت
+                                                </Button>
+                                                <Button
+                                                    variant="plain"
+                                                    size="sm"
+                                                    icon={<HiOutlineTrash />}
+                                                    onClick={() => handleDeleteBill(bill.id)}
+                                                    className="text-red-600 hover:text-red-700"
+                                                />
+                                            </>
+                                        )}
+                                        <Button
+                                            className={bill.status === 'pending' ? '' : 'flex-1'}
+                                            variant="plain"
+                                            size="sm"
+                                            icon={<HiOutlineEye />}
+                                            onClick={() => navigate(`/owner/accounting/bills/${bill.id}`)}
+                                        >
+                                            {bill.status === 'pending' ? '' : 'مشاهده جزئیات'}
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
             </Card>
 
             {/* Delete Confirmation */}

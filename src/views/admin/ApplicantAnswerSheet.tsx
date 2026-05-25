@@ -130,57 +130,61 @@ const ApplicantAnswerSheet = () => {
         <Container>
             <div className="space-y-6 pb-10">
                 {/* Header Navigation */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start md:items-center gap-3">
                         <Button
                             variant="plain"
+                            className="mt-1 md:mt-0"
                             icon={<HiOutlineArrowLeft />}
                             onClick={() => navigate(-1)}
                         />
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">مشاهده پاسخنامه</h2>
-                            <p className="text-sm text-gray-500">مشاهده دقیق جزئیات پاسخ‌های متقاضی</p>
+                            <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">مشاهده پاسخنامه</h2>
+                            <p className="text-xs md:text-sm text-gray-500 mt-1">مشاهده دقیق جزئیات پاسخ‌های متقاضی</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 w-full md:w-auto">
                         <Button
                             variant="plain"
+                            className="flex-1 md:flex-none text-xs sm:text-sm"
                             icon={<HiOutlinePrinter />}
                             onClick={() => window.print()}
                         >
-                            چاپ پاسخنامه
+                            <span className="hidden sm:inline">چاپ پاسخنامه</span>
+                            <span className="sm:hidden">چاپ</span>
                         </Button>
                         <Button
                             variant="solid"
+                            className="flex-1 md:flex-none text-xs sm:text-sm"
                             icon={<HiOutlineDownload />}
                             onClick={() => setIsExportModalOpen(true)}
                         >
-                            دریافت خروجی
+                            <span className="hidden sm:inline">دریافت خروجی</span>
+                            <span className="sm:hidden">خروجی</span>
                         </Button>
                     </div>
-
                 </div>
 
                 {/* Info Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card className="col-span-2">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 font-bold text-xl">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+                    <Card className="col-span-1 md:col-span-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 font-bold text-xl self-start sm:self-center shrink-0">
                                 {applicantInfo?.applicantName?.charAt(0)}
                             </div>
-                            <div className="flex-1 grid grid-cols-2 gap-4">
+                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">متقاضی</p>
-                                    <div className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
-                                        <HiOutlineUser className="text-indigo-500" />
-                                        {applicantInfo?.applicantName}
+                                    <div className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white text-sm sm:text-base">
+                                        <HiOutlineUser className="text-indigo-500 shrink-0" />
+                                        <span className="truncate">{applicantInfo?.applicantName}</span>
                                     </div>
                                 </div>
                                 <div>
                                     <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">شرکت / سازمان</p>
-                                    <div className="flex items-center gap-2 font-semibold text-gray-600 dark:text-gray-300">
-                                        <HiOutlineOfficeBuilding className="text-indigo-500" />
-                                        {applicantInfo?.companyName}
+                                    <div className="flex items-center gap-2 font-semibold text-gray-600 dark:text-gray-300 text-sm sm:text-base">
+                                        <HiOutlineOfficeBuilding className="text-indigo-500 shrink-0" />
+                                        <span className="truncate">{applicantInfo?.companyName}</span>
                                     </div>
                                 </div>
                             </div>
@@ -233,14 +237,14 @@ const ApplicantAnswerSheet = () => {
                                 {section.section_description && (
                                     <div className="mb-6 prose dark:prose-invert max-w-none text-sm text-gray-600 dark:text-gray-400" dangerouslySetInnerHTML={{ __html: section.section_description }} />
                                 )}
-                                <div className="space-y-8">
+                                <div className="space-y-6 sm:space-y-8">
                                     {section.questions.map((question: any, qIdx: number) => (
-                                        <div key={question.question_id || qIdx} className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm">
-                                            <div className="flex gap-4 mb-4">
-                                                <span className="flex-shrink-0 w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-sm font-black text-gray-500">
+                                        <div key={question.question_id || qIdx} className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 border border-gray-100 dark:border-gray-800 shadow-sm">
+                                            <div className="flex gap-3 sm:gap-4 mb-4">
+                                                <span className="flex-shrink-0 w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-sm font-black text-gray-500 mt-0.5">
                                                     {question.question_number}
                                                 </span>
-                                                <div className="flex-1">
+                                                <div className="flex-1 min-w-0">
                                                     <h5 className="text-base font-bold text-gray-800 dark:text-gray-100 mb-3 leading-relaxed">
                                                         {question.question_text}
                                                     </h5>
@@ -357,11 +361,11 @@ const ApplicantAnswerSheet = () => {
                                                         )}
 
                                                         {question.type === 'order' && (
-                                                            <div className="space-y-3 pl-8">
+                                                            <div className="space-y-3 sm:pl-8">
                                                                 {question.answer?.ordered_options?.map((opt: any, idx: number) => (
                                                                     <div
                                                                         key={idx}
-                                                                        className="flex items-center gap-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl transition-all hover:translate-x-1"
+                                                                        className="flex items-center gap-3 sm:gap-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl transition-all hover:translate-x-1"
                                                                     >
                                                                         <span className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-sm font-black shadow-lg shadow-indigo-200 dark:shadow-none shrink-0">
                                                                             {opt.user_priority}

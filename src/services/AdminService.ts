@@ -895,6 +895,16 @@ export async function updateExamCollection(id: number | string, data: any): Prom
     }
 }
 
+export async function resendAccessSms(data: { phone: string, code: string }): Promise<any> {
+    try {
+        const response = await apiClient.post<any>('/exam-collections/resend-access', data)
+        return response
+    } catch (error) {
+        console.error('Error resending access sms:', error)
+        throw error
+    }
+}
+
 // Exam Collection Analysis
 export interface CollectionAnalysis {
     admin_analysis: string | null

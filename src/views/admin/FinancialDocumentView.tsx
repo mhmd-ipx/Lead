@@ -120,26 +120,29 @@ const FinancialDocumentView = () => {
                     variant="plain"
                     icon={<HiOutlineArrowLeft />}
                     onClick={() => navigate('/admin/accounting/documents')}
+                    className="w-full sm:w-auto"
                 >
                     بازگشت به لیست اسناد
                 </Button>
             </div>
 
             {/* Document Details */}
-            <Card id="admin-financial-doc-view-details" className="p-6">
-                <div className="flex justify-between items-start mb-6">
+            <Card id="admin-financial-doc-view-details" className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">
                             {document.title}
                         </h1>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                             شناسه: <span className="font-mono">#{document.id}</span>
                         </p>
                     </div>
-                    {getStatusBadge(document.status)}
+                    <div className="shrink-0">
+                        {getStatusBadge(document.status)}
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
                     <div>
                         <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                             شرکت / سازمان
@@ -197,44 +200,82 @@ const FinancialDocumentView = () => {
                             صورتحساب‌های مرتبط
                         </h3>
                         <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                            <Table>
-                                <THead>
-                                    <Tr>
-                                        <Th>شماره صورتحساب</Th>
-                                        <Th>تاریخ صدور</Th>
-                                        <Th>مبلغ کل</Th>
-                                        <Th>وضعیت</Th>
-                                        <Th>عملیات</Th>
-                                    </Tr>
-                                </THead>
-                                <TBody>
-                                    {document.bills.map((bill) => (
-                                        <Tr key={bill.id}>
-                                            <Td>
-                                                <span className="font-mono text-sm font-semibold">{bill.bill_number}</span>
-                                            </Td>
-                                            <Td>{formatDate(bill.created_at)}</Td>
-                                            <Td>{formatCurrency(bill.total_amount)}</Td>
-                                            <Td>
-                                                {bill.status === 'paid' ? (
-                                                    <Tag className="bg-emerald-100 text-emerald-600 border-0">پرداخت شده</Tag>
-                                                ) : (
-                                                    <Tag className="bg-amber-100 text-amber-600 border-0">در انتظار</Tag>
-                                                )}
-                                            </Td>
-                                            <Td>
-                                                <Button
-                                                    size="xs"
-                                                    icon={<HiOutlineEye />}
-                                                    onClick={() => navigate(`/admin/accounting/bills/${bill.id}`)}
-                                                >
-                                                    مشاهده
-                                                </Button>
-                                            </Td>
+                            {/* Desktop View */}
+                            <div className="hidden sm:block">
+                                <Table>
+                                    <THead>
+                                        <Tr>
+                                            <Th>شماره صورتحساب</Th>
+                                            <Th>تاریخ صدور</Th>
+                                            <Th>مبلغ کل</Th>
+                                            <Th>وضعیت</Th>
+                                            <Th>عملیات</Th>
                                         </Tr>
-                                    ))}
-                                </TBody>
-                            </Table>
+                                    </THead>
+                                    <TBody>
+                                        {document.bills.map((bill) => (
+                                            <Tr key={bill.id}>
+                                                <Td>
+                                                    <span className="font-mono text-sm font-semibold">{bill.bill_number}</span>
+                                                </Td>
+                                                <Td>{formatDate(bill.created_at)}</Td>
+                                                <Td>{formatCurrency(bill.total_amount)}</Td>
+                                                <Td>
+                                                    {bill.status === 'paid' ? (
+                                                        <Tag className="bg-emerald-100 text-emerald-600 border-0">پرداخت شده</Tag>
+                                                    ) : (
+                                                        <Tag className="bg-amber-100 text-amber-600 border-0">در انتظار</Tag>
+                                                    )}
+                                                </Td>
+                                                <Td>
+                                                    <Button
+                                                        size="xs"
+                                                        icon={<HiOutlineEye />}
+                                                        onClick={() => navigate(`/admin/accounting/bills/${bill.id}`)}
+                                                    >
+                                                        مشاهده
+                                                    </Button>
+                                                </Td>
+                                            </Tr>
+                                        ))}
+                                    </TBody>
+                                </Table>
+                            </div>
+                            
+                            {/* Mobile View */}
+                            <div className="sm:hidden flex flex-col divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
+                                {document.bills.map((bill) => (
+                                    <div key={bill.id} className="p-4 flex flex-col gap-3">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-gray-500">شماره:</span>
+                                                <span className="font-mono text-sm font-semibold">{bill.bill_number}</span>
+                                            </div>
+                                            {bill.status === 'paid' ? (
+                                                <Tag className="bg-emerald-100 text-emerald-600 border-0 text-[10px] px-2 py-0.5">پرداخت شده</Tag>
+                                            ) : (
+                                                <Tag className="bg-amber-100 text-amber-600 border-0 text-[10px] px-2 py-0.5">در انتظار</Tag>
+                                            )}
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-gray-500">مبلغ کل:</span>
+                                            <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(bill.total_amount)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs text-gray-500">{formatDate(bill.created_at)}</span>
+                                            <Button
+                                                size="sm"
+                                                variant="plain"
+                                                icon={<HiOutlineEye />}
+                                                className="text-indigo-600"
+                                                onClick={() => navigate(`/admin/accounting/bills/${bill.id}`)}
+                                            >
+                                                مشاهده
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}

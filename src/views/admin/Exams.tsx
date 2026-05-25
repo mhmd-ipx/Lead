@@ -351,15 +351,15 @@ const Exams = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div id="admin-exams-header" className="flex items-center justify-between">
+            <div id="admin-exams-header" className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         مدیریت آزمون‌ها
-                        <span className="text-sm font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
+                        <span className="text-xs sm:text-sm font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
                             {data.length} آزمون
                         </span>
                     </h1>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
                         مدیریت و ویرایش آزمون‌های موجود در سیستم
                     </p>
                 </div>
@@ -368,6 +368,7 @@ const Exams = () => {
                     variant="solid"
                     icon={<HiOutlinePlus />}
                     onClick={openModal}
+                    className="w-full sm:w-auto"
                 >
                     افزودن آزمون
                 </Button>
@@ -375,8 +376,8 @@ const Exams = () => {
 
             {/* Table Card */}
             <Card id="admin-exams-table-container">
-                <div className="p-6">
-                    <div className="overflow-x-auto">
+                <div className="p-4 sm:p-6">
+                    <div className="hidden sm:block overflow-x-auto">
                         <Table className="w-full">
                             <THead>
                                 {table.getHeaderGroups().map((headerGroup) => (
@@ -400,13 +401,57 @@ const Exams = () => {
                                                 {flexRender(
                                                     cell.column.columnDef.cell,
                                                     cell.getContext()
-                               				    )}
+                                                )}
                                             </Td>
                                         ))}
                                     </Tr>
                                 ))}
                             </TBody>
                         </Table>
+                    </div>
+
+                    {/* Mobile List View */}
+                    <div className="sm:hidden flex flex-col gap-4 mt-4">
+                        {data.map((exam) => (
+                            <div key={exam.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col gap-3">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-bold flex items-center justify-center shrink-0">
+                                            {exam.priority}
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-gray-900 dark:text-white text-base">
+                                                {exam.title}
+                                            </div>
+                                            {exam.description && (
+                                                <div className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                                    {exam.description}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 bg-gray-50 dark:bg-gray-900/50 p-2 rounded text-sm mt-1">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-gray-500 text-[10px]">تعداد سوالات</span>
+                                        <span className="font-medium text-gray-900 dark:text-white text-xs">{exam.questions.length} سوال</span>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-gray-500 text-[10px]">مدت زمان</span>
+                                        <span className="font-medium text-gray-900 dark:text-white text-xs">{exam.duration} دقیقه</span>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700 mt-1">
+                                    <Button size="sm" variant="plain" className="flex-1 text-xs" icon={<HiOutlinePencil />} onClick={() => handleView(exam)}>مشاهده و ویرایش</Button>
+                                    <Button size="sm" variant="plain" className="flex-1 text-xs text-red-600" loading={deletingId === exam.id} disabled={deletingId !== null} icon={deletingId === exam.id ? undefined : <HiOutlineTrash />} onClick={() => handleDelete(exam)}>حذف</Button>
+                                </div>
+                            </div>
+                        ))}
+                        {data.length === 0 && !loading && (
+                            <div className="text-center py-8">
+                                <p className="text-gray-500 text-sm">آزمونی یافت نشد</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </Card>
@@ -519,11 +564,12 @@ const Exams = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center justify-end gap-3 mt-6">
+                    <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 sm:gap-3 mt-6">
                         <Button
                             variant="plain"
                             onClick={closeModal}
                             disabled={creating}
+                            className="w-full sm:w-auto"
                         >
                             انصراف
                         </Button>
@@ -533,7 +579,7 @@ const Exams = () => {
                             loading={creating}
                             icon={!creating ? <HiOutlinePlus /> : undefined}
                             onClick={handleCreateExam}
-                            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 border-none"
+                            className="w-full sm:w-auto bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 border-none"
                         >
                             {creating ? 'در حال ایجاد...' : 'ایجاد آزمون'}
                         </Button>

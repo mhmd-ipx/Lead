@@ -15,6 +15,82 @@ import { apiGetCollectionProgress, apiStartExam } from '@/services/ExamineeServi
 
 const { Tr, Th, Td, THead, TBody } = Table
 
+const ExamActionBtn = ({ exam, index, prevExam, navigate, examData }: { exam: any, index: number, prevExam: any, navigate: any, examData: any }) => {
+    const [isStarting, setIsStarting] = useState(false)
+    const status = exam.status
+    const isFinished = ['passed', 'failed', 'completed', 'archived'].includes(status)
+    const isInProgress = status === 'in_progress' || status === 'active'
+
+    const isLocked = prevExam && !['passed', 'failed', 'completed', 'archived'].includes(prevExam.status)
+
+    const handleAction = async () => {
+        if (isFinished || isLocked) return
+
+        setIsStarting(true)
+        let resultId = null
+
+        try {
+            const userId = examData?.user?.id
+            const collectionId = examData?.collection?.id
+
+            if (!userId || !collectionId) {
+                toast.push(<Notification title="خطا" type="danger">اطلاعات لازم برای شروع آزمون یافت نشد.</Notification>)
+                return
+            }
+
+            const response = await apiStartExam(exam.exam_id, collectionId, userId)
+            resultId = response.data?.id
+        } catch (error: any) {
+            console.error('Error starting/continuing exam:', error)
+            resultId = error.data?.id
+        } finally {
+            setIsStarting(false)
+        }
+
+        if (resultId) {
+            navigate(`/manager/exams/start/${exam.exam_id}`, { state: { resultId } })
+        } else {
+            toast.push(<Notification title="خطا" type="danger">اطلاعات ردیف آزمون یافت نشد.</Notification>)
+        }
+    }
+
+    return (
+        <Button
+            size="sm"
+            variant="solid"
+            icon={isLocked ? <HiOutlineLockClosed /> : <HiOutlinePlay />}
+            disabled={isFinished || isLocked}
+            loading={isStarting}
+            className={`${(isFinished || isLocked)
+                ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700'
+                } border-none shadow-md transform transition-transform duration-200 active:scale-95 w-full sm:w-auto`}
+            onClick={handleAction}
+        >
+            {isLocked ? 'قفل شده' : isFinished ? 'پایان یافته' : isInProgress ? 'ادامه آزمون' : 'شروع آزمون'}
+        </Button>
+    )
+}
+
+const getStatusDisplay = (status: string) => {
+    const isPassed = status === 'passed'
+    const isFailed = status === 'failed'
+    const isInProgress = status === 'in_progress' || status === 'active'
+    const isCompleted = status === 'completed' || status === 'archived'
+    const isNotStarted = status === 'not_started' || status === 'draft'
+
+    let color = 'bg-gray-300'
+    let label = 'نامشخص'
+
+    if (isPassed) { color = 'bg-emerald-500'; label = 'قبول شده' }
+    else if (isFailed) { color = 'bg-red-500'; label = 'مردود' }
+    else if (isInProgress) { color = 'bg-amber-500'; label = 'در حال انجام' }
+    else if (isCompleted) { color = 'bg-blue-500'; label = 'تکمیل شده' }
+    else if (isNotStarted) { color = 'bg-gray-300'; label = 'شروع نشده' }
+
+    return { color, label }
+}
+
 const Exams = () => {
     const navigate = useNavigate()
     const { examData } = useExaminerSessionStore()
@@ -91,22 +167,7 @@ const Exams = () => {
                 header: 'وضعیت',
                 accessorKey: 'status',
                 cell: (info) => {
-                    const status = info.getValue() as string
-
-                    const isPassed = status === 'passed'
-                    const isFailed = status === 'failed'
-                    const isInProgress = status === 'in_progress' || status === 'active'
-                    const isCompleted = status === 'completed' || status === 'archived'
-                    const isNotStarted = status === 'not_started' || status === 'draft'
-
-                    let color = 'bg-gray-300'
-                    let label = 'نامشخص'
-
-                    if (isPassed) { color = 'bg-emerald-500'; label = 'قبول شده' }
-                    else if (isFailed) { color = 'bg-red-500'; label = 'مردود' }
-                    else if (isInProgress) { color = 'bg-amber-500'; label = 'در حال انجام' }
-                    else if (isCompleted) { color = 'bg-blue-500'; label = 'تکمیل شده' }
-                    else if (isNotStarted) { color = 'bg-gray-300'; label = 'شروع نشده' }
+                    const { color, label } = getStatusDisplay(info.getValue() as string)
 
                     return (
                         <div className="flex items-center gap-2">
@@ -122,64 +183,16 @@ const Exams = () => {
                 header: 'عملیات',
                 cell: (info) => {
                     const exam = info.row.original
-                    const status = exam.status
-                    const isFinished = ['passed', 'failed', 'completed', 'archived'].includes(status)
-                    const isInProgress = status === 'in_progress' || status === 'active'
-
-                    // Sequential locking logic:
-                    // An exam is locked if it's not the first one AND the previous exam is not finished.
                     const prevExam = info.row.index > 0 ? info.table.getRowModel().rows[info.row.index - 1].original : null
-                    const isLocked = prevExam && !['passed', 'failed', 'completed', 'archived'].includes(prevExam.status)
-
-                    const [isStarting, setIsStarting] = useState(false)
-
-                    const handleAction = async () => {
-                        if (isFinished || isLocked) return
-
-                        setIsStarting(true)
-                        let resultId = null
-
-                        try {
-                            const userId = examData?.user?.id
-                            const collectionId = examData?.collection?.id
-
-                            if (!userId || !collectionId) {
-                                toast.push(<Notification title="خطا" type="danger">اطلاعات لازم برای شروع آزمون یافت نشد.</Notification>)
-                                return
-                            }
-
-                            const response = await apiStartExam(exam.exam_id, collectionId, userId)
-                            resultId = response.data?.id
-                        } catch (error: any) {
-                            console.error('Error starting/continuing exam:', error)
-                            // Now error is an ApiError object thanks to our ApiClient update
-                            resultId = error.data?.id
-                        } finally {
-                            setIsStarting(false)
-                        }
-
-                        if (resultId) {
-                            navigate(`/manager/exams/start/${exam.exam_id}`, { state: { resultId } })
-                        } else {
-                            toast.push(<Notification title="خطا" type="danger">اطلاعات ردیف آزمون یافت نشد.</Notification>)
-                        }
-                    }
 
                     return (
-                        <Button
-                            size="sm"
-                            variant="solid"
-                            icon={isLocked ? <HiOutlineLockClosed /> : <HiOutlinePlay />}
-                            disabled={isFinished || isLocked}
-                            loading={isStarting}
-                            className={`${(isFinished || isLocked)
-                                ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700'
-                                } border-none shadow-md transform transition-transform duration-200 active:scale-95`}
-                            onClick={handleAction}
-                        >
-                            {isLocked ? 'قفل شده' : isFinished ? 'پایان یافته' : isInProgress ? 'ادامه آزمون' : 'شروع آزمون'}
-                        </Button>
+                        <ExamActionBtn 
+                            exam={exam} 
+                            index={info.row.index} 
+                            prevExam={prevExam} 
+                            navigate={navigate} 
+                            examData={examData} 
+                        />
                     )
                 },
                 size: 150,
@@ -234,12 +247,13 @@ const Exams = () => {
                 </Card>
 
                 {/* Table Card */}
-                <Card>
-                    <div className="p-6">
-                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <Card className="p-0">
+                    <div className="p-6 border-b border-gray-100 dark:border-gray-800">
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-0">
                             لیست مراحل آزمون
                         </h2>
-                        <div className="overflow-x-auto">
+                    </div>
+                    <div className="overflow-x-auto hidden lg:block">
                             <Table className="w-full">
                                 <THead>
                                     {table.getHeaderGroups().map((headerGroup) => (
@@ -288,7 +302,65 @@ const Exams = () => {
                                     )}
                                 </TBody>
                             </Table>
-                        </div>
+                    </div>
+
+                    {/* Mobile List View */}
+                    <div className="lg:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+                        {loading ? (
+                            Array.from({ length: 3 }).map((_, index) => (
+                                <div key={index} className="p-4 space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <Skeleton variant="circle" width={32} height={32} />
+                                        <Skeleton width={150} height={16} />
+                                    </div>
+                                    <Skeleton width="100%" height={24} />
+                                </div>
+                            ))
+                        ) : table.getRowModel().rows.length > 0 ? (
+                            table.getRowModel().rows.map((row) => {
+                                const exam = row.original;
+                                const prevExam = row.index > 0 ? table.getRowModel().rows[row.index - 1].original : null;
+                                const { color, label } = getStatusDisplay(exam.status);
+
+                                return (
+                                    <div key={row.id} className="p-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                        <div className="flex items-start gap-3 mb-3">
+                                            <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 font-bold flex items-center justify-center shrink-0">
+                                                {row.index + 1}
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="font-semibold text-gray-900 dark:text-white text-sm mb-1 line-clamp-2">
+                                                    {exam.exam_title}
+                                                </div>
+                                                <div className="flex items-center justify-between text-xs mt-2">
+                                                    <span className="text-gray-500">
+                                                        {exam.duration} دقیقه
+                                                    </span>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className={`w-2 h-2 rounded-full ${color}`} />
+                                                        <span className="font-medium text-gray-700 dark:text-gray-300">{label}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                                            <ExamActionBtn 
+                                                exam={exam} 
+                                                index={row.index} 
+                                                prevExam={prevExam} 
+                                                navigate={navigate} 
+                                                examData={examData} 
+                                            />
+                                        </div>
+                                    </div>
+                                )
+                            })
+                        ) : (
+                            <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                                هیچ آزمونی برای شما یافت نشد.
+                            </div>
+                        )}
                     </div>
                 </Card>
             </div>

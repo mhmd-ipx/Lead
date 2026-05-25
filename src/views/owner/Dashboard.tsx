@@ -5,6 +5,7 @@ import {
     Skeleton,
     Tag,
     Button,
+    Card
 } from '@/components/ui'
 import {
     HiOutlineUsers,
@@ -16,10 +17,12 @@ import {
     HiOutlineExclamationCircle,
     HiOutlineUserCircle,
     HiOutlineCog,
-    HiOutlineUserAdd
+    HiOutlineUserAdd,
+    HiOutlineOfficeBuilding
 } from 'react-icons/hi'
 import { useSessionUser } from '@/store/authStore'
-import { getMyManagers, getAssessments, getExams, getInvoices } from '@/services/OwnerService'
+import { getMyManagers, getAssessments, getInvoices } from '@/services/OwnerService'
+import { getApplicantExamSets } from '@/services/AdminService'
 import classNames from '@/utils/classNames'
 
 // --- Reusable Stat Card
@@ -149,9 +152,9 @@ const Dashboard = () => {
         { revalidateOnFocus: false }
     )
 
-    const { data: examsData, isLoading: examsLoading } = useSWR(
-        '/owner/exams',
-        getExams,
+    const { data: examSetsData, isLoading: examsLoading } = useSWR(
+        '/owner/exams-results-dashboard',
+        getApplicantExamSets,
         { revalidateOnFocus: false }
     )
 
@@ -171,6 +174,10 @@ const Dashboard = () => {
     const unreadCount = 0
 
     // Compute stats from the fetched data
+    const totalCompanies = useMemo(() => {
+        return managersData?.length || 0;
+    }, [managersData])
+
     const totalManagers = useMemo(() => {
         if (!managersData) return 0;
         return managersData.reduce((acc, company) => acc + (company.managers?.length || 0), 0)
@@ -178,9 +185,9 @@ const Dashboard = () => {
 
     const activeManagers = useMemo(() => {
         if (!managersData) return 0;
-        return managersData.reduce((acc, company) => 
+        return managersData.reduce((acc, company) =>
             acc + (company.managers?.filter(m => m.status === 'active').length || 0)
-        , 0)
+            , 0)
     }, [managersData])
 
     const completedAssessments = useMemo(() => {
@@ -189,14 +196,14 @@ const Dashboard = () => {
     }, [assessmentsData])
 
     const completedExams = useMemo(() => {
-        if (!examsData) return 0;
-        return examsData.filter(e => e.status === 'completed').length
-    }, [examsData])
+        if (!examSetsData) return 0;
+        return examSetsData.filter((e: any) => e.status === 'completed').length
+    }, [examSetsData])
 
     const pendingExams = useMemo(() => {
-        if (!examsData) return 0;
-        return examsData.filter(e => e.status === 'active' || e.status === 'draft').length
-    }, [examsData])
+        if (!examSetsData) return 0;
+        return examSetsData.filter((e: any) => e.status === 'pending' || e.status === 'in_progress' || e.status === 'active' || e.status === 'draft').length
+    }, [examSetsData])
 
     const totalPending = useMemo(() => {
         if (!billsData) return 0;
@@ -240,7 +247,7 @@ const Dashboard = () => {
                             variant="default"
                             icon={<HiOutlineCog />}
                             className="bg-white/20 hover:!bg-white/40 text-white border-0 transition-colors"
-                            onClick={() => navigate('/owner/profile')}
+                            onClick={() => navigate('/owner/user-profile')}
                         >
                             پروفایل کاربری
                         </Button>
@@ -250,6 +257,17 @@ const Dashboard = () => {
 
             {/* ── Stat Cards ───────────────────────────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard
+                    loading={managersLoading}
+                    title="سازمان‌های ثبت شده"
+                    value={totalCompanies}
+                    icon={<HiOutlineOfficeBuilding />}
+                    iconBg="bg-blue-100 dark:bg-blue-500/20"
+                    iconColor="text-blue-600 dark:text-blue-400"
+                    onView={() => navigate('/owner/companies')}
+                    id="owner-dashboard-stats-companies"
+                />
+
                 <StatCard
                     loading={managersLoading}
                     title="متقاضیان ثبت شده"
@@ -262,18 +280,9 @@ const Dashboard = () => {
                     onView={() => navigate('/owner/managers')}
                     id="owner-dashboard-stats-managers"
                 />
-                
-                <StatCard
-                    loading={assessmentsLoading}
-                    title="نیازسنجی‌های تکمیل شده"
-                    value={completedAssessments}
-                    icon={<HiOutlineClipboardList />}
-                    iconBg="bg-orange-100 dark:bg-orange-500/20"
-                    iconColor="text-orange-600 dark:text-orange-400"
-                    onView={() => navigate('/owner/assessment')}
-                    id="owner-dashboard-stats-assessments"
-                />
-                
+
+
+
                 <StatCard
                     loading={examsLoading}
                     title="آزمون‌های انجام شده"
@@ -284,7 +293,7 @@ const Dashboard = () => {
                     icon={<HiOutlineAcademicCap />}
                     iconBg="bg-teal-100 dark:bg-teal-500/20"
                     iconColor="text-teal-600 dark:text-teal-400"
-                    onView={() => navigate('/owner/results')}
+                    onView={() => navigate('/owner/exams-results')}
                     id="owner-dashboard-stats-exams"
                 />
 
@@ -294,14 +303,69 @@ const Dashboard = () => {
                     value={totalPending ? new Intl.NumberFormat('fa-IR').format(totalPending) : '۰'}
                     alertBadge={!!(totalPending && totalPending > 0)}
                     subLabel="تایید نشده"
-                    subValue={totalPending ? 1 : 0} 
+                    subValue={totalPending ? 1 : 0}
                     icon={<HiOutlineCash />}
                     iconBg="bg-red-100 dark:bg-red-500/20"
                     iconColor="text-red-600 dark:text-red-400"
-                    onView={() => navigate('/owner/bills')}
+                    onView={() => navigate('/owner/accounting/documents')}
                     id="owner-dashboard-stats-pending-bills"
                 />
             </div>
+
+            {/* ── Guide / Timeline ─────────────────────────────────────────── */}
+            <Card className="mt-8 border-indigo-100 dark:border-indigo-900 shadow-sm">
+                <div className="p-6">
+                    <h2 className="text-base font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                            <HiOutlineAcademicCap className="w-4 h-4" />
+                        </span>
+                        راهنمای مراحل کار در سامانه
+                    </h2>
+
+                    <div className="relative">
+                        {/* Connecting Line for Timeline (desktop) */}
+                        <div className="hidden md:block absolute top-6 left-12 right-12 h-0.5 bg-gray-200 dark:bg-gray-700 z-0"></div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative z-10">
+                            {/* Step 1 */}
+                            <div className="flex flex-col items-center text-center group">
+                                <div className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 border-[3px] border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-sm group-hover:scale-110 group-hover:border-blue-200 dark:group-hover:border-blue-800 transition-all mb-3 relative z-10">
+                                    <HiOutlineOfficeBuilding className="w-5 h-5" />
+                                </div>
+                                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1.5">۱. ثبت سازمان</h3>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed px-2">ابتدا باید سازمان یا شرکت خود را در سیستم ثبت کنید.</p>
+                            </div>
+
+                            {/* Step 2 */}
+                            <div className="flex flex-col items-center text-center group">
+                                <div className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 border-[3px] border-violet-100 dark:border-violet-900/50 flex items-center justify-center text-violet-600 dark:text-violet-400 shadow-sm group-hover:scale-110 group-hover:border-violet-200 dark:group-hover:border-violet-800 transition-all mb-3 relative z-10">
+                                    <HiOutlineUsers className="w-5 h-5" />
+                                </div>
+                                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1.5">۲. تعریف متقاضی</h3>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed px-2">متقاضیان خود را برای سازمان مربوطه تعریف نمایید.</p>
+                            </div>
+
+                            {/* Step 3 */}
+                            <div className="flex flex-col items-center text-center group">
+                                <div className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 border-[3px] border-orange-100 dark:border-orange-900/50 flex items-center justify-center text-orange-600 dark:text-orange-400 shadow-sm group-hover:scale-110 group-hover:border-orange-200 dark:group-hover:border-orange-800 transition-all mb-3 relative z-10">
+                                    <HiOutlineClipboardList className="w-5 h-5" />
+                                </div>
+                                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1.5">۳. نیازسنجی</h3>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed px-2">با ثبت نیازسنجی، آزمون متناسب به متقاضی اختصاص می‌یابد.</p>
+                            </div>
+
+                            {/* Step 4 */}
+                            <div className="flex flex-col items-center text-center group">
+                                <div className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 border-[3px] border-teal-100 dark:border-teal-900/50 flex items-center justify-center text-teal-600 dark:text-teal-400 shadow-sm group-hover:scale-110 group-hover:border-teal-200 dark:group-hover:border-teal-800 transition-all mb-3 relative z-10">
+                                    <HiOutlineAcademicCap className="w-5 h-5" />
+                                </div>
+                                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1.5">۴. نتایج آزمون</h3>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed px-2">پس از اتمام آزمون، کارنامه متقاضی را مشاهده کنید.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Card>
         </div>
     )
 }

@@ -24,33 +24,42 @@ import Cookies from 'js-cookie'
 type FilterCategory = 'all' | 'active' | 'inactive' | 'assessmentDone' | 'examDone'
 
 // Statistic Card Component
-const StatisticCard = ({ icon, label, value, color, loading, id }: {
+const StatisticCard = ({ icon, label, value, color, loading, id, isActive, onClick }: {
     icon: React.ReactNode
     label: string
     value: number
     color: string
     loading?: boolean
     id?: string
+    isActive?: boolean
+    onClick?: () => void
 }) => {
     const iconClass = classNames(
-        'w-12 h-12 rounded-lg flex items-center justify-center',
+        'w-12 h-12 rounded-lg flex items-center justify-center shrink-0',
         color
     )
 
     return (
-        <button id={id} className="w-full text-right hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-4">
-                <div className={iconClass}>
-                    {icon}
-                </div>
-                <div className="flex-1">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{label}</p>
-                    {loading ? (
-                        <Skeleton width={60} height={36} />
-                    ) : (
-                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{value}</h3>
-                    )}
-                </div>
+        <button 
+            id={id} 
+            onClick={onClick} 
+            className={classNames(
+                "w-full text-right transition-all p-4 rounded-xl border-2 flex items-center gap-4",
+                isActive 
+                    ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/20" 
+                    : "border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
+            )}
+        >
+            <div className={iconClass}>
+                {icon}
+            </div>
+            <div className="flex-1 overflow-hidden">
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{label}</p>
+                {loading ? (
+                    <Skeleton width={60} height={32} className="mt-1" />
+                ) : (
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-0.5">{value}</h3>
+                )}
             </div>
         </button>
     )
@@ -59,32 +68,32 @@ const StatisticCard = ({ icon, label, value, color, loading, id }: {
 // Skeleton for table rows
 const TableRowSkeleton = () => (
     <tr>
-        <td className="px-6 py-4 whitespace-nowrap">
+        <td className="px-4 py-3 whitespace-nowrap">
             <div className="flex items-center gap-3">
                 <Skeleton variant="circle" width={32} height={32} />
                 <div className="space-y-2">
-                    <Skeleton width={120} height={16} />
-                    <Skeleton width={80} height={14} />
+                    <Skeleton width={120} height={14} />
+                    <Skeleton width={80} height={12} />
                 </div>
             </div>
         </td>
-        <td className="px-6 py-4 whitespace-nowrap">
-            <Skeleton width={100} height={16} />
+        <td className="px-4 py-3 whitespace-nowrap">
+            <Skeleton width={90} height={14} />
         </td>
-        <td className="px-6 py-4 whitespace-nowrap">
-            <Skeleton width={80} height={24} />
+        <td className="px-4 py-3 whitespace-nowrap">
+            <Skeleton width={70} height={20} />
         </td>
-        <td className="px-6 py-4 whitespace-nowrap">
-            <Skeleton width={90} height={24} />
+        <td className="px-4 py-3 whitespace-nowrap">
+            <Skeleton width={80} height={20} />
         </td>
-        <td className="px-6 py-4 whitespace-nowrap">
-            <Skeleton width={90} height={24} />
+        <td className="px-4 py-3 whitespace-nowrap">
+            <Skeleton width={80} height={20} />
         </td>
-        <td className="px-6 py-4 whitespace-nowrap">
+        <td className="px-4 py-3 whitespace-nowrap">
             <div className="flex gap-2">
-                <Skeleton variant="circle" width={32} height={32} />
-                <Skeleton variant="circle" width={32} height={32} />
-                <Skeleton variant="circle" width={32} height={32} />
+                <Skeleton variant="circle" width={28} height={28} />
+                <Skeleton variant="circle" width={28} height={28} />
+                <Skeleton variant="circle" width={28} height={28} />
             </div>
         </td>
     </tr>
@@ -257,38 +266,50 @@ const CompanyManagers = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     <Button
                         variant="plain"
                         icon={<HiOutlineArrowLeft />}
                         onClick={() => navigate('/admin/companies')}
+                        className="self-start sm:self-auto"
                     >
-                        بازگشت به لیست سازمان‌ها
+                        بازگشت
                     </Button>
                     <div id="admin-company-managers-header">
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                            <HiOutlineUserGroup className="w-7 h-7" />
-                            متقاضیان سازمان {company?.name && `- ${company.name}`}
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <HiOutlineUserGroup className="w-6 h-6 sm:w-7 sm:h-7" />
+                            متقاضیان {company?.name ? `- ${company.name}` : ''}
                         </h1>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
                             مدیریت متقاضیان و نیازسنجی‌ها
                         </p>
                     </div>
                 </div>
-                <Button
-                    id="admin-company-managers-add-button"
-                    variant="solid"
-                    icon={<HiOutlinePlus />}
-                    onClick={() => navigate(`/admin/companies/${companyId}/managers/add`)}
-                >
-                    افزودن متقاضی
-                </Button>
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                    <Input
+                        id="admin-company-managers-search"
+                        className="w-full sm:w-64 bg-white dark:bg-gray-900 text-sm shadow-sm order-2 sm:order-1"
+                        placeholder="جستجو متقاضی..."
+                        prefix={<HiOutlineSearch />}
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                    />
+                    <Button
+                        id="admin-company-managers-add-button"
+                        variant="solid"
+                        icon={<HiOutlinePlus />}
+                        className="w-full sm:w-auto text-sm shrink-0 order-1 sm:order-2"
+                        onClick={() => navigate(`/admin/companies/${companyId}/managers/add`)}
+                    >
+                        افزودن متقاضی
+                    </Button>
+                </div>
             </div>
 
             {/* Statistics */}
-            <div id="admin-company-managers-stats" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="p-4">
+            <div id="admin-company-managers-stats" className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 md:grid md:grid-cols-2 lg:grid-cols-4 scrollbar-hide">
+                <div className="w-[70vw] sm:w-auto shrink-0 snap-start">
                     <StatisticCard
                         id="admin-company-managers-stats-total"
                         icon={<HiOutlineUserGroup className="w-6 h-6 text-white" />}
@@ -296,9 +317,11 @@ const CompanyManagers = () => {
                         value={stats.total}
                         color="bg-gradient-to-br from-blue-500 to-blue-600"
                         loading={isLoading}
+                        isActive={selectedCategory === 'all'}
+                        onClick={() => handleCategoryChange('all')}
                     />
-                </Card>
-                <Card className="p-4">
+                </div>
+                <div className="w-[70vw] sm:w-auto shrink-0 snap-start">
                     <StatisticCard
                         id="admin-company-managers-stats-active"
                         icon={<HiOutlineCheckCircle className="w-6 h-6 text-white" />}
@@ -306,9 +329,11 @@ const CompanyManagers = () => {
                         value={stats.active}
                         color="bg-gradient-to-br from-emerald-500 to-emerald-600"
                         loading={isLoading}
+                        isActive={selectedCategory === 'active'}
+                        onClick={() => handleCategoryChange('active')}
                     />
-                </Card>
-                <Card className="p-4">
+                </div>
+                <div className="w-[70vw] sm:w-auto shrink-0 snap-start">
                     <StatisticCard
                         id="admin-company-managers-stats-assessment"
                         icon={<HiOutlineClipboardCheck className="w-6 h-6 text-white" />}
@@ -316,9 +341,11 @@ const CompanyManagers = () => {
                         value={stats.assessmentDone}
                         color="bg-gradient-to-br from-purple-500 to-purple-600"
                         loading={isLoading}
+                        isActive={selectedCategory === 'assessmentDone'}
+                        onClick={() => handleCategoryChange('assessmentDone')}
                     />
-                </Card>
-                <Card className="p-4">
+                </div>
+                <div className="w-[70vw] sm:w-auto shrink-0 snap-start">
                     <StatisticCard
                         id="admin-company-managers-stats-exam"
                         icon={<HiOutlineAcademicCap className="w-6 h-6 text-white" />}
@@ -326,83 +353,37 @@ const CompanyManagers = () => {
                         value={stats.examDone}
                         color="bg-gradient-to-br from-amber-500 to-amber-600"
                         loading={isLoading}
-                    />
-                </Card>
-            </div>
-
-            {/* Filters and Search */}
-            <Card className="p-4">
-                <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                    <div id="admin-company-managers-filters" className="flex gap-2 flex-wrap">
-                        <Button
-                            size="sm"
-                            variant={selectedCategory === 'all' ? 'solid' : 'default'}
-                            onClick={() => handleCategoryChange('all')}
-                        >
-                            همه ({stats.total})
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant={selectedCategory === 'active' ? 'solid' : 'default'}
-                            onClick={() => handleCategoryChange('active')}
-                        >
-                            فعال ({stats.active})
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant={selectedCategory === 'inactive' ? 'solid' : 'default'}
-                            onClick={() => handleCategoryChange('inactive')}
-                        >
-                            غیرفعال ({stats.total - stats.active})
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant={selectedCategory === 'assessmentDone' ? 'solid' : 'default'}
-                            onClick={() => handleCategoryChange('assessmentDone')}
-                        >
-                            نیازسنجی شده ({stats.assessmentDone})
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant={selectedCategory === 'examDone' ? 'solid' : 'default'}
-                            onClick={() => handleCategoryChange('examDone')}
-                        >
-                            آزمون داده‌اند ({stats.examDone})
-                        </Button>
-                    </div>
-                    <Input
-                        id="admin-company-managers-search"
-                        className="w-64 bg-white dark:bg-gray-900"
-                        placeholder="جستجو..."
-                        prefix={<HiOutlineSearch />}
-                        value={searchQuery}
-                        onChange={handleSearchChange}
+                        isActive={selectedCategory === 'examDone'}
+                        onClick={() => handleCategoryChange('examDone')}
                     />
                 </div>
-            </Card>
+            </div>
 
-            {/* Table */}
-            <Card id="admin-company-managers-table">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
+
+
+            {/* Table & Mobile List */}
+            <Card id="admin-company-managers-table" className="p-1 sm:p-0">
+                {/* Desktop Table */}
+                <div className="overflow-x-auto hidden sm:block">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead className="bg-gray-50 dark:bg-gray-800">
                             <tr>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     متقاضی
                                 </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     تماس
                                 </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     وضعیت
                                 </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     نیازسنجی
                                 </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     آزمون
                                 </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     عملیات
                                 </th>
                             </tr>
@@ -414,8 +395,8 @@ const CompanyManagers = () => {
                                 ))
                             ) : filteredManagers.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center">
-                                        <p className="text-gray-500 dark:text-gray-400">
+                                    <td colSpan={6} className="px-4 py-12 text-center">
+                                        <p className="text-gray-500 dark:text-gray-400 text-sm">
                                             {searchQuery || selectedCategory !== 'all'
                                                 ? 'متقاضی با این فیلتر یافت نشد'
                                                 : 'هنوز متقاضی‌ای ثبت نشده است'}
@@ -425,7 +406,7 @@ const CompanyManagers = () => {
                             ) : (
                                 filteredManagers.map((manager) => (
                                     <tr key={manager.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td className="px-4 py-3 whitespace-nowrap">
                                             <div className="flex items-center gap-3">
                                                 <Avatar size={32} src={manager.user.avatar || undefined}>
                                                     {manager.user.name.charAt(0)}
@@ -434,61 +415,42 @@ const CompanyManagers = () => {
                                                     <div className="text-sm font-medium text-gray-900 dark:text-white">
                                                         {manager.user.name}
                                                     </div>
-                                                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400">
                                                         {manager.position} - {manager.department}
                                                     </div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td className="px-4 py-3 whitespace-nowrap">
                                             <div className="text-sm text-gray-900 dark:text-white">
                                                 {manager.user.phone}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <Tag className={getStatusColor(manager.status)}>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <Tag className={`${getStatusColor(manager.status)} text-xs border-0`}>
                                                 {getStatusLabel(manager.status)}
                                             </Tag>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <Tag className={getAssessmentStatusColor(manager.assessment_status)}>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <Tag className={`${getAssessmentStatusColor(manager.assessment_status)} text-xs border-0`}>
                                                 {getAssessmentStatusLabel(manager.assessment_status)}
                                             </Tag>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <Tag className={getAssessmentStatusColor(manager.exam_status)}>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <Tag className={`${getAssessmentStatusColor(manager.exam_status)} text-xs border-0`}>
                                                 {getAssessmentStatusLabel(manager.exam_status)}
                                             </Tag>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex gap-2">
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <div className="flex gap-1">
                                                 <Tooltip title="مشاهده">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="plain"
-                                                        icon={<HiOutlineEye />}
-                                                        onClick={() => navigate(`/admin/companies/${companyId}/managers/${manager.id}`)}
-                                                    />
+                                                    <Button size="sm" variant="plain" icon={<HiOutlineEye />} onClick={() => navigate(`/admin/companies/${companyId}/managers/${manager.id}`)} />
                                                 </Tooltip>
                                                 <Tooltip title="ویرایش">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="plain"
-                                                        icon={<HiOutlinePencil />}
-                                                        onClick={() => navigate(`/admin/companies/${companyId}/managers/${manager.id}/edit`)}
-                                                    />
+                                                    <Button size="sm" variant="plain" icon={<HiOutlinePencil />} onClick={() => navigate(`/admin/companies/${companyId}/managers/${manager.id}/edit`)} />
                                                 </Tooltip>
                                                 <Tooltip title="حذف">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="plain"
-                                                        icon={<HiOutlineTrash />}
-                                                        className="text-red-500 hover:text-red-600"
-                                                        onClick={() => {
-                                                            setSelectedManager(manager)
-                                                            setDeleteDialogOpen(true)
-                                                        }}
-                                                    />
+                                                    <Button size="sm" variant="plain" icon={<HiOutlineTrash />} className="text-red-500 hover:text-red-600" onClick={() => { setSelectedManager(manager); setDeleteDialogOpen(true) }} />
                                                 </Tooltip>
                                             </div>
                                         </td>
@@ -497,6 +459,81 @@ const CompanyManagers = () => {
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile List */}
+                <div className="sm:hidden flex flex-col divide-y divide-gray-200 dark:divide-gray-700 px-3">
+                    {isLoading ? (
+                        Array.from({ length: 3 }).map((_, index) => (
+                            <div key={index} className="py-4 space-y-3">
+                                <div className="flex gap-3 items-center">
+                                    <Skeleton variant="circle" width={36} height={36} />
+                                    <div className="space-y-2 flex-1">
+                                        <Skeleton width="60%" height={16} />
+                                        <Skeleton width="40%" height={12} />
+                                    </div>
+                                </div>
+                                <Skeleton width="100%" height={70} />
+                            </div>
+                        ))
+                    ) : filteredManagers.length === 0 ? (
+                        <div className="text-center py-8">
+                            <HiOutlineUserGroup className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                            <p className="text-gray-500 dark:text-gray-400 text-xs">
+                                {searchQuery || selectedCategory !== 'all' ? 'متقاضی با این فیلتر یافت نشد' : 'هنوز متقاضی‌ای ثبت نشده است'}
+                            </p>
+                        </div>
+                    ) : (
+                        filteredManagers.map((manager) => (
+                            <div key={manager.id} className="py-5">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar size={36} src={manager.user.avatar || undefined}>
+                                            {manager.user.name.charAt(0)}
+                                        </Avatar>
+                                        <div>
+                                            <div className="text-sm font-bold text-gray-900 dark:text-white">{manager.user.name}</div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{manager.position} - {manager.department}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-y-3 gap-x-2 mb-4 text-xs bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 border border-gray-100 dark:border-gray-800">
+                                    <div>
+                                        <span className="text-gray-400 block mb-1">شماره تماس:</span>
+                                        <span className="text-gray-700 dark:text-gray-300 font-medium">{manager.user.phone}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-400 block mb-1">وضعیت حساب:</span>
+                                        <Tag className={`${getStatusColor(manager.status)} text-[10px] px-1.5 py-0 border-0 mt-0.5`}>
+                                            {getStatusLabel(manager.status)}
+                                        </Tag>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-400 block mb-1">نیازسنجی:</span>
+                                        <Tag className={`${getAssessmentStatusColor(manager.assessment_status)} text-[10px] px-1.5 py-0 border-0 mt-0.5`}>
+                                            {getAssessmentStatusLabel(manager.assessment_status)}
+                                        </Tag>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-400 block mb-1">آزمون:</span>
+                                        <Tag className={`${getAssessmentStatusColor(manager.exam_status)} text-[10px] px-1.5 py-0 border-0 mt-0.5`}>
+                                            {getAssessmentStatusLabel(manager.exam_status)}
+                                        </Tag>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between mt-2">
+                                    <span className="text-xs text-gray-500 font-medium px-1">عملیات:</span>
+                                    <div className="flex items-center gap-1">
+                                        <Button variant="plain" size="xs" icon={<HiOutlineEye className="text-base" />} onClick={() => navigate(`/admin/companies/${companyId}/managers/${manager.id}`)} className="p-1" />
+                                        <Button variant="plain" size="xs" icon={<HiOutlinePencil className="text-base" />} onClick={() => navigate(`/admin/companies/${companyId}/managers/${manager.id}/edit`)} className="p-1" />
+                                        <Button variant="plain" size="xs" icon={<HiOutlineTrash className="text-base" />} className="text-red-500 hover:text-red-600 p-1" onClick={() => { setSelectedManager(manager); setDeleteDialogOpen(true) }} />
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </Card>
 

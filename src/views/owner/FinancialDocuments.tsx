@@ -78,7 +78,7 @@ const StatisticCard = (props: StatisticCardProps) => {
     return (
         <button
             className={classNames(
-                'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full',
+                'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full min-w-[240px] md:min-w-0 shrink-0 md:shrink-1',
                 active && 'bg-white dark:bg-gray-900 shadow-md',
             )}
             onClick={() => onClick(label)}
@@ -383,7 +383,7 @@ const FinancialDocuments = () => {
             </div>
 
             {/* Stats Cards */}
-            <div id="financial-documents-stats-cards" className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
+            <div id="financial-documents-stats-cards" className="flex md:grid md:grid-cols-4 gap-4 overflow-x-auto pb-2 md:pb-0 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
                 <StatisticCard
                     title="همه اسناد"
                     value={totalDocuments}
@@ -437,7 +437,7 @@ const FinancialDocuments = () => {
             {/* Bulk Actions */}
             {selectedRows.length > 0 && (
                 <Card id="financial-documents-bulk-actions-anchor" className="p-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
                             <p className="text-sm font-medium text-blue-900 dark:text-blue-200">
                                 {selectedRows.length} سند انتخاب شده
@@ -450,6 +450,7 @@ const FinancialDocuments = () => {
                             variant="solid"
                             icon={<HiOutlineCash />}
                             onClick={handleBulkPayment}
+                            className="w-full sm:w-auto"
                         >
                             ایجاد صورتحساب و پرداخت
                         </Button>
@@ -459,8 +460,20 @@ const FinancialDocuments = () => {
             }
 
             {/* Table */}
-            <Card id="financial-documents-table">
-                <div className="overflow-x-auto">
+            <Card id="financial-documents-table" className="p-0">
+                {/* Mobile Select All */}
+                <div className="lg:hidden p-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3">
+                    <IndeterminateCheckbox
+                        checked={table.getIsAllRowsSelected()}
+                        indeterminate={table.getIsSomeRowsSelected()}
+                        onChange={table.getToggleAllRowsSelectedHandler()}
+                    />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        انتخاب همه اسناد قابل پرداخت
+                    </span>
+                </div>
+                
+                <div className="overflow-x-auto hidden lg:block">
                     <Table>
                         <THead>
                             {table.getHeaderGroups().map((headerGroup) => (
@@ -504,6 +517,74 @@ const FinancialDocuments = () => {
                             )}
                         </TBody>
                     </Table>
+                </div>
+
+                {/* Mobile List View */}
+                <div className="lg:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+                    {loading ? (
+                        [...Array(3)].map((_, index) => (
+                            <div key={index} className="p-4 space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <Skeleton width={20} height={20} />
+                                    <Skeleton width={150} height={16} />
+                                </div>
+                                <Skeleton width="100%" height={24} />
+                            </div>
+                        ))
+                    ) : table.getRowModel().rows.length > 0 ? (
+                        table.getRowModel().rows.map((row) => (
+                            <div key={row.id} className="p-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors flex gap-3">
+                                <div className="mt-1">
+                                    <IndeterminateCheckbox
+                                        checked={row.getIsSelected()}
+                                        disabled={!row.getCanSelect()}
+                                        indeterminate={row.getIsSomeSelected()}
+                                        onChange={row.getToggleSelectedHandler()}
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="pr-2">
+                                            <div className="font-semibold text-gray-900 dark:text-white text-sm mb-1 line-clamp-1">
+                                                {row.original.title}
+                                            </div>
+                                            <div className="font-mono text-xs text-gray-500 mb-1">
+                                                #{row.original.id}
+                                            </div>
+                                            <div className="text-[11px] text-gray-500">
+                                                تاریخ: {formatDate(row.original.created_date)}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-2 shrink-0">
+                                            <div className="w-fit scale-[0.85] origin-left">{getStatusTag(row.original.status)}</div>
+                                            <div className="font-bold text-sm">
+                                                {formatCurrency(parseFloat(row.original.amount), row.original.currency)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-3 mt-2">
+                                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                                            {row.original.company?.name || '-'}
+                                        </div>
+                                        <Button
+                                            variant="plain"
+                                            size="sm"
+                                            icon={<HiOutlineEye />}
+                                            onClick={() => navigate(`/owner/accounting/documents/${row.original.id}`)}
+                                            className="text-gray-500"
+                                        >
+                                            جزئیات
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                            سندی یافت نشد
+                        </div>
+                    )}
                 </div>
             </Card>
 

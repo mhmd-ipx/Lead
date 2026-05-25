@@ -2,6 +2,7 @@ import { useState, Suspense, lazy } from 'react'
 import classNames from 'classnames'
 import Drawer from '@/components/ui/Drawer'
 import NavToggle from '@/components/shared/NavToggle'
+import Logo from '@/components/template/Logo'
 import { DIR_RTL } from '@/constants/theme.constant'
 import withHeaderItem, { WithHeaderItemProps } from '@/utils/hoc/withHeaderItem'
 import navigationConfig from '@/configs/navigation.config'
@@ -46,7 +47,7 @@ const MobileNav = () => {
                 <MobileNavToggle toggled={isOpen} />
             </div>
             <Drawer
-                title="Navigation"
+                title={<Logo type="full" imgClass="max-h-8" />}
                 isOpen={isOpen}
                 bodyClass={classNames('p-0')}
                 width={330}
@@ -57,7 +58,7 @@ const MobileNav = () => {
                 <Suspense fallback={<></>}>
                     {isOpen && (
                         <VerticalMenuContent
-                            collapsed={sideNavCollapse}
+                            collapsed={false}
                             navigationTree={navigationConfig}
                             routeKey={currentRouteKey}
                             userAuthority={userAuthority as string[]}

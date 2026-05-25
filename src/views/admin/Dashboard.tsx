@@ -585,7 +585,7 @@ const Dashboard = () => {
                                 </Tag>
                             )}
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                             <Segment
                                 value={notifFilter}
                                 onChange={(val) =>
@@ -594,6 +594,7 @@ const Dashboard = () => {
                                     )
                                 }
                                 size="sm"
+                                className="w-full sm:w-auto"
                             >
                                 <Segment.Item value="all">همه</Segment.Item>
                                 <Segment.Item value="unread">خوانده نشده</Segment.Item>
@@ -603,7 +604,7 @@ const Dashboard = () => {
                                 size="sm"
                                 variant="default"
                                 icon={<HiOutlineEye />}
-                                className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-blue-600 dark:text-blue-400 border-0"
+                                className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-blue-600 dark:text-blue-400 border-0 w-full sm:w-auto"
                                 onClick={() => navigate('/admin/notifications')}
                             >
                                 مشاهده

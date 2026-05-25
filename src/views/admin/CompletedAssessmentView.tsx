@@ -41,17 +41,17 @@ const StatisticCard = (props: StatisticCardProps) => {
     const { title, value, icon, iconClass, id } = props
 
     return (
-        <div id={id} className="p-4 rounded-2xl bg-white dark:bg-gray-900 shadow-md">
+        <div id={id} className="p-4 rounded-2xl bg-white dark:bg-gray-900 shadow-sm border border-gray-100 dark:border-gray-800">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="mb-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
+                    <div className="mb-1 sm:mb-2 text-xs sm:text-sm font-semibold text-gray-500 dark:text-gray-400">
                         {title}
                     </div>
-                    <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{value}</h3>
+                    <h3 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">{value}</h3>
                 </div>
                 <div
                     className={classNames(
-                        'flex items-center justify-center min-h-12 min-w-12 max-h-12 max-w-12 rounded-full text-2xl',
+                        'flex items-center justify-center min-h-10 min-w-10 max-h-10 max-w-10 sm:min-h-12 sm:min-w-12 sm:max-h-12 sm:max-w-12 rounded-full text-xl sm:text-2xl',
                         iconClass,
                     )}
                 >
@@ -305,46 +305,56 @@ const CompletedAssessmentView = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     <Button
                         variant="plain"
                         icon={<HiOutlineArrowLeft />}
                         onClick={() => navigate('/admin/assessments/completed')}
+                        className="self-start sm:self-auto hidden sm:flex"
                     >
                         بازگشت
                     </Button>
                     <div id="admin-assessment-view-header">
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                            جزئیات نیازسنجی
-                        </h1>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            متقاضی: {assessment.managerName} | سازمان: {assessment.companyName}
+                        <div className="flex items-center gap-2 mb-1">
+                            <Button
+                                variant="plain"
+                                icon={<HiOutlineArrowLeft />}
+                                onClick={() => navigate('/admin/assessments/completed')}
+                                className="sm:hidden p-2 -ml-2"
+                            />
+                            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                                جزئیات نیازسنجی
+                            </h1>
+                        </div>
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            متقاضی: <span className="font-medium text-gray-800 dark:text-gray-300">{assessment.managerName}</span> | سازمان: <span className="font-medium text-gray-800 dark:text-gray-300">{assessment.companyName}</span>
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full md:w-auto mt-2 md:mt-0">
                     <Button
                         variant="plain"
                         icon={<HiOutlinePrinter />}
                         onClick={() => window.print()}
+                        className="flex-1 md:flex-none text-xs sm:text-sm"
                     >
-                        چاپ نیازسنجی
+                        چاپ
                     </Button>
                     <Button
                         variant="solid"
                         icon={<HiOutlineDownload />}
-                        size="sm"
                         onClick={() => setIsExportModalOpen(true)}
+                        className="flex-1 md:flex-none text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700"
                     >
-                        دریافت خروجی
+                        خروجی
                     </Button>
                     <Button
                         id="admin-assessment-view-action-assign"
                         variant="solid"
                         icon={<HiOutlineAcademicCap />}
-                        size="sm"
                         onClick={handleOpenAssignDialog}
+                        className="flex-1 md:flex-none text-xs sm:text-sm w-full sm:w-auto basis-full sm:basis-auto mt-2 sm:mt-0"
                     >
                         اختصاص آزمون
                     </Button>
@@ -368,49 +378,50 @@ const CompletedAssessmentView = () => {
             </div>
 
             {/* Assessment Info */}
-            <Card id="admin-assessment-view-info" className="p-6">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="p-3 bg-primary-100 dark:bg-primary-900/20 rounded-lg">
-                        <HiOutlineClipboardCheck className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+            {/* Assessment Info */}
+            <Card id="admin-assessment-view-info" className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6">
+                    <div className="p-3 bg-primary-100 dark:bg-primary-900/20 rounded-lg shrink-0">
+                        <HiOutlineClipboardCheck className="w-6 h-6 sm:w-8 sm:h-8 text-primary-600 dark:text-primary-400" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                        <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                             {assessment.templateName}
                         </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
                             درخواست‌دهنده: {assessment.ownerName}
                         </p>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:mb-2">
+                    <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg sm:bg-transparent sm:p-0">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                             تاریخ ایجاد
                         </label>
-                        <p className="text-gray-900 dark:text-white">
+                        <p className="text-sm sm:text-base text-gray-900 dark:text-white font-medium sm:font-normal">
                             {new Date(assessment.createdAt).toLocaleDateString('fa-IR')}
                         </p>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg sm:bg-transparent sm:p-0">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                             تاریخ تکمیل
                         </label>
-                        <p className="text-gray-900 dark:text-white">
+                        <p className="text-sm sm:text-base text-gray-900 dark:text-white font-medium sm:font-normal">
                             {assessment.submittedAt ? new Date(assessment.submittedAt).toLocaleDateString('fa-IR') : '-'}
                         </p>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg sm:bg-transparent sm:p-0">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                             وضعیت
                         </label>
                         <div>
                             {assessment.status === 'submitted' ? (
-                                <Tag className="text-green-600 bg-green-100 dark:text-green-100 dark:bg-green-500/20 border-0">
+                                <Tag className="text-green-600 bg-green-100 dark:text-green-100 dark:bg-green-500/20 border-0 text-xs sm:text-sm px-2 py-0.5">
                                     تکمیل شده
                                 </Tag>
                             ) : (
-                                <Tag className="text-amber-600 bg-amber-100 dark:text-amber-100 dark:bg-amber-500/20 border-0">
+                                <Tag className="text-amber-600 bg-amber-100 dark:text-amber-100 dark:bg-amber-500/20 border-0 text-xs sm:text-sm px-2 py-0.5">
                                     پیش‌نویس
                                 </Tag>
                             )}
@@ -422,33 +433,33 @@ const CompletedAssessmentView = () => {
             {/* Answers */}
             <div id="admin-assessment-view-answers" className="space-y-4">
                 {assessment.steps.map((step, stepIndex) => (
-                    <Card key={step.id} className="p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <Card key={step.id} className="p-4 sm:p-6">
+                        <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2 sm:mb-4 pb-2 border-b border-gray-100 dark:border-gray-800">
                             مرحله {stepIndex + 1}: {step.title}
                         </h3>
                         {step.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6 leading-relaxed">
                                 {step.description}
                             </p>
                         )}
 
-                        <div className="space-y-6">
+                        <div className="space-y-4 sm:space-y-6">
                             {step.questions.map((question, questionIndex) => {
                                 const answer = assessment.answers[step.id]?.[question.id]
 
                                 return (
-                                    <div key={question.id} className="border-r-4 border-primary-500 pr-4">
+                                    <div key={question.id} className="border-r-2 sm:border-r-4 border-primary-500 pr-3 sm:pr-4">
                                         <div className="flex items-start justify-between mb-2">
-                                            <p className="font-medium text-gray-900 dark:text-white">
+                                            <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white leading-relaxed">
                                                 {questionIndex + 1}. {question.question}
                                             </p>
                                         </div>
-                                        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                                        <div className="bg-gray-50 dark:bg-gray-800/80 rounded-lg p-3 sm:p-4 mt-2">
                                             {answer !== undefined && answer !== null ? (
                                                 Array.isArray(answer) ? (
-                                                    <ul className="list-disc list-inside space-y-1">
+                                                    <ul className="list-disc list-inside space-y-1.5 sm:space-y-1">
                                                         {answer.map((item, i) => (
-                                                            <li key={i} className="text-gray-900 dark:text-white">
+                                                            <li key={i} className="text-sm sm:text-base text-gray-900 dark:text-white leading-relaxed">
                                                                 {item}
                                                             </li>
                                                         ))}
@@ -460,21 +471,26 @@ const CompletedAssessmentView = () => {
                                                                 <HiOutlineStar
                                                                     key={i}
                                                                     className={classNames(
-                                                                        'w-5 h-5',
-                                                                        i < answer ? 'text-amber-500 fill-current' : 'text-gray-300'
+                                                                        'w-4 h-4 sm:w-5 sm:h-5',
+                                                                        i < answer ? 'text-amber-500 fill-current' : 'text-gray-300 dark:text-gray-600'
                                                                     )}
                                                                 />
                                                             ))}
                                                         </div>
-                                                        <span className="text-gray-900 dark:text-white font-semibold">
+                                                        <span className="text-sm sm:text-base text-gray-900 dark:text-white font-semibold">
                                                             {answer} از 5
                                                         </span>
                                                     </div>
                                                 ) : (
-                                                    <p className="text-gray-900 dark:text-white">{answer}</p>
+                                                    <p className="text-sm sm:text-base text-gray-900 dark:text-white leading-relaxed">
+                                                        {typeof answer === 'object' ? JSON.stringify(answer) : String(answer)}
+                                                    </p>
                                                 )
                                             ) : (
-                                                <p className="text-gray-500 dark:text-gray-400 italic">پاسخ داده نشده</p>
+                                                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic flex items-center gap-1">
+                                                    <HiOutlineClock className="w-4 h-4" />
+                                                    پاسخ داده نشده
+                                                </p>
                                             )}
                                         </div>
                                     </div>
@@ -491,24 +507,26 @@ const CompletedAssessmentView = () => {
                 onClose={handleCloseDialog}
                 onRequestClose={handleCloseDialog}
                 width={800}
-                className="pb-0"
+                className="pb-0 w-full md:w-[800px]"
             >
-                <div className="p-6 h-full flex flex-col">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                        <HiOutlineAcademicCap className="w-6 h-6 text-indigo-600" />
-                        <span>اختصاص مجموعه آزمون</span>
-                        <span className="text-sm font-normal text-gray-500 mx-2">|</span>
-                        <span className="text-sm font-normal text-gray-500">مرحله {step} از 2</span>
+                <div className="p-4 sm:p-6 h-full flex flex-col">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex flex-col sm:flex-row sm:items-center gap-2">
+                        <div className="flex items-center gap-2">
+                            <HiOutlineAcademicCap className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" />
+                            <span>اختصاص مجموعه آزمون</span>
+                        </div>
+                        <div className="hidden sm:block text-sm font-normal text-gray-500 mx-2">|</div>
+                        <span className="text-xs sm:text-sm font-normal text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded w-fit">مرحله {step} از 2</span>
                     </h3>
 
-                    <div className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg flex justify-between items-center">
+                    <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                         <div>
-                            <p className="text-xs text-indigo-600 dark:text-indigo-300 font-medium mb-1">نیازسنجی مربوط به:</p>
-                            <p className="font-bold text-gray-900 dark:text-white">{assessment.managerName}</p>
+                            <p className="text-[10px] sm:text-xs text-indigo-600 dark:text-indigo-300 font-medium mb-1">نیازسنجی مربوط به:</p>
+                            <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">{assessment.managerName}</p>
                         </div>
-                        <div className="text-left">
-                            <p className="text-xs text-indigo-600 dark:text-indigo-300 font-medium mb-1">سازمان:</p>
-                            <p className="font-bold text-gray-900 dark:text-white">{assessment.companyName}</p>
+                        <div className="text-right sm:text-left">
+                            <p className="text-[10px] sm:text-xs text-indigo-600 dark:text-indigo-300 font-medium mb-1">سازمان:</p>
+                            <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">{assessment.companyName}</p>
                         </div>
                     </div>
 
@@ -644,21 +662,23 @@ const CompletedAssessmentView = () => {
                         )}
                     </div>
 
-                    <div className="flex justify-between border-t border-gray-100 dark:border-gray-700 pt-4 mt-auto">
+                    <div className="flex flex-col-reverse sm:flex-row sm:justify-between border-t border-gray-100 dark:border-gray-700 pt-4 mt-auto gap-3">
                         <Button
                             variant="plain"
                             onClick={handleCloseDialog}
                             disabled={submitting}
+                            className="w-full sm:w-auto"
                         >
                             انصراف
                         </Button>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 w-full sm:w-auto">
                             {step === 2 && (
                                 <Button
                                     variant="default"
                                     onClick={handlePrevStep}
                                     disabled={submitting}
                                     icon={<HiArrowRight className="ml-2" />}
+                                    className="flex-1 sm:flex-none"
                                 >
                                     مرحله قبل
                                 </Button>
@@ -669,6 +689,7 @@ const CompletedAssessmentView = () => {
                                     onClick={handleNextStep}
                                     disabled={selectedExamIds.length === 0}
                                     icon={<HiArrowLeft className="mr-2" />}
+                                    className="flex-1 sm:flex-none"
                                 >
                                     مرحله بعد
                                 </Button>
@@ -678,6 +699,7 @@ const CompletedAssessmentView = () => {
                                     onClick={handleAssignExams}
                                     loading={submitting}
                                     icon={<HiOutlineCheckCircle className="mr-2" />}
+                                    className="flex-1 sm:flex-none"
                                 >
                                     تایید و اختصاص
                                 </Button>

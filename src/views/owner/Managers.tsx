@@ -41,7 +41,7 @@ const StatisticCard = (props: StatisticCardProps) => {
   return (
     <button
       className={classNames(
-        'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full',
+        'p-4 rounded-2xl cursor-pointer text-right transition duration-150 outline-none w-full min-w-[240px] md:min-w-0 shrink-0 md:shrink-1',
         active && 'bg-white dark:bg-gray-900 shadow-md',
       )}
       onClick={() => onClick(label)}
@@ -245,7 +245,7 @@ const Managers = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div id="managers-header">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             متقاضیان
@@ -254,9 +254,9 @@ const Managers = () => {
             مدیریت متقاضیان و نیازسنجی‌ها
           </p>
         </div>
-        <div id="managers-search-filter" className="flex items-center gap-3">
+        <div id="managers-search-filter" className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
           <Select
-            className="min-w-[200px]"
+            className="w-full sm:min-w-[200px]"
             placeholder="همه سازمان‌ها"
             value={
               selectedCompanyId
@@ -274,7 +274,7 @@ const Managers = () => {
             isDisabled={isLoading}
           />
           <Input
-            className="w-64"
+            className="w-full sm:w-64"
             placeholder="جستجو..."
             prefix={<HiOutlineSearch />}
             value={searchQuery}
@@ -287,6 +287,7 @@ const Managers = () => {
             icon={<HiOutlinePlus />}
             onClick={() => navigate('/owner/managers/add')}
             disabled={isLoading}
+            className="w-full sm:w-auto"
           >
             افزودن متقاضی
           </Button>
@@ -294,7 +295,7 @@ const Managers = () => {
       </div>
 
       {/* Stats Cards */}
-      <div id="managers-stats-cards" className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
+      <div id="managers-stats-cards" className="flex md:grid md:grid-cols-4 gap-4 overflow-x-auto pb-2 md:pb-0 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
         <StatisticCard
           title="همه متقاضیان"
           value={totalManagers}
@@ -338,9 +339,9 @@ const Managers = () => {
       </div>
 
       {/* Managers Table */}
-      <Card id="managers-table">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <Card id="managers-table" className="p-0">
+        <div className="p-6 border-b border-gray-100 dark:border-gray-800">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-0">
             لیست متقاضیان
             {!isLoading && selectedCategory !== 'all' && (
               <span className="text-sm font-normal text-gray-500 dark:text-gray-400 mr-2">
@@ -348,8 +349,9 @@ const Managers = () => {
               </span>
             )}
           </h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        </div>
+        <div className="overflow-x-auto hidden lg:block">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
@@ -469,7 +471,89 @@ const Managers = () => {
               </tbody>
             </table>
           </div>
-        </div>
+
+          {/* Mobile List View */}
+          <div className="lg:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+            {isLoading ? (
+              [...Array(5)].map((_, index) => (
+                <div key={index} className="p-4 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Skeleton variant="circle" width={40} height={40} />
+                    <div className="space-y-2">
+                      <Skeleton width={120} height={16} />
+                      <Skeleton width={80} height={14} />
+                    </div>
+                  </div>
+                  <Skeleton width="100%" height={20} />
+                </div>
+              ))
+            ) : filteredManagers.length === 0 ? (
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                {searchQuery || selectedCategory !== 'all' || selectedCompanyId
+                  ? 'متقاضی با این فیلتر یافت نشد'
+                  : 'هنوز متقاضی‌ای ثبت نشده است'}
+              </div>
+            ) : (
+              filteredManagers.map((manager) => (
+                <div key={manager.id} className="p-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar size={40} src={manager.user.avatar || ''} />
+                      <div>
+                        <div className="font-semibold text-gray-900 dark:text-white text-sm">
+                          {manager.user.name}
+                        </div>
+                        <div className="text-[11px] text-gray-500 mt-0.5 font-mono" dir="ltr">
+                          {manager.user.phone}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Tooltip title="مشاهده جزئیات">
+                        <Button
+                          variant="plain"
+                          size="sm"
+                          shape="circle"
+                          icon={<HiOutlineEye />}
+                          onClick={() => handleViewDetails(manager)}
+                          className="text-gray-500 hover:text-gray-700"
+                        />
+                      </Tooltip>
+                      <Tooltip title="نیازسنجی">
+                        <Button
+                          variant="plain"
+                          size="sm"
+                          shape="circle"
+                          icon={<HiOutlineClipboardCheck />}
+                          onClick={() => navigate(`/owner/managers/${manager.id}/assessment`)}
+                          className="text-blue-600 hover:text-blue-700 bg-blue-50 dark:bg-blue-500/10"
+                        />
+                      </Tooltip>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] text-gray-400">سازمان</span>
+                      <span className="text-xs text-gray-700 dark:text-gray-300 font-medium truncate">{manager.companyName}</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] text-gray-400">وضعیت</span>
+                      <div className="w-fit scale-[0.85] origin-right">{getStatusTag(manager.status)}</div>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] text-gray-400">نیازسنجی</span>
+                      <div className="w-fit scale-[0.85] origin-right">{getAssessmentStatusTag(manager.assessment_status)}</div>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] text-gray-400">آزمون‌ها</span>
+                      <div className="w-fit scale-[0.85] origin-right">{getExamStatusTag(manager.exam_status)}</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
       </Card>
 
       {/* Info Dialog */}

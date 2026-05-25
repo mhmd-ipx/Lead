@@ -282,8 +282,8 @@ const SystemUsers = () => {
                 </Card>
 
                 {/* Main Table Card */}
-                <Card className="overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm rounded-xl">
-                    <div className="overflow-x-auto">
+                <Card className="overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm rounded-xl p-0">
+                    <div className="overflow-x-auto hidden lg:block">
                         <table className="w-full text-right border-collapse">
                             <thead>
                                 <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 text-xs font-semibold text-gray-500 dark:text-gray-400">
@@ -413,6 +413,90 @@ const SystemUsers = () => {
                         </table>
                     </div>
 
+                    {/* Mobile List View */}
+                    <div className="lg:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+                        {isLoading ? (
+                            Array.from({ length: 4 }).map((_, idx) => (
+                                <div key={idx} className="p-4 space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <Skeleton variant="circle" width={40} height={40} />
+                                        <div className="space-y-2">
+                                            <Skeleton width={120} height={16} />
+                                            <Skeleton width={80} height={14} />
+                                        </div>
+                                    </div>
+                                    <Skeleton width="100%" height={20} />
+                                </div>
+                            ))
+                        ) : filteredUsers.length === 0 ? (
+                            <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                                هیچ کاربری با مشخصات وارد شده یافت نشد.
+                            </div>
+                        ) : (
+                            filteredUsers.map((user) => (
+                                <div key={user.id} className="p-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex items-center gap-3">
+                                            <Avatar
+                                                size={40}
+                                                src={getImageUrl(user.avatar)}
+                                                className="border border-gray-100 dark:border-gray-800"
+                                            >
+                                                {user.name?.charAt(0) || <HiOutlineUser />}
+                                            </Avatar>
+                                            <div>
+                                                <div className="font-semibold text-gray-900 dark:text-white text-sm">
+                                                    {user.name || 'کاربر بدون نام'}
+                                                </div>
+                                                <div className="text-[11px] text-gray-500 mt-0.5 font-mono" dir="ltr">
+                                                    {user.phone || user.email || `شناسه: ${user.id}`}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Tooltip title="ویرایش اطلاعات">
+                                            <Button
+                                                size="sm"
+                                                variant="plain"
+                                                shape="circle"
+                                                icon={<HiOutlinePencil />}
+                                                onClick={() => handleEditClick(user)}
+                                                className="text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10"
+                                            />
+                                        </Tooltip>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] text-gray-400">نقش کاربری</span>
+                                            <Tag className={`w-fit text-[10px] ${getRoleColor(user.role)}`}>
+                                                {getRoleLabel(user.role)}
+                                            </Tag>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] text-gray-400">وضعیت</span>
+                                            <Tag className={`w-fit text-[10px] ${getStatusColor(user.status)}`}>
+                                                {getStatusLabel(user.status)}
+                                            </Tag>
+                                        </div>
+                                        {user.company && (
+                                            <div className="flex flex-col gap-1 col-span-2">
+                                                <span className="text-[10px] text-gray-400">سازمان / شرکت</span>
+                                                <div className="flex items-center gap-1 text-gray-700 dark:text-gray-300 text-xs">
+                                                    <HiOutlineOfficeBuilding className="text-gray-400" />
+                                                    <span className="truncate">{user.company.name}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center justify-between text-[10px] text-gray-500 pt-3 border-t border-gray-100 dark:border-gray-800">
+                                        <span>ثبت نام: {formatDate(user.created_at)}</span>
+                                        <span>آخرین ورود: {user.last_login ? formatDate(user.last_login) : 'بدون ورود'}</span>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
                     {/* Pagination */}
                     {totalPages > 1 && (
                         <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800">
@@ -488,7 +572,7 @@ const SystemUsers = () => {
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                                 نقش کاربری
@@ -520,11 +604,12 @@ const SystemUsers = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800 mt-6">
+                    <div className="flex flex-col sm:flex-row sm:justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800 mt-6">
                         <Button
                             variant="plain"
                             onClick={() => setIsEditOpen(false)}
                             icon={<HiOutlineX />}
+                            className="w-full sm:w-auto"
                         >
                             انصراف
                         </Button>
@@ -533,6 +618,7 @@ const SystemUsers = () => {
                             onClick={handleSaveEdit}
                             icon={<HiOutlineCheck />}
                             loading={isSaving}
+                            className="w-full sm:w-auto"
                         >
                             ذخیره تغییرات
                         </Button>

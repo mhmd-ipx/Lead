@@ -22,7 +22,7 @@ import {
     HiOutlineClipboard,
     HiOutlineShare,
 } from 'react-icons/hi'
-import { getApplicantExamSets, getExamCollectionById, updateExamCollection, getExamsList } from '@/services/AdminService'
+import { getApplicantExamSets, getExamCollectionById, updateExamCollection, getExamsList, resendAccessSms } from '@/services/AdminService'
 import { ApplicantExamSet } from '@/mock/data/adminData'
 import Table from '@/components/ui/Table'
 import classNames from '@/utils/classNames'
@@ -176,27 +176,31 @@ const ApplicantExamSets = () => {
 
     // Copy / Share state
     const [copied, setCopied] = useState(false)
+    const [resendLoading, setResendLoading] = useState(false)
 
-    const buildShareText = (details: CollectionDetails) => {
+    const buildShareText = (details: CollectionDetails, examSet: ApplicantExamSet | null) => {
         const userName = details.assignments?.[0]?.user?.name || 'کاربر'
-        const phone = details.assignments?.[0]?.user?.phone || '-'
+        const companyName = examSet?.companyName || 'سازمان'
         const code = details.code || '-'
         const start = formatDate(details.start_datetime)
         const end = formatDate(details.end_datetime)
+
         return (
-            `📌 اطلاعیه آزمون - ${details.title}\n\n` +
-            `👤 کاربر: ${userName}\n` +
-            `📅 زمان برگزاری: از ${start} تا ${end}\n` +
-            `⏱ مدت آزمون: ${details.duration_minutes} دقیقه\n\n` +
-            `🔑 اطلاعات ورود به آزمون:\n` +
-            `📱 شماره تماس: ${phone}\n` +
-            `📌 کد ورود: ${code}`
+            `کاربر گرامی ${userName}\n` +
+            `شما به درخواست ${companyName} به آزمون‌های ارزیابی دعوت شده‌اید.\n` +
+            `لینک ورود: https://api.leadmapro.com\n` +
+            `کد ورود: ${code}\n` +
+            `بازه برگزاری: از ${start} تا ${end}\n` +
+            `مدت زمان آزمون‌ها: ${details.duration_minutes} دقیقه\n` +
+            `پشتیبانی: 03136617986\n` +
+            `"پروژه lead ، ارزیابی مدیران تا توسعه رهبران آینده"\n` +
+            `Lead`
         )
     }
 
     const handleCopy = () => {
         if (!collectionDetails) return
-        navigator.clipboard.writeText(buildShareText(collectionDetails)).then(() => {
+        navigator.clipboard.writeText(buildShareText(collectionDetails, selectedExamSet)).then(() => {
             setCopied(true)
             toast.push(<Notification title="متن کپی شد" type="success" />, { placement: 'top-center' })
             setTimeout(() => setCopied(false), 2000)
@@ -205,11 +209,48 @@ const ApplicantExamSets = () => {
 
     const handleShare = async () => {
         if (!collectionDetails) return
-        const text = buildShareText(collectionDetails)
+        const text = buildShareText(collectionDetails, selectedExamSet)
         if (navigator.share) {
             await navigator.share({ text }).catch(() => { })
         } else {
             handleCopy()
+        }
+    }
+
+    const handleResendSms = async () => {
+        if (!collectionDetails) return
+        const phone = collectionDetails.assignments?.[0]?.user?.phone
+        const code = collectionDetails.code
+
+        if (!phone || !code) {
+            toast.push(<Notification title="اطلاعات کاربر یا کد آزمون یافت نشد" type="danger" />, { placement: 'top-center' })
+            return
+        }
+
+        setResendLoading(true)
+        try {
+            const response = await resendAccessSms({ phone, code })
+            toast.push(
+                <Notification
+                    title="ارسال مجدد پیامک"
+                    type="success"
+                >
+                    {response.message || response.data?.message || "پیامک با موفقیت ارسال شد"}
+                </Notification>,
+                { placement: 'top-center' }
+            )
+        } catch (error: any) {
+            toast.push(
+                <Notification
+                    title="خطا در برقراری ارتباط با سرور"
+                    type="danger"
+                >
+                    {error?.response?.data?.message || "مشکلی در ارسال پیامک رخ داد"}
+                </Notification>,
+                { placement: 'top-center' }
+            )
+        } finally {
+            setResendLoading(false)
         }
     }
 
@@ -442,18 +483,18 @@ const ApplicantExamSets = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div id="admin-applicant-exams-header">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                         آزمون‌های متقاضیان
                     </h1>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
                         مدیریت و نظارت بر آزمون‌های تمام متقاضیان
                     </p>
                 </div>
                 <Input
                     id="admin-applicant-exams-search"
-                    className="w-64"
+                    className="w-full sm:w-64"
                     placeholder="جستجو..."
                     prefix={<HiOutlineSearch />}
                     value={searchQuery}
@@ -461,48 +502,59 @@ const ApplicantExamSets = () => {
                 />
             </div>
 
+
             {/* Stats Cards */}
-            <div id="admin-applicant-exams-stats" className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700">
-                <StatisticCard
-                    id="admin-applicant-exams-stats-all"
-                    title="همه وضعیت ها"
-                    value={loading ? undefined as any : totalExamSets}
-                    iconClass="bg-purple-200 text-purple-700"
-                    icon={<HiOutlineAcademicCap />}
-                    label="all"
-                    active={selectedCategory === 'all'}
-                    onClick={handleCategoryChange}
-                />
-                <StatisticCard
-                    id="admin-applicant-exams-stats-completed"
-                    title="تکمیل شده"
-                    value={loading ? undefined as any : completedExamSets}
-                    iconClass="bg-emerald-200 text-emerald-700"
-                    icon={<HiOutlineCheckCircle />}
-                    label="completed"
-                    active={selectedCategory === 'completed'}
-                    onClick={handleCategoryChange}
-                />
-                <StatisticCard
-                    id="admin-applicant-exams-stats-progress"
-                    title="در حال انجام"
-                    value={loading ? undefined as any : inProgressExamSets}
-                    iconClass="bg-blue-200 text-blue-700"
-                    icon={<HiOutlineClock />}
-                    label="in_progress"
-                    active={selectedCategory === 'in_progress'}
-                    onClick={handleCategoryChange}
-                />
-                <StatisticCard
-                    id="admin-applicant-exams-stats-pending"
-                    title="در انتظار"
-                    value={loading ? undefined as any : pendingExamSets}
-                    iconClass="bg-amber-200 text-amber-700"
-                    icon={<HiOutlineClock />}
-                    label="pending"
-                    active={selectedCategory === 'pending'}
-                    onClick={handleCategoryChange}
-                />
+            <div className="overflow-x-auto custom-scrollbar -mx-4 sm:mx-0 px-4 sm:px-0 pb-2 sm:pb-0">
+                <div id="admin-applicant-exams-stats" className="flex sm:grid sm:grid-cols-4 gap-4 rounded-2xl sm:p-3 sm:bg-gray-100 dark:sm:bg-gray-700 min-w-max sm:min-w-0">
+                    <div className="w-[80vw] sm:w-auto shrink-0 snap-center">
+                        <StatisticCard
+                            id="admin-applicant-exams-stats-all"
+                            title="همه وضعیت ها"
+                            value={loading ? undefined as any : totalExamSets}
+                            iconClass="bg-purple-200 text-purple-700"
+                            icon={<HiOutlineAcademicCap />}
+                            label="all"
+                            active={selectedCategory === 'all'}
+                            onClick={handleCategoryChange}
+                        />
+                    </div>
+                    <div className="w-[80vw] sm:w-auto shrink-0 snap-center">
+                        <StatisticCard
+                            id="admin-applicant-exams-stats-completed"
+                            title="تکمیل شده"
+                            value={loading ? undefined as any : completedExamSets}
+                            iconClass="bg-emerald-200 text-emerald-700"
+                            icon={<HiOutlineCheckCircle />}
+                            label="completed"
+                            active={selectedCategory === 'completed'}
+                            onClick={handleCategoryChange}
+                        />
+                    </div>
+                    <div className="w-[80vw] sm:w-auto shrink-0 snap-center">
+                        <StatisticCard
+                            id="admin-applicant-exams-stats-progress"
+                            title="در حال انجام"
+                            value={loading ? undefined as any : inProgressExamSets}
+                            iconClass="bg-blue-200 text-blue-700"
+                            icon={<HiOutlineClock />}
+                            label="in_progress"
+                            active={selectedCategory === 'in_progress'}
+                            onClick={handleCategoryChange}
+                        />
+                    </div>
+                    <div className="w-[80vw] sm:w-auto shrink-0 snap-center">
+                        <StatisticCard
+                            id="admin-applicant-exams-stats-pending"
+                            title="در انتظار"
+                            value={loading ? undefined as any : pendingExamSets}
+                            iconClass="bg-amber-200 text-amber-700"
+                            icon={<HiOutlineClock />}
+                            label="pending"
+                            active={selectedCategory === 'pending'}
+                            onClick={handleCategoryChange}
+                        />
+                    </div>
+                </div>
             </div>
 
             {/* Table */}
@@ -513,7 +565,7 @@ const ApplicantExamSets = () => {
                             ({filteredExamSets.length} مورد یافت شد)
                         </div>
                     )}
-                    <div className="overflow-x-auto">
+                    <div className="hidden sm:block overflow-x-auto">
                         <Table>
                             <THead>
                                 <Tr>
@@ -609,13 +661,92 @@ const ApplicantExamSets = () => {
                                                         ? 'مجموعه آزمونی با این فیلتر یافت نشد'
                                                         : 'هنوز مجموعه آزمونی ثبت نشده است'}
                                                 </p>
-                                                ```
                                             </div>
                                         </Td>
                                     </Tr>
                                 )}
                             </TBody>
                         </Table>
+                    </div>
+
+                    {/* Mobile List View */}
+                    <div className="sm:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+                        {loading ? (
+                            <div className="text-center py-10">
+                                <div className="flex justify-center">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                                </div>
+                            </div>
+                        ) : filteredExamSets.length > 0 ? (
+                            filteredExamSets.map((examSet) => (
+                                <div key={examSet.id} className="p-4 space-y-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm">
+                                                {examSet.applicantName.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <div className="font-bold text-gray-900 dark:text-white text-sm mb-1">
+                                                    {examSet.applicantName}
+                                                </div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                                    <HiOutlineOfficeBuilding className="w-3.5 h-3.5" />
+                                                    {examSet.companyName}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div>{getStatusTag(examSet.status)}</div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg">
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                            <HiOutlineCalendar className="w-4 h-4" />
+                                            <span dir="ltr">{examSet.examDate ? new Date(examSet.examDate).toLocaleDateString('fa-IR') : '-'}</span>
+                                        </div>
+                                        <div className="text-xs font-bold text-gray-900 dark:text-white">
+                                            {examSet.completedExams} از {examSet.totalExams} آزمون
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                                        {((examSet.status as any) === 'pending' || (examSet.status as any) === 'draft') && (
+                                            <Button
+                                                variant="plain"
+                                                className="flex-1 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/20"
+                                                icon={<HiOutlinePencil />}
+                                                onClick={() => handleEditClick(examSet)}
+                                            >
+                                                ویرایش
+                                            </Button>
+                                        )}
+                                        <Button
+                                            variant="plain"
+                                            className="flex-1 text-xs"
+                                            icon={<HiOutlineInformationCircle />}
+                                            onClick={() => handleInfoClick(examSet)}
+                                        >
+                                            اطلاعات
+                                        </Button>
+                                        <Button
+                                            variant="solid"
+                                            className="flex-1 text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
+                                            icon={<HiOutlineEye />}
+                                            onClick={() => navigate(`/admin/applicant-exams/${examSet.id}/results`)}
+                                        >
+                                            نتایج
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-12">
+                                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                                    {searchQuery || selectedCategory !== 'all'
+                                        ? 'مجموعه آزمونی با این فیلتر یافت نشد'
+                                        : 'هنوز مجموعه آزمونی ثبت نشده است'}
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </Card>
@@ -625,11 +756,12 @@ const ApplicantExamSets = () => {
                 isOpen={infoDialogOpen}
                 onClose={() => setInfoDialogOpen(false)}
                 onRequestClose={() => setInfoDialogOpen(false)}
-                width={700}
+                width={850}
+                className="w-full sm:w-[850px] pb-0"
             >
-                <div className="flex flex-col h-[650px] max-h-[90vh]">
-                    <h5 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white border-b pb-4 flex-shrink-0">
-                        <HiOutlineInformationCircle className="w-6 h-6 text-indigo-600" />
+                <div className="flex flex-col p-4 sm:p-6 h-[650px] max-h-[90vh]">
+                    <h5 className="mb-4 flex items-center gap-2 text-base sm:text-lg font-bold text-gray-900 dark:text-white border-b pb-4 flex-shrink-0">
+                        <HiOutlineInformationCircle className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" />
                         اطلاعات مجموعه آزمون
                     </h5>
 
@@ -643,7 +775,7 @@ const ApplicantExamSets = () => {
                             <Skeleton height={200} />
                         </div>
                     ) : collectionDetails ? (
-                        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+                        <div className="flex-1 overflow-y-auto sm:overflow-hidden flex flex-col min-h-0 custom-scrollbar pb-2 sm:pb-0 pr-1 sm:pr-0">
                             {/* Basic Info - Static */}
                             <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div className="space-y-3">
@@ -730,7 +862,7 @@ const ApplicantExamSets = () => {
                                         </div>
 
                                         {/* Copy / Share buttons */}
-                                        <div className="flex gap-2 mt-3">
+                                        <div className="flex flex-col sm:flex-row gap-2 mt-3">
                                             <Button
                                                 size="sm"
                                                 variant="default"
@@ -738,7 +870,7 @@ const ApplicantExamSets = () => {
                                                 className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-blue-600 dark:text-blue-400 border-0 justify-center"
                                                 onClick={handleCopy}
                                             >
-                                                {copied ? 'کپی شد ✓' : 'کپی متن'}
+                                                {copied ? 'کپی شد ✓' : 'کپی اطلاعات'}
                                             </Button>
                                             <Button
                                                 size="sm"
@@ -747,7 +879,17 @@ const ApplicantExamSets = () => {
                                                 className="flex-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 border-0 justify-center"
                                                 onClick={handleShare}
                                             >
-                                                اشتراک گذاری
+                                                اشتراک
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="default"
+                                                icon={<HiOutlineMail />}
+                                                loading={resendLoading}
+                                                className="flex-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 border-0 justify-center"
+                                                onClick={handleResendSms}
+                                            >
+                                                پیامک ورود
                                             </Button>
                                         </div>
                                     </div>
@@ -755,7 +897,7 @@ const ApplicantExamSets = () => {
                             </div>
 
                             {/* Exams List - Scrollable */}
-                            <div className="flex-1 flex flex-col min-h-0">
+                            <div className="flex-1 flex flex-col min-h-[300px] sm:min-h-0 mt-4 sm:mt-0">
                                 <h6 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2 flex-shrink-0">
                                     <HiOutlineViewList className="w-5 h-5 text-indigo-500" />
                                     لیست آزمون‌ها ({collectionDetails.total_exams})
@@ -802,8 +944,8 @@ const ApplicantExamSets = () => {
                         </div>
                     )}
 
-                    <div className="flex justify-end pt-4 mt-2 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
-                        <Button variant="solid" onClick={() => setInfoDialogOpen(false)}>
+                    <div className="flex flex-col-reverse sm:flex-row justify-end pt-4 mt-2 border-t border-gray-100 dark:border-gray-800 flex-shrink-0 gap-2">
+                        <Button variant="solid" onClick={() => setInfoDialogOpen(false)} className="w-full sm:w-auto">
                             بستن
                         </Button>
                     </div>
@@ -816,14 +958,16 @@ const ApplicantExamSets = () => {
                 onClose={() => setEditDialogOpen(false)}
                 onRequestClose={() => setEditDialogOpen(false)}
                 width={800}
-                className="pb-0"
+                className="pb-0 w-full sm:w-[800px]"
             >
-                <div className="p-6 h-[650px] max-h-[90vh] flex flex-col">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                        <HiOutlinePencil className="w-6 h-6 text-indigo-600" />
-                        <span>ویرایش مجموعه آزمون</span>
-                        <span className="text-sm font-normal text-gray-500 mx-2">|</span>
-                        <span className="text-sm font-normal text-gray-500">مرحله {step} از 2</span>
+                <div className="p-4 sm:p-6 h-[650px] max-h-[90vh] flex flex-col">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex flex-col sm:flex-row sm:items-center gap-2">
+                        <div className="flex items-center gap-2">
+                            <HiOutlinePencil className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" />
+                            <span>ویرایش مجموعه آزمون</span>
+                        </div>
+                        <div className="hidden sm:block text-sm font-normal text-gray-500 mx-2">|</div>
+                        <span className="text-xs sm:text-sm font-normal text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded w-fit">مرحله {step} از 2</span>
                     </h3>
 
                     <div className="flex-1 overflow-y-auto mb-6 px-1 custom-scrollbar">
@@ -970,17 +1114,18 @@ const ApplicantExamSets = () => {
                         )}
                     </div>
 
-                    <div className="flex justify-between border-t border-gray-100 dark:border-gray-800 pt-4 mt-auto">
-                        <Button variant="plain" onClick={() => setEditDialogOpen(false)} disabled={editLoading}>
+                    <div className="flex flex-col-reverse sm:flex-row justify-between border-t border-gray-100 dark:border-gray-800 pt-4 mt-auto gap-3">
+                        <Button variant="plain" onClick={() => setEditDialogOpen(false)} disabled={editLoading} className="w-full sm:w-auto">
                             انصراف
                         </Button>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 w-full sm:w-auto">
                             {step === 2 && (
                                 <Button
                                     variant="default"
                                     onClick={() => setStep(1)}
                                     disabled={editLoading}
                                     icon={<HiArrowRight className="ml-2" />}
+                                    className="flex-1 sm:flex-none"
                                 >
                                     مرحله قبل
                                 </Button>
@@ -1006,6 +1151,7 @@ const ApplicantExamSets = () => {
                                     }}
                                     disabled={editFormData.exam_ids.length === 0}
                                     icon={<HiArrowLeft className="mr-2" />}
+                                    className="flex-1 sm:flex-none"
                                 >
                                     مرحله بعد
                                 </Button>
@@ -1015,6 +1161,7 @@ const ApplicantExamSets = () => {
                                     onClick={handleEditSubmit}
                                     loading={editLoading}
                                     icon={<HiOutlineCheckCircle className="mr-2" />}
+                                    className="flex-1 sm:flex-none"
                                 >
                                     ثبت تغییرات
                                 </Button>

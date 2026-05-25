@@ -8,13 +8,18 @@ import ConfirmDialog from '@/components/shared/ConfirmDialog'
 
 const { MenuItem } = Menu
 
-const LogoutButton = () => {
+interface LogoutButtonProps {
+    collapsed?: boolean
+}
+
+const LogoutButton = ({ collapsed }: LogoutButtonProps) => {
     const { signOut } = useAuth()
     const [isOpen, setIsOpen] = useState(false)
     const sideNavCollapse = useThemeStore(
         (state) => state.layout.sideNavCollapse,
     )
     const direction = useThemeStore((state) => state.direction)
+    const isCollapsed = collapsed !== undefined ? collapsed : sideNavCollapse
 
     const handleLogout = () => {
         setIsOpen(true)
@@ -31,7 +36,7 @@ const LogoutButton = () => {
 
     return (
         <>
-            {sideNavCollapse ? (
+            {isCollapsed ? (
                 <Tooltip
                     title="خروج"
                     placement={direction === 'rtl' ? 'left' : 'right'}

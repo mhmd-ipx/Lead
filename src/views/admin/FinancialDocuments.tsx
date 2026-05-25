@@ -142,7 +142,7 @@ const FinancialDocuments = () => {
             const query = searchQuery.toLowerCase()
             const matchesSearch = (
                 doc.title.toLowerCase().includes(query) ||
-                doc.company.name.toLowerCase().includes(query) ||
+                (doc.company?.name || '').toLowerCase().includes(query) ||
                 (doc.description && doc.description.toLowerCase().includes(query))
             )
             return matchesFilter && matchesSearch && matchesCompany
@@ -150,12 +150,12 @@ const FinancialDocuments = () => {
     }, [documents, selectedFilter, searchQuery, selectedCompany])
 
     const companyOptions = useMemo(() => {
-        const uniqueCompanies = Array.from(new Set(documents.map(d => JSON.stringify({ id: d.company_id, name: d.company.name }))))
+        const uniqueCompanies = Array.from(new Set(documents.map(d => JSON.stringify({ id: d.company_id, name: d.company?.name || 'بدون سازمان' }))))
             .map((s: string) => JSON.parse(s))
 
         return [
             { value: 'all', label: 'همه سازمان‌ها' },
-            ...uniqueCompanies.map((c: any) => ({ value: c.id.toString(), label: c.name }))
+            ...uniqueCompanies.map((c: any) => ({ value: c.id?.toString() || '', label: c.name }))
         ]
     }, [documents])
 
@@ -398,17 +398,17 @@ const FinancialDocuments = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div id="admin-financial-docs-header" className="flex justify-between items-center gap-4">
+            <div id="admin-financial-docs-header" className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                         اسناد مالی
                     </h1>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
                         مدیریت و مشاهده اسناد مالی سیستم
                     </p>
                 </div>
-                <div id="admin-financial-docs-filters" className="flex items-center gap-3">
-                    <div className="w-48">
+                <div id="admin-financial-docs-filters" className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                    <div className="w-full sm:w-48">
                         <Select
                             size="sm"
                             placeholder="فیلتر سازمان"
@@ -423,13 +423,14 @@ const FinancialDocuments = () => {
                         prefix={<HiOutlineSearch className="text-gray-400" />}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-64"
+                        className="w-full sm:w-64"
                     />
                     <Button
                         id="admin-financial-docs-add-btn"
                         variant="solid"
                         icon={<HiOutlinePlus />}
                         onClick={() => setCreateDialogOpen(true)}
+                        className="w-full sm:w-auto"
                     >
                         ثبت سند جدید
                     </Button>
@@ -437,78 +438,88 @@ const FinancialDocuments = () => {
             </div>
 
             {/* Stats / Filters */}
-            <div id="admin-financial-docs-stats" className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card
-                    className={classNames(
-                        'p-4 cursor-pointer transition-all',
-                        selectedFilter === 'all' && 'ring-2 ring-primary'
-                    )}
-                    onClick={() => setSelectedFilter('all')}
-                >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">همه</p>
-                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{documents.length}</h3>
-                        </div>
-                        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-                            <HiOutlineDocumentText className="text-xl text-purple-600 dark:text-purple-400" />
-                        </div>
+            <div className="overflow-x-auto custom-scrollbar -mx-4 sm:mx-0 px-4 sm:px-0 pb-2 sm:pb-0">
+                <div id="admin-financial-docs-stats" className="flex sm:grid sm:grid-cols-4 gap-4 min-w-max sm:min-w-0">
+                    <div className="w-[80vw] sm:w-auto shrink-0 snap-center">
+                        <Card
+                            className={classNames(
+                                'p-4 cursor-pointer transition-all',
+                                selectedFilter === 'all' && 'ring-2 ring-primary'
+                            )}
+                            onClick={() => setSelectedFilter('all')}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">همه</p>
+                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{documents.length}</h3>
+                                </div>
+                                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                                    <HiOutlineDocumentText className="text-xl text-purple-600 dark:text-purple-400" />
+                                </div>
+                            </div>
+                        </Card>
                     </div>
-                </Card>
 
-                <Card
-                    className={classNames(
-                        'p-4 cursor-pointer transition-all',
-                        selectedFilter === 'pending' && 'ring-2 ring-primary'
-                    )}
-                    onClick={() => setSelectedFilter('pending')}
-                >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">در انتظار</p>
-                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{pendingCount}</h3>
-                        </div>
-                        <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
-                            <HiOutlineClock className="text-xl text-yellow-600 dark:text-yellow-400" />
-                        </div>
+                    <div className="w-[80vw] sm:w-auto shrink-0 snap-center">
+                        <Card
+                            className={classNames(
+                                'p-4 cursor-pointer transition-all',
+                                selectedFilter === 'pending' && 'ring-2 ring-primary'
+                            )}
+                            onClick={() => setSelectedFilter('pending')}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">در انتظار</p>
+                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{pendingCount}</h3>
+                                </div>
+                                <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                                    <HiOutlineClock className="text-xl text-yellow-600 dark:text-yellow-400" />
+                                </div>
+                            </div>
+                        </Card>
                     </div>
-                </Card>
 
-                <Card
-                    className={classNames(
-                        'p-4 cursor-pointer transition-all',
-                        selectedFilter === 'paid' && 'ring-2 ring-primary'
-                    )}
-                    onClick={() => setSelectedFilter('paid')}
-                >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">پرداخت شده</p>
-                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{paidCount}</h3>
-                        </div>
-                        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                            <HiOutlineCheckCircle className="text-xl text-green-600 dark:text-green-400" />
-                        </div>
+                    <div className="w-[80vw] sm:w-auto shrink-0 snap-center">
+                        <Card
+                            className={classNames(
+                                'p-4 cursor-pointer transition-all',
+                                selectedFilter === 'paid' && 'ring-2 ring-primary'
+                            )}
+                            onClick={() => setSelectedFilter('paid')}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">پرداخت شده</p>
+                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{paidCount}</h3>
+                                </div>
+                                <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                    <HiOutlineCheckCircle className="text-xl text-green-600 dark:text-green-400" />
+                                </div>
+                            </div>
+                        </Card>
                     </div>
-                </Card>
 
-                <Card
-                    className={classNames(
-                        'p-4 cursor-pointer transition-all',
-                        selectedFilter === 'cancelled' && 'ring-2 ring-primary'
-                    )}
-                    onClick={() => setSelectedFilter('cancelled')}
-                >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">لغو شده</p>
-                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{cancelledCount}</h3>
-                        </div>
-                        <div className="w-10 h-10 bg-gray-100 dark:bg-gray-900/30 rounded-full flex items-center justify-center">
-                            <HiOutlineXCircle className="text-xl text-gray-600 dark:text-gray-400" />
-                        </div>
+                    <div className="w-[80vw] sm:w-auto shrink-0 snap-center">
+                        <Card
+                            className={classNames(
+                                'p-4 cursor-pointer transition-all',
+                                selectedFilter === 'cancelled' && 'ring-2 ring-primary'
+                            )}
+                            onClick={() => setSelectedFilter('cancelled')}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">لغو شده</p>
+                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{cancelledCount}</h3>
+                                </div>
+                                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-900/30 rounded-full flex items-center justify-center">
+                                    <HiOutlineXCircle className="text-xl text-gray-600 dark:text-gray-400" />
+                                </div>
+                            </div>
+                        </Card>
                     </div>
-                </Card>
+                </div>
             </div>
 
             {/* Table */}
@@ -523,7 +534,7 @@ const FinancialDocuments = () => {
                             </span>
                         )}
                     </h2>
-                    <div className="overflow-x-auto">
+                    <div className="hidden sm:block overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead className="bg-gray-50 dark:bg-gray-800">
                                 <tr>
@@ -587,7 +598,7 @@ const FinancialDocuments = () => {
                                             <div className="flex items-center gap-2">
                                                 <HiOutlineOfficeBuilding className="w-5 h-5 text-gray-400" />
                                                 <div className="text-sm text-gray-900 dark:text-white">
-                                                    {document.company.name}
+                                                    {document.company?.name || 'بدون سازمان'}
                                                 </div>
                                             </div>
                                         </td>
@@ -647,7 +658,7 @@ const FinancialDocuments = () => {
                                 ))}
                                 {filteredDocuments.length === 0 && (
                                     <tr>
-                                        <td colSpan={5}>
+                                        <td colSpan={6}>
                                             <div className="text-center py-12">
                                                 <HiOutlineDocumentText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                                                 <p className="text-gray-500 dark:text-gray-400">
@@ -662,6 +673,50 @@ const FinancialDocuments = () => {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Mobile List View */}
+                    <div className="sm:hidden flex flex-col gap-4 mt-4">
+                        {filteredDocuments.map(document => (
+                            <div key={document.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col gap-3">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-start gap-2">
+                                        <HiOutlineDocumentText className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+                                        <div>
+                                            <div className="font-bold text-gray-900 dark:text-white text-sm">{document.title}</div>
+                                            <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                                <HiOutlineOfficeBuilding className="w-3.5 h-3.5" />
+                                                {document.company?.name || 'بدون سازمان'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="shrink-0">{getStatusTag(document.status)}</div>
+                                </div>
+                                <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-900/50 p-2 rounded text-sm">
+                                    <span className="text-gray-500 text-xs">مبلغ:</span>
+                                    <span className="font-bold text-green-600">{formatAmount(document.amount, document.currency)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs text-gray-500">وضعیت صورتحساب:</span>
+                                    {document.bills_exists ? (
+                                        <Tag className="bg-indigo-100 text-indigo-600 text-xs border-0 py-0.5 px-2">در صورتحساب</Tag>
+                                    ) : (
+                                        <Tag className="bg-gray-100 text-gray-600 text-xs border-0 py-0.5 px-2">آزاد</Tag>
+                                    )}
+                                </div>
+                                <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700 mt-1">
+                                    <Button size="sm" variant="plain" className="flex-1 text-xs" icon={<HiOutlineEye />} onClick={() => handleView(document)}>مشاهده</Button>
+                                    <Button size="sm" variant="plain" className="flex-1 text-xs text-blue-600" icon={<HiOutlinePencil />} onClick={() => handleEdit(document)}>ویرایش</Button>
+                                    <Button size="sm" variant="plain" className="flex-1 text-xs text-red-600" icon={<HiOutlineTrash />} onClick={() => handleDelete(document)}>حذف</Button>
+                                </div>
+                            </div>
+                        ))}
+                        {filteredDocuments.length === 0 && (
+                            <div className="text-center py-8">
+                                <HiOutlineDocumentText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                                <p className="text-gray-500 text-sm">موردی یافت نشد</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </Card>
 
@@ -670,10 +725,13 @@ const FinancialDocuments = () => {
                 isOpen={createDialogOpen}
                 onClose={() => setCreateDialogOpen(false)}
                 onRequestClose={() => setCreateDialogOpen(false)}
+                width={700}
+                className="w-full sm:w-[700px] pb-0"
             >
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    ثبت سند مالی جدید
-                </h3>
+                <div className="p-4 sm:p-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        ثبت سند مالی جدید
+                    </h3>
 
                 <Formik
                     initialValues={{
@@ -764,12 +822,13 @@ const FinancialDocuments = () => {
                                     </FormItem>
                                 </div>
 
-                                <div className="flex justify-end gap-2 mt-6">
+                                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-6 border-t border-gray-100 dark:border-gray-700 pt-4">
                                     <Button
                                         type="button"
                                         variant="plain"
                                         onClick={() => setCreateDialogOpen(false)}
                                         disabled={submitting}
+                                        className="w-full sm:w-auto"
                                     >
                                         انصراف
                                     </Button>
@@ -777,6 +836,7 @@ const FinancialDocuments = () => {
                                         type="submit"
                                         variant="solid"
                                         loading={submitting}
+                                        className="w-full sm:w-auto"
                                     >
                                         ثبت سند
                                     </Button>
@@ -785,6 +845,7 @@ const FinancialDocuments = () => {
                         </Form>
                     )}
                 </Formik>
+                </div>
             </Dialog>
 
             {/* Edit Dialog */}
@@ -793,11 +854,13 @@ const FinancialDocuments = () => {
                 onClose={() => setEditDialogOpen(false)}
                 onRequestClose={() => setEditDialogOpen(false)}
                 width={700}
+                className="w-full sm:w-[700px] pb-0"
             >
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        ویرایش سند مالی #{selectedDocument?.id}
-                    </h3>
+                <div className="p-4 sm:p-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            ویرایش سند مالی #{selectedDocument?.id}
+                        </h3>
                     {detailLoading && <Spinner />}
                 </div>
 
@@ -908,12 +971,13 @@ const FinancialDocuments = () => {
                                         </FormItem>
                                     </div>
 
-                                    <div className="flex justify-end gap-2 mt-6">
+                                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-6 border-t border-gray-100 dark:border-gray-700 pt-4">
                                         <Button
                                             type="button"
                                             variant="plain"
                                             onClick={() => setEditDialogOpen(false)}
                                             disabled={submitting}
+                                            className="w-full sm:w-auto"
                                         >
                                             انصراف
                                         </Button>
@@ -921,8 +985,9 @@ const FinancialDocuments = () => {
                                             type="submit"
                                             variant="solid"
                                             loading={submitting}
+                                            className="w-full sm:w-auto"
                                         >
-                                            ذخیره تغییرات
+                                            ثبت تغییرات
                                         </Button>
                                     </div>
                                 </FormContainer>
@@ -930,6 +995,7 @@ const FinancialDocuments = () => {
                         )}
                     </Formik>
                 )}
+                </div>
             </Dialog>
 
             {/* Delete Confirmation Dialog */}
@@ -937,15 +1003,15 @@ const FinancialDocuments = () => {
                 isOpen={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}
                 onRequestClose={() => setDeleteDialogOpen(false)}
+                className="w-full sm:w-[400px] pb-0"
             >
-                <div className="p-2">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                        حذف سند مالی
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-6">
-                        آیا از حذف سند مالی <span className="font-semibold text-gray-900 dark:text-white">"{selectedDocument?.title}"</span> اطمینان دارید؟ این عملیات غیرقابل بازگشت است.
+                <div className="p-4 sm:p-6">
+                    <h5 className="mb-4">تایید حذف</h5>
+                    <p>
+                        آیا از حذف سند مالی «<span className="font-bold">{selectedDocument?.title}</span>» اطمینان دارید؟
+                        این عمل غیرقابل بازگشت است.
                     </p>
-                    <div className="flex justify-end gap-2">
+                    <div className="text-right mt-6 flex flex-col-reverse sm:flex-row justify-end gap-2">
                         <Button
                             variant="plain"
                             onClick={() => setDeleteDialogOpen(false)}

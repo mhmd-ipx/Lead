@@ -160,7 +160,7 @@ const Companies = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div id="companies-header">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                         سازمان های من
@@ -169,9 +169,9 @@ const Companies = () => {
                         مدیریت سازمان‌ها و شرکت‌های شما
                     </p>
                 </div>
-                <div id="companies-search-filter" className="flex items-center gap-3">
+                <div id="companies-search-filter" className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
                     <Input
-                        className="w-64"
+                        className="w-full sm:w-64"
                         placeholder="جستجو..."
                         prefix={<HiOutlineSearch />}
                         value={searchQuery}
@@ -181,6 +181,7 @@ const Companies = () => {
                         variant="solid"
                         icon={<HiOutlinePlus />}
                         onClick={() => navigate('/owner/companies/add')}
+                        className="w-full sm:w-auto"
                     >
                         افزودن سازمان
                     </Button>
@@ -188,9 +189,8 @@ const Companies = () => {
             </div>
 
             {/* Companies Table */}
-            <Card id="companies-table">
-                <div className="p-6">
-                    <div className="overflow-x-auto">
+            <Card id="companies-table" className="p-0">
+                <div className="overflow-x-auto hidden lg:block">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead className="bg-gray-50 dark:bg-gray-800">
                                 <tr>
@@ -301,7 +301,83 @@ const Companies = () => {
                                 )}
                             </tbody>
                         </table>
-                    </div>
+                </div>
+
+                {/* Mobile List View */}
+                <div className="lg:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+                    {loading ? (
+                        [...Array(3)].map((_, index) => (
+                            <div key={index} className="p-4 space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <Skeleton variant="circle" width={40} height={40} />
+                                    <div className="space-y-2">
+                                        <Skeleton width={150} height={16} />
+                                        <Skeleton width={100} height={12} />
+                                    </div>
+                                </div>
+                                <Skeleton width="100%" height={24} />
+                            </div>
+                        ))
+                    ) : filteredCompanies.length > 0 ? (
+                        filteredCompanies.map((company) => (
+                            <div key={company.id || 'temp-id'} className="p-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar
+                                            size={40}
+                                            src={company.logo}
+                                            icon={<HiOutlineOfficeBuilding />}
+                                        />
+                                        <div>
+                                            <div className="font-semibold text-gray-900 dark:text-white text-sm">
+                                                {company.name}
+                                            </div>
+                                            <div className="text-[11px] text-gray-500 mt-0.5">
+                                                {company.website || '-'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-1">
+                                        <Tooltip title="ویرایش">
+                                            <Button
+                                                variant="plain"
+                                                size="sm"
+                                                shape="circle"
+                                                icon={<HiOutlinePencil />}
+                                                onClick={() => navigate(`/owner/companies/${company.id || '1'}/edit`)}
+                                                className="text-gray-500 hover:text-blue-600 bg-gray-50 dark:bg-gray-800/50"
+                                            />
+                                        </Tooltip>
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-gray-400">تماس</span>
+                                        <span className="text-xs text-gray-700 dark:text-gray-300 truncate" dir="ltr">{company.phone || '-'}</span>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-gray-400">حوزه فعالیت</span>
+                                        <span className="text-xs text-gray-700 dark:text-gray-300 truncate">{company.fieldOfActivity || '-'}</span>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-gray-400">اطلاعات حقوقی</span>
+                                        <span className="text-xs text-gray-700 dark:text-gray-300">شناسه: {company.nationalId || '-'}</span>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-gray-400">وضعیت</span>
+                                        <div className="w-fit scale-[0.85] origin-right">{getStatusTag(company.status || 'active')}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                            {searchQuery
+                                ? 'سازمانی با این مشخصات یافت نشد'
+                                : 'هنوز سازمانی ثبت نشده است'}
+                        </div>
+                    )}
                 </div>
             </Card>
         </div>

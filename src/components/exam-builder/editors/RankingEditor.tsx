@@ -134,26 +134,38 @@ const RankingEditor = ({ options, onChange }: RankingEditorProps) => {
                                                     }`}
                                             >
                                                 <div className="space-y-3">
-                                                    <div className="flex items-start gap-3">
+                                                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                                                         <div
                                                             {...provided.dragHandleProps}
-                                                            className="cursor-move text-gray-400 hover:text-gray-600 mt-2"
+                                                            className="cursor-move text-gray-400 hover:text-gray-600 self-center sm:self-start sm:mt-2 hidden sm:block"
                                                         >
                                                             <MdDragIndicator className="w-5 h-5" />
                                                         </div>
 
-                                                        <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-bold flex items-center justify-center shrink-0 mt-2">
+                                                        <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-bold flex items-center justify-center shrink-0 self-center sm:self-start sm:mt-2 hidden sm:flex">
                                                             {option.correctOrder}
                                                         </div>
 
-                                                        <div className="flex-1 flex items-start gap-2">
-                                                            <Input
-                                                                placeholder={`گزینه ${index + 1}`}
-                                                                value={option.text}
-                                                                onChange={(e) => updateOption(option.id, { text: e.target.value })}
-                                                            />
+                                                        <div className="flex-1 flex flex-col sm:flex-row sm:items-start gap-2 w-full">
+                                                            <div className="flex items-center gap-2 w-full">
+                                                                <div
+                                                                    {...provided.dragHandleProps}
+                                                                    className="cursor-move text-gray-400 hover:text-gray-600 sm:hidden shrink-0"
+                                                                >
+                                                                    <MdDragIndicator className="w-5 h-5" />
+                                                                </div>
+                                                                <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-bold flex items-center justify-center shrink-0 sm:hidden">
+                                                                    {option.correctOrder}
+                                                                </div>
+                                                                <Input
+                                                                    placeholder={`گزینه ${index + 1}`}
+                                                                    value={option.text}
+                                                                    onChange={(e) => updateOption(option.id, { text: e.target.value })}
+                                                                    className="flex-1"
+                                                                />
+                                                            </div>
                                                             
-                                                            <div className="flex items-center gap-1 shrink-0">
+                                                            <div className="flex items-center justify-end gap-1 shrink-0 mt-2 sm:mt-0">
                                                                 <Upload 
                                                                     showList={false}
                                                                     onChange={(files) => handleImageUpload(option.id, files)}

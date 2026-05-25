@@ -14,12 +14,12 @@ AxiosBase.interceptors.request.use(
         const updatedConfig = AxiosRequestIntrceptorConfigCallback(config)
 
         // Log complete request details
-        console.log('🚀 API Request:', {
-            method: updatedConfig.method?.toUpperCase(),
-            url: `${updatedConfig.baseURL || ''}${updatedConfig.url || ''}`,
-            headers: updatedConfig.headers,
-            data: updatedConfig.data,
-        })
+        // console.log('🚀 API Request:', {
+        //     method: updatedConfig.method?.toUpperCase(),
+        //     url: `${updatedConfig.baseURL || ''}${updatedConfig.url || ''}`,
+        //     headers: updatedConfig.headers,
+        //     data: updatedConfig.data,
+        // })
 
         return updatedConfig
     },
@@ -31,21 +31,21 @@ AxiosBase.interceptors.request.use(
 AxiosBase.interceptors.response.use(
     (response) => {
         // Log complete response details
-        console.log('✅ API Response:', {
-            status: response.status,
-            url: `${response.config.baseURL || ''}${response.config.url || ''}`,
-            data: response.data,
-        })
+        // console.log('✅ API Response:', {
+        //     status: response.status,
+        //     url: `${response.config.baseURL || ''}${response.config.url || ''}`,
+        //     data: response.data,
+        // })
         return response
     },
     (error: AxiosError) => {
         // Log error details
-        console.error('❌ API Error:', {
-            status: error.response?.status,
-            url: `${error.config?.baseURL || ''}${error.config?.url || ''}`,
-            message: error.message,
-            responseData: error.response?.data,
-        })
+        // console.error('❌ API Error:', {
+        //     status: error.response?.status,
+        //     url: `${error.config?.baseURL || ''}${error.config?.url || ''}`,
+        //     message: error.message,
+        //     responseData: error.response?.data,
+        // })
         AxiosResponseIntrceptorErrorCallback(error)
         return Promise.reject(error)
     },

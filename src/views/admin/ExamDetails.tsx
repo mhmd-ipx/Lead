@@ -586,30 +586,30 @@ const ExamDetails = () => {
                     </div>
 
                     <div className="relative mt-8">
-                        <div className="absolute top-0 bottom-0 right-6 md:right-8 w-0.5 bg-gray-200 dark:bg-gray-700 z-0 h-full"></div>
+                                                <div className="absolute top-0 bottom-0 right-6 md:right-8 w-0.5 bg-gray-200 dark:bg-gray-700 z-0 h-full"></div>
                         <div className="space-y-12">
                             {sections.map((section, index) => (
                                 <div key={section.id} className="relative z-10">
                                     {/* Header */}
-                                    <div className="flex items-center gap-4 mb-6 group">
-                                        <div className="flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 z-10 relative">
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6 group">
+                                        <div className="flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 z-10 relative shrink-0 mx-auto sm:mx-0">
                                             <span className="text-xl md:text-2xl font-bold text-primary-600 dark:text-primary-400">
                                                 {index + 1}
                                             </span>
                                         </div>
-                                        <div className="flex-1 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center hover:shadow-md transition-shadow cursor-pointer" onClick={() => toggleSection(section.id)}>
+                                        <div className="flex-1 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => toggleSection(section.id)}>
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                                                    <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100">
                                                         {section.title}
                                                     </h2>
-                                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-semibold rounded-full border border-blue-100">
+                                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] sm:text-xs font-semibold rounded-full border border-blue-100">
                                                         {section.questions?.length || 0} سوال
                                                     </span>
                                                 </div>
-                                                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1" dangerouslySetInnerHTML={{ __html: section.content || 'بدون توضیحات' }} />
+                                                <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1" dangerouslySetInnerHTML={{ __html: section.content || 'بدون توضیحات' }} />
                                             </div>
-                                            <div className="flex items-center gap-1">
+                                            <div className="flex items-center justify-end gap-1 w-full sm:w-auto border-t sm:border-0 border-gray-100 dark:border-gray-700 pt-2 sm:pt-0">
                                                 <Button 
                                                     variant="plain" 
                                                     shape="circle" 
@@ -699,25 +699,27 @@ const ExamDetails = () => {
                                                                                                 <div className="w-7 h-7 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 text-xs font-bold shrink-0">
                                                                                                     {qIndex + 1}
                                                                                                 </div>
-                                                                                                <div className="flex-1">
-                                                                                                    <div className="flex items-start justify-between gap-4">
-                                                                                                        <h3 className="font-semibold text-gray-800 text-[15px] leading-relaxed line-clamp-2" dangerouslySetInnerHTML={{ __html: question.title }}></h3>
-                                                                                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                                                                                                            <span className="px-2 py-0.5 text-[10px] bg-gray-100 text-gray-500 rounded font-medium mr-2">
+                                                                                                <div className="flex-1 min-w-0">
+                                                                                                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 mb-2">
+                                                                                                        <h3 className="font-semibold text-gray-800 text-sm sm:text-[15px] leading-relaxed break-words line-clamp-2" dangerouslySetInnerHTML={{ __html: question.title }}></h3>
+                                                                                                        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0">
+                                                                                                            <span className="px-2 py-0.5 text-[10px] bg-gray-100 text-gray-500 rounded font-medium sm:mr-2">
                                                                                                                 {question.type === 'multiple_choice' ? 'تستی' :
                                                                                                                  question.type === 'descriptive' ? 'تشریحی' :
                                                                                                                  question.type === 'check_box' ? 'چند گزینه‌ای' :
                                                                                                                  question.type === 'mixed' ? 'تستی-تشریحی' : 'اولویت‌بندی'}
                                                                                                             </span>
-                                                                                                            <span
-                                                                                                                {...provided.dragHandleProps}
-                                                                                                                title="تغییر ترتیب"
-                                                                                                                className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-violet-500 p-1 rounded transition-colors"
-                                                                                                            >
-                                                                                                                <MdDragIndicator className="w-4 h-4" />
-                                                                                                            </span>
-                                                                                                            <Button size="xs" variant="plain" icon={<HiOutlinePencil />} onClick={() => openQuestionForm(section.id, question)} />
-                                                                                                            <Button size="xs" variant="plain" icon={<HiOutlineTrash />} onClick={() => deleteQuestionFromSection(section.id, question.id!)} className="text-red-500" />
+                                                                                                            <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                                                                                <span
+                                                                                                                    {...provided.dragHandleProps}
+                                                                                                                    title="تغییر ترتیب"
+                                                                                                                    className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-violet-500 p-1 rounded transition-colors"
+                                                                                                                >
+                                                                                                                    <MdDragIndicator className="w-4 h-4" />
+                                                                                                                </span>
+                                                                                                                <Button size="xs" variant="plain" icon={<HiOutlinePencil />} onClick={() => openQuestionForm(section.id, question)} />
+                                                                                                                <Button size="xs" variant="plain" icon={<HiOutlineTrash />} onClick={() => deleteQuestionFromSection(section.id, question.id!)} className="text-red-500" />
+                                                                                                            </div>
                                                                                                         </div>
                                                                                                     </div>
                                                                                                     

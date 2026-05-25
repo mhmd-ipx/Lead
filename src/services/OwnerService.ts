@@ -72,11 +72,12 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
 // Company Profile
 export const getCompanies = async (): Promise<CompanyProfile[]> => {
   try {
-    const response = await apiClient.get<{ data: CompanyProfile[] }>(API_ENDPOINTS.COMPANY.MY_COMPANIES)
-    return response.data
+    const response = await apiClient.get<any>(API_ENDPOINTS.COMPANY.MY_COMPANIES)
+    // Sometimes the API returns { data: [...] } and sometimes just [...]
+    return response.data?.data || response.data || response || []
   } catch (error) {
-    console.warn('Failed to fetch companies from API, using mock data:', error)
-    return mockCompanies
+    console.error('Failed to fetch companies from API:', error)
+    throw error
   }
 }
 
