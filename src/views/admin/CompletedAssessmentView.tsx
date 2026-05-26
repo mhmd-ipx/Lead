@@ -173,7 +173,7 @@ const CompletedAssessmentView = () => {
                 due_date: dayjs(collectionForm.end_datetime).format('YYYY-MM-DD'),
                 duration_minutes: Number(collectionForm.duration_minutes),
                 exam_ids: selectedExamIds,
-                user_id: Number(assessment.managerId),
+                user_id: Number(assessment.userId || assessment.managerId),
             }
 
             await createExamCollection(payload)

@@ -188,7 +188,7 @@ const ApplicantExamSets = () => {
         return (
             `کاربر گرامی ${userName}\n` +
             `شما به درخواست ${companyName} به آزمون‌های ارزیابی دعوت شده‌اید.\n` +
-            `لینک ورود: https://api.leadmapro.com\n` +
+            `لینک ورود: https://app.leadmapro.com\n` +
             `کد ورود: ${code}\n` +
             `بازه برگزاری: از ${start} تا ${end}\n` +
             `مدت زمان آزمون‌ها: ${details.duration_minutes} دقیقه\n` +
@@ -242,10 +242,10 @@ const ApplicantExamSets = () => {
         } catch (error: any) {
             toast.push(
                 <Notification
-                    title="خطا در برقراری ارتباط با سرور"
+                    title="خطا در ارسال پیامک"
                     type="danger"
                 >
-                    {error?.response?.data?.message || "مشکلی در ارسال پیامک رخ داد"}
+                    {error?.message || error?.response?.data?.message || "مشکلی در ارسال پیامک رخ داد"}
                 </Notification>,
                 { placement: 'top-center' }
             )

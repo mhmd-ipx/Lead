@@ -164,6 +164,7 @@ export interface AssessmentTemplate {
 
 export interface CompletedAssessment {
     id: string
+    userId?: string
     managerId: string
     managerName: string
     companyId: string

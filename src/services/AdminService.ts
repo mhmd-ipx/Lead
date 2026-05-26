@@ -292,6 +292,7 @@ export async function getAssessmentById(id: string): Promise<CompletedAssessment
 
             return {
                 id: item.id.toString(),
+                userId: item.manager.user_id.toString(),
                 managerId: item.manager_id.toString(),
                 managerName: item.manager.user.name,
                 companyId: item.manager.company_id.toString(),
@@ -365,7 +366,7 @@ export async function getApplicantExamSets(): Promise<ApplicantExamSet[]> {
             const applicantExamSets: ApplicantExamSet[] = []
 
             collections.forEach((collection: any) => {
-                if (collection.assignments && Array.isArray(collection.assignments)) {
+                if (collection.assignments && Array.isArray(collection.assignments) && collection.assignments.length > 0) {
                     collection.assignments.forEach((assignment: any) => {
                         // Calculate progress
                         const total = collection.total_exams || 0
@@ -413,6 +414,34 @@ export async function getApplicantExamSets(): Promise<ApplicantExamSet[]> {
                             // Store collectionId if needed for further fetching
                             collectionId: collection.id
                         })
+                    })
+                } else {
+                    // Map the collection even if it has no assignments
+                    applicantExamSets.push({
+                        id: `col-${collection.id}`,
+                        title: collection.title,
+                        description: collection.description,
+                        assignedDate: collection.created_at,
+                        examDate: collection.start_datetime,
+                        status: collection.status === 'active' ? 'pending' : (collection.status === 'archived' ? 'completed' : 'pending'),
+                        progress: 0,
+                        totalExams: collection.total_exams || 0,
+                        completedExams: 0,
+                        duration: collection.duration_minutes,
+                        applicantId: '-',
+                        applicantName: 'بدون متقاضی',
+                        companyId: '',
+                        companyName: '-',
+                        username: '-',
+                        password: '-',
+                        exams: collection.exams ? collection.exams.map((exam: any) => ({
+                            id: exam.id.toString(),
+                            title: exam.title,
+                            description: exam.description,
+                            duration: exam.duration,
+                            questionCount: 0
+                        })) : [],
+                        collectionId: collection.id
                     })
                 }
             })

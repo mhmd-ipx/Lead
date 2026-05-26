@@ -21,8 +21,7 @@ import {
     HiOutlineOfficeBuilding
 } from 'react-icons/hi'
 import { useSessionUser } from '@/store/authStore'
-import { getMyManagers, getAssessments, getInvoices } from '@/services/OwnerService'
-import { getApplicantExamSets } from '@/services/AdminService'
+import { getMyManagers, getAssessments, getExams, getInvoices } from '@/services/OwnerService'
 import classNames from '@/utils/classNames'
 
 // --- Reusable Stat Card
@@ -152,9 +151,9 @@ const Dashboard = () => {
         { revalidateOnFocus: false }
     )
 
-    const { data: examSetsData, isLoading: examsLoading } = useSWR(
-        '/owner/exams-results-dashboard',
-        getApplicantExamSets,
+    const { data: examsData, isLoading: examsLoading } = useSWR(
+        '/owner/exams',
+        getExams,
         { revalidateOnFocus: false }
     )
 
@@ -196,14 +195,14 @@ const Dashboard = () => {
     }, [assessmentsData])
 
     const completedExams = useMemo(() => {
-        if (!examSetsData) return 0;
-        return examSetsData.filter((e: any) => e.status === 'completed').length
-    }, [examSetsData])
+        if (!examsData) return 0;
+        return examsData.filter(e => e.status === 'completed').length
+    }, [examsData])
 
     const pendingExams = useMemo(() => {
-        if (!examSetsData) return 0;
-        return examSetsData.filter((e: any) => e.status === 'pending' || e.status === 'in_progress' || e.status === 'active' || e.status === 'draft').length
-    }, [examSetsData])
+        if (!examsData) return 0;
+        return examsData.filter(e => e.status === 'active' || e.status === 'draft').length
+    }, [examsData])
 
     const totalPending = useMemo(() => {
         if (!billsData) return 0;
@@ -247,7 +246,7 @@ const Dashboard = () => {
                             variant="default"
                             icon={<HiOutlineCog />}
                             className="bg-white/20 hover:!bg-white/40 text-white border-0 transition-colors"
-                            onClick={() => navigate('/owner/user-profile')}
+                            onClick={() => navigate('/owner/profile')}
                         >
                             پروفایل کاربری
                         </Button>
@@ -307,7 +306,7 @@ const Dashboard = () => {
                     icon={<HiOutlineCash />}
                     iconBg="bg-red-100 dark:bg-red-500/20"
                     iconColor="text-red-600 dark:text-red-400"
-                    onView={() => navigate('/owner/accounting/documents')}
+                    onView={() => navigate('/owner/bills')}
                     id="owner-dashboard-stats-pending-bills"
                 />
             </div>
