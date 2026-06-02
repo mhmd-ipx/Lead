@@ -9,193 +9,108 @@ import {
 
 const ContactSupport = () => {
     return (
-        <div className="space-y-6">
-            {/* Header */}
+        <div className="max-w-6xl mx-auto space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    تماس مستقیم با پشتیبانی
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                    پشتیبانی
                 </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    از طریق راه‌های زیر می‌توانید با ما در ارتباط باشید
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    برای رفع مشکلات و پاسخ به سوالات خود با ما در تماس باشید.
                 </p>
             </div>
 
-            {/* Contact Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Phone */}
-                <Card className="p-6">
-                    <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                            <HiOutlinePhone className="text-2xl text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                                تلفن تماس
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                از شنبه تا پنجشنبه
-                            </p>
-                            <a
-                                href="tel:+982188776655"
-                                className="text-lg font-bold text-blue-600 dark:text-blue-400 hover:underline"
-                                dir="ltr"
-                            >
-                                021-88776655
-                            </a>
-                            <p className="text-sm text-gray-500 dark:text-gray-500 mt-1" dir="ltr">
-                                021-88776656
-                            </p>
-                        </div>
+            <Card className="p-0 overflow-hidden border-0 shadow-sm ring-1 ring-gray-100 dark:ring-gray-800">
+                <div className="grid grid-cols-1 lg:grid-cols-2">
+                    {/* Map Section */}
+                    <div className="h-[350px] lg:h-auto order-2 lg:order-1 bg-gray-50 dark:bg-gray-800/50">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d53757.65476741567!2d51.64423604566773!3d32.636726652323254!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3fbc37006277ddd7%3A0x39c7e2d0f76955b0!2z2LTYsdqp2Kog2KLYqtix24zZhiDYqtis2KfYsdiqINix2KfYs9iq2KfZhg!5e0!3m2!1sen!2s!4v1780379439881!5m2!1sen!2s" className="w-full h-full border-0 opacity-90 hover:opacity-100 transition-opacity duration-300" allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"></iframe>
                     </div>
-                </Card>
 
-                {/* Email */}
-                <Card className="p-6">
-                    <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                            <HiOutlineMail className="text-2xl text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                                ایمیل
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                پاسخگویی تا 24 ساعت
-                            </p>
-                            <a
-                                href="mailto:support@lead-project.ir"
-                                className="text-sm font-semibold text-purple-600 dark:text-purple-400 hover:underline break-all"
-                            >
-                                support@lead-project.ir
-                            </a>
-                            <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                                info@lead-project.ir
-                            </p>
-                        </div>
-                    </div>
-                </Card>
+                    {/* Contact Info */}
+                    <div className="p-6 md:p-10 order-1 lg:order-2 space-y-8 bg-white dark:bg-gray-900/50">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10">
 
-                {/* Address */}
-                <Card className="p-6">
-                    <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                            <HiOutlineLocationMarker className="text-2xl text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                                آدرس دفتر
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                                تهران، خیابان ولیعصر، نرسیده به میدان ونک، پلاک 1234، طبقه 5
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                                کد پستی: 1234567890
-                            </p>
-                        </div>
-                    </div>
-                </Card>
-
-                {/* Working Hours */}
-                <Card className="p-6">
-                    <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                            <HiOutlineClock className="text-2xl text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                                ساعات کاری
-                            </h3>
-                            <div className="space-y-1 text-sm">
-                                <p className="text-gray-600 dark:text-gray-400">
-                                    <span className="font-medium">شنبه تا چهارشنبه:</span> 9:00 - 18:00
-                                </p>
-                                <p className="text-gray-600 dark:text-gray-400">
-                                    <span className="font-medium">پنجشنبه:</span> 9:00 - 13:00
-                                </p>
-                                <p className="text-red-600 dark:text-red-400">
-                                    <span className="font-medium">جمعه:</span> تعطیل
-                                </p>
+                            {/* Phone */}
+                            <div className="flex gap-4">
+                                <div className="text-gray-400 dark:text-gray-500 mt-0.5">
+                                    <HiOutlinePhone className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">تلفن تماس</h4>
+                                    <div className="space-y-1.5">
+                                        <a href="tel:+983136617986" className="block text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors" dir="ltr">031-36617986</a>
+                                        <a href="tel:+989130322201" className="block text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors" dir="ltr">09130322201</a>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                </Card>
 
-                {/* Website */}
-                <Card className="p-6">
-                    <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                            <HiOutlineGlobe className="text-2xl text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                                وبسایت و شبکه‌های اجتماعی
-                            </h3>
-                            <div className="space-y-2">
-                                <a
-                                    href="https://lead-project.ir"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
-                                >
-                                    www.lead-project.ir
-                                </a>
-                                <div className="flex gap-3 mt-3">
-                                    <a
-                                        href="#"
-                                        className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                                    >
-                                        <span className="text-lg">📱</span>
-                                    </a>
-                                    <a
-                                        href="#"
-                                        className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                                    >
-                                        <span className="text-lg">🐦</span>
-                                    </a>
-                                    <a
-                                        href="#"
-                                        className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                                    >
-                                        <span className="text-lg">💼</span>
+                            {/* Email */}
+                            <div className="flex gap-4">
+                                <div className="text-gray-400 dark:text-gray-500 mt-0.5">
+                                    <HiOutlineMail className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">ایمیل</h4>
+                                    <a href="mailto:leadmapro@gmail.com" className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                        leadmapro@gmail.com
                                     </a>
                                 </div>
                             </div>
+
+                            {/* Hours */}
+                            <div className="flex gap-4">
+                                <div className="text-gray-400 dark:text-gray-500 mt-0.5">
+                                    <HiOutlineClock className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">ساعات کاری</h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">شنبه تا چهارشنبه</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">۸:۰۰ - ۱۷:۰۰</p>
+                                </div>
+                            </div>
+
+                            {/* Website */}
+                            <div className="flex gap-4">
+                                <div className="text-gray-400 dark:text-gray-500 mt-0.5">
+                                    <HiOutlineGlobe className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">وب‌سایت</h4>
+                                    <a href="https://atrindanesh.com/lead/" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors" dir="ltr">
+                                        atrindanesh.com/lead
+                                    </a>
+                                </div>
+                            </div>
+
+                            {/* Emergency */}
+                            <div className="flex gap-4">
+                                <div className="text-red-400 dark:text-red-500 mt-0.5">
+                                    <span className="text-lg leading-none block">🚨</span>
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">اضطراری (۲۴/۷)</h4>
+                                    <a href="tel:+989130322201" className="text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors" dir="ltr">
+                                        09130322201
+                                    </a>
+                                </div>
+                            </div>
+
+                            {/* Address */}
+                            <div className="flex gap-4 sm:col-span-2">
+                                <div className="text-gray-400 dark:text-gray-500 mt-0.5">
+                                    <HiOutlineLocationMarker className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">آدرس</h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-md">
+                                        اصفهان - خیابان شیخ مفید - کوچه حاج نائب (۲۰) - ساختمان پندار مفید - طبقه دوم - واحد ۷
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">کد پستی: ۸۱۶۴۹۶۵۹۱۸</p>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-                </Card>
-
-                {/* Emergency */}
-                <Card className="p-6 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-red-200 dark:border-red-800">
-                    <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-2xl">🚨</span>
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="font-semibold text-red-900 dark:text-red-100 mb-2">
-                                پشتیبانی اضطراری (24/7)
-                            </h3>
-                            <p className="text-sm text-red-800 dark:text-red-200 mb-2">
-                                فقط برای موارد فوری
-                            </p>
-                            <a
-                                href="tel:+989121234567"
-                                className="text-lg font-bold text-red-600 dark:text-red-400 hover:underline"
-                                dir="ltr"
-                            >
-                                0912-123-4567
-                            </a>
-                        </div>
-                    </div>
-                </Card>
-            </div>
-
-            {/* Map or Additional Info */}
-            <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    نقشه دفتر
-                </h2>
-                <div className="w-full h-[400px] bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-                    <p className="text-gray-500 dark:text-gray-400">نقشه اینجا قرار می‌گیرد</p>
                 </div>
             </Card>
         </div>
