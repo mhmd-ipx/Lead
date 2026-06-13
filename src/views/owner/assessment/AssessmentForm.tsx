@@ -125,16 +125,16 @@ const AssessmentForm = () => {
 
         case 'radio':
           return (
-            <div className="space-y-2">
+            <div className="space-y-4">
               {question.options?.map((option) => (
-                <label key={option} className="flex items-center">
+                <label key={option} className="flex items-center gap-3 cursor-pointer">
                   <Radio
                     name={`${stepId}-${question.id}`}
                     value={option}
                     checked={currentAnswer === option}
                     onChange={(value) => handleAnswerChange(stepId, question.id, value)}
                   />
-                  <span className="mr-2">{option}</span>
+                  <span className="select-none">{option}</span>
                 </label>
               ))}
             </div>
@@ -143,9 +143,9 @@ const AssessmentForm = () => {
         case 'checkbox': {
           const checkboxValues = (currentAnswer as string[]) || []
           return (
-            <div className="space-y-2">
+            <div className="space-y-4">
               {question.options?.map((option) => (
-                <div key={option} className="flex items-center">
+                <div key={option} className="flex items-center gap-3">
                   <input
                     type="checkbox"
                     id={`${stepId}-${question.id}-${option}`}
@@ -156,9 +156,11 @@ const AssessmentForm = () => {
                         : checkboxValues.filter(v => v !== option)
                       handleAnswerChange(stepId, question.id, newValues)
                     }}
-                    className="ml-2"
+                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer"
                   />
-                  <label htmlFor={`${stepId}-${question.id}-${option}`}>{option}</label>
+                  <label htmlFor={`${stepId}-${question.id}-${option}`} className="cursor-pointer select-none">
+                    {option}
+                  </label>
                 </div>
               ))}
             </div>
@@ -190,7 +192,7 @@ const AssessmentForm = () => {
         case 'checkbox': {
           const displayValues = (currentAnswer as string[]) || []
           return (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               {displayValues.length > 0 ? (
                 displayValues.map((value) => (
                   <Tag key={value} className="bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-100 border-0">

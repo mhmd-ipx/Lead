@@ -14,7 +14,6 @@ const ApplicantAssessment = () => {
     const [submitting, setSubmitting] = useState(false)
     const [answers, setAnswers] = useState<Record<string, any>>({})
     const [formErrors, setFormErrors] = useState<Record<string, string>>({})
-    const [isEditing, setIsEditing] = useState(false)
     const [confirmDialogIsOpen, setConfirmDialogIsOpen] = useState(false)
 
     useEffect(() => {
@@ -146,8 +145,6 @@ const ApplicantAssessment = () => {
 
             // Reload to update status
             loadAssessment()
-            // Exit edit mode if we were editing
-            setIsEditing(false)
 
         } catch (error) {
             console.error('Error submitting assessment:', error)
@@ -160,7 +157,7 @@ const ApplicantAssessment = () => {
 
     const renderQuestionInput = (question: AssessmentQuestion) => {
         const value = answers[question.id]
-        const isReadOnly = assessment?.status === 'submitted' && !isEditing
+        const isReadOnly = assessment?.status === 'submitted'
 
         switch (question.type) {
             case 'text':
@@ -185,10 +182,12 @@ const ApplicantAssessment = () => {
                 )
             case 'radio':
                 return (
-                    <div className="space-y-2">
-                        <Radio.Group value={value} onChange={(val) => handleAnswerChange(question.id, val)} disabled={isReadOnly}>
+                    <div className="mt-2">
+                        <Radio.Group value={value} onChange={(val) => handleAnswerChange(question.id, val)} disabled={isReadOnly} className="flex flex-col gap-4">
                             {question.options?.map((opt, idx) => (
-                                <Radio key={idx} value={opt}>{opt}</Radio>
+                                <Radio key={idx} value={opt} className="flex items-center gap-3 cursor-pointer">
+                                    <span className="text-gray-700 dark:text-gray-200">{opt}</span>
+                                </Radio>
                             ))}
                         </Radio.Group>
                     </div>
@@ -197,10 +196,11 @@ const ApplicantAssessment = () => {
                 // Checkbox needs array value
                 const selectedValues = Array.isArray(value) ? value : []
                 return (
-                    <div className="space-y-2">
+                    <div className="flex flex-col gap-4 mt-2">
                         {question.options?.map((opt, idx) => (
                             <Checkbox
                                 key={idx}
+                                className="flex items-center gap-3 cursor-pointer"
                                 checked={selectedValues.includes(opt)}
                                 onChange={(checked) => {
                                     // checked is boolean here based on Checkbox component
@@ -211,7 +211,7 @@ const ApplicantAssessment = () => {
                                 }}
                                 disabled={isReadOnly}
                             >
-                                {opt}
+                                <span className="text-gray-700 dark:text-gray-200">{opt}</span>
                             </Checkbox>
                         ))}
                     </div>
@@ -386,36 +386,17 @@ const ApplicantAssessment = () => {
 
                 {/* Actions */}
                 <div id="assessment-actions-bar" className="sticky bottom-6 mt-6 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex justify-end gap-4">
-                    {isSubmitted && !isEditing ? (
-                        <div className="flex justify-between w-full items-center">
-                            <span className="text-gray-500 text-sm">برای تغییر پاسخ‌ها وارد حالت ویرایش شوید</span>
-                            <div className="flex gap-2">
-                                <Button variant="plain" onClick={() => navigate('/owner/managers')}>
-                                    بازگشت
-                                </Button>
-                                <Button
-                                    variant="solid"
-                                    icon={<HiOutlinePencil />}
-                                    onClick={() => setIsEditing(true)}
-                                >
-                                    حالت ویرایش
-                                </Button>
-                            </div>
+                    {isSubmitted ? (
+                        <div className="flex justify-end w-full items-center">
+                            <Button variant="plain" onClick={() => navigate('/owner/managers')}>
+                                بازگشت
+                            </Button>
                         </div>
                     ) : (
                         <>
                             <Button
                                 variant="plain"
-                                onClick={() => {
-                                    if (isSubmitted) {
-                                        setIsEditing(false)
-                                        // Reset answers to original load state if cancelled? 
-                                        // For now just exit edit mode, keeping client state is ok or reload.
-                                        loadAssessment()
-                                    } else {
-                                        navigate('/owner/managers')
-                                    }
-                                }}
+                                onClick={() => navigate('/owner/managers')}
                             >
                                 انصراف
                             </Button>
@@ -426,7 +407,7 @@ const ApplicantAssessment = () => {
                                 icon={<HiOutlineSave />}
                                 onClick={handleSubmit}
                             >
-                                {isSubmitted ? 'ذخیره تغییرات' : 'ثبت نهایی نیازسنجی'}
+                                ثبت نهایی نیازسنجی
                             </Button>
                         </>
                     )}
